@@ -29,6 +29,7 @@ def check_arch_violation(file_path: str, prompt_tpl: str) -> str | None:
 
     try:
         from arch.check import check_arch
+
         result = check_arch()
 
         if not result["ok"] and result["violations"]:
@@ -43,9 +44,12 @@ def check_arch_violation(file_path: str, prompt_tpl: str) -> str | None:
 
 
 def sync_architecture_md(file_path: str, prompt_tpl: str) -> str | None:
-    """Auto-update ARCHITECTURE.md when arch-related files change.
+    """Auto-create/update ARCHITECTURE.md.
 
-    Triggers on:
+    Creates if:
+    - File doesn't exist and src/ file is being edited
+
+    Updates when:
     - config.jsonc changes (arch.layers might have changed)
     - src/arch/ file changes
 
@@ -54,23 +58,32 @@ def sync_architecture_md(file_path: str, prompt_tpl: str) -> str | None:
         prompt_tpl: Template for success message.
 
     Returns:
-        Status message if updated, None otherwise.
+        Status message if created/updated, None otherwise.
     """
-    # Check if this is a file that affects architecture docs
-    triggers = [
-        "config.jsonc",
-        "/src/arch/",
-    ]
+    from pathlib import Path
 
-    should_update = any(trigger in file_path for trigger in triggers)
-    if not should_update:
+    # Check if ARCHITECTURE.md exists
+    arch_file = Path.cwd() / "docs" / "ARCHITECTURE.md"
+    file_exists = arch_file.exists()
+
+    # Triggers for update (only if file exists)
+    update_triggers = ["config.jsonc", "/src/arch/"]
+    should_update = file_exists and any(t in file_path for t in update_triggers)
+
+    # Triggers for create (only if file doesn't exist)
+    create_triggers = ["/src/"]
+    should_create = not file_exists and any(t in file_path for t in create_triggers)
+
+    if not should_update and not should_create:
         return None
 
     try:
         from arch.docs import update_architecture_md
+
         success, msg = update_architecture_md()
         if success:
-            return prompt_tpl
+            action = "Created" if should_create else "Updated"
+            return prompt_tpl.replace("Updated", action) if should_create else prompt_tpl
         return None
     except Exception:  # noqa: S110
         return None
