@@ -35,18 +35,19 @@ All commands use the `/dk` prefix to avoid conflicts with native Claude CLI comm
 
 | Command | Action |
 | ------- | ------ |
+| `/dk git` | Git workflow help |
 | `/dk git init` | Initialize new project (full setup) |
 | `/dk git update` | Sync files and GitHub settings |
 | `/dk git pr` | Create pull request |
-| `/dk git pr review [num]` | Check PR review comments |
-| `/dk git pr merge [num]` | Merge PR (squash) |
+| `/dk git pr review [n]` | Check PR review comments |
+| `/dk git pr merge [n]` | Merge PR (squash) |
 | `/dk git branch <name>` | Create feature branch |
 | `/dk git squash` | Squash commits |
 | `/dk git cleanup` | Clean local tags + branches |
 | `/dk git issue report` | Report bug in devkit-plugin |
 | `/dk git issue create` | Create issue in current project |
 | `/dk git issue list` | List open issues |
-| `/dk git issue view [num]` | View issue details |
+| `/dk git issue view [n]` | View issue details |
 
 ## Architecture
 
@@ -55,7 +56,7 @@ All commands use the `/dk` prefix to avoid conflicts with native Claude CLI comm
 | `/dk arch` | Architecture overview |
 | `/dk arch analyze` | Analyze dependencies and violations |
 | `/dk arch check` | Check layer rule compliance |
-| `/dk arch init [python\|ts]` | Scaffold Clean Architecture |
+| `/dk arch init [type]` | Scaffold Clean Architecture |
 | `/dk arch layers` | Show layer documentation |
 
 ## Documentation
@@ -70,12 +71,15 @@ All commands use the `/dk` prefix to avoid conflicts with native Claude CLI comm
 
 | Command | Action |
 | ------- | ------ |
+| `/dk env` | Environment sync help |
 | `/dk env sync` | Sync .env to Vercel + GitHub |
 | `/dk env pull` | Pull env vars from Vercel |
 | `/dk env list` | List env vars |
 | `/dk env clean` | Remove unused env vars |
+| `/dk vercel` | Vercel deployment help |
 | `/dk vercel connect` | Link project to Vercel |
 | `/dk vercel env` | Manage Vercel env vars |
+| `/dk neon` | NeonDB branch management |
 | `/dk neon branch list` | List NeonDB branches |
 | `/dk neon branch create` | Create NeonDB branch |
 | `/dk neon branch delete` | Delete NeonDB branch |
@@ -178,19 +182,16 @@ gh auth login
 ```bash
 # Correct
 uv run pytest tests/
-uv run python hooks/pr.py
+uv run python src/events/session.py
 
 # Wrong (uses system Python without dependencies)
 python3 -m pytest tests/
-python3 hooks/pr.py
+python3 src/events/session.py
 ```
 
 ## Documentation
 
-- [Index](docs/INDEX.md) - File overview
-- [Architecture](docs/ARCHITECTURE.md) - System design
-- [Patterns](docs/PATTERNS.md) - Code patterns
-- [Dependencies](docs/DEPENDENCIES.md) - Module graph
+- [Plugin Reference](docs/PLUGIN.md) - Auto-generated plugin documentation
 
 ## Git
 

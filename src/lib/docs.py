@@ -51,32 +51,6 @@ def parse_sections(content: str) -> dict[str, str]:
     return result
 
 
-def render_template(template: str, values: dict) -> str:
-    """Replace {{var}} placeholders with values.
-
-    Args:
-        template: Template string with {{var}} placeholders.
-        values: Dict of values to substitute.
-
-    Returns:
-        Rendered string with placeholders replaced.
-    """
-
-    def replace_var(match: re.Match) -> str:
-        key = match.group(1)
-        # Support nested keys like 'project.name'
-        parts = key.split(".")
-        value = values
-        for part in parts:
-            if isinstance(value, dict):
-                value = value.get(part, "")
-            else:
-                return ""
-        return str(value) if value else ""
-
-    return re.sub(r"\{\{(\w+(?:\.\w+)*)\}\}", replace_var, template)
-
-
 def generate_auto_section() -> str:
     """Generate AUTO section content from config.
 

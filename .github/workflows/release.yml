@@ -45,12 +45,20 @@ jobs:
           except ImportError:
               HAS_TOML = False
 
-          # Load config from .claude/.devkit/config.json
+          def strip_jsonc_comments(text):
+              """Remove // and /* */ comments from JSONC."""
+              # Remove single-line comments (but not in strings)
+              result = re.sub(r'(?<!:)//.*$', '', text, flags=re.MULTILINE)
+              # Remove multi-line comments
+              result = re.sub(r'/\*.*?\*/', '', result, flags=re.DOTALL)
+              return result
+
+          # Load config from .claude/.devkit/config.jsonc
           config = {}
-          config_path = Path(".claude/.devkit/config.json")
+          config_path = Path(".claude/.devkit/config.jsonc")
           if config_path.exists():
               try:
-                  config = json.loads(config_path.read_text())
+                  config = json.loads(strip_jsonc_comments(config_path.read_text()))
               except Exception:
                   pass
 

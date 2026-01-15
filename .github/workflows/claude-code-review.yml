@@ -32,7 +32,7 @@ jobs:
 
             ## Steps
             1. Run `git diff origin/main...HEAD` to see changes
-            2. Read .claude/.devkit/config.json for project rules (if exists)
+            2. Read .claude/.devkit/config.jsonc for project rules (if exists)
             3. Read modified files for context
             4. Check ALL categories below
             5. Post review comment: gh pr comment ${{ github.event.pull_request.number }} --body "REVIEW"

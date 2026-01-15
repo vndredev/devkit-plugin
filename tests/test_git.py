@@ -197,14 +197,15 @@ class TestIsProtectedBranch:
 
             assert result is True
 
-    def test_is_protected_branch_master(self):
-        """Should detect master as protected."""
+    def test_is_protected_branch_master_not_default(self):
+        """Should NOT detect master as protected by default (only main)."""
         with patch("lib.git.git_branch") as mock_branch:
             mock_branch.return_value = "master"
 
             result = is_protected_branch()
 
-            assert result is True
+            # Default only protects "main", not "master"
+            assert result is False
 
     def test_is_protected_branch_feature(self):
         """Should not detect feature branch as protected."""

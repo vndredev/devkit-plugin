@@ -25,113 +25,119 @@ def load_presets() -> dict:
 
 
 def render_template(template: str, values: dict) -> str:
-    """Replace {{var}} placeholders with values."""
+    """Replace {{var}} placeholders with values.
+
+    Supports both simple keys ({{var}}) and nested keys ({{project.name}}).
+
+    Args:
+        template: Template string with {{var}} placeholders.
+        values: Dict of values to substitute.
+
+    Returns:
+        Rendered string with placeholders replaced.
+    """
+
     def replace_var(match: re.Match) -> str:
         key = match.group(1)
-        value = values.get(key, "")
+        # Support nested keys like 'project.name'
+        parts = key.split(".")
+        value = values
+        for part in parts:
+            if isinstance(value, dict):
+                value = value.get(part, "")
+            else:
+                return ""
+        # Handle special types
         if isinstance(value, (list, dict)):
             return json.dumps(value)
         if isinstance(value, bool):
             return "true" if value else "false"
-        return str(value)
+        return str(value) if value else ""
 
-    return re.sub(r"\{\{(\w+)\}\}", replace_var, template)
+    return re.sub(r"\{\{(\w+(?:\.\w+)*)\}\}", replace_var, template)
+
+
+def _sync_linter_config(
+    root: Path,
+    preset: str,
+    overrides: dict,
+    preset_category: str,
+    template_path: str,
+    output_name: str,
+) -> tuple[bool, str]:
+    """Generic linter config sync.
+
+    Args:
+        root: Project root directory.
+        preset: Preset name (e.g., 'strict', 'relaxed').
+        overrides: Custom overrides to apply.
+        preset_category: Category in presets.json (e.g., 'python', 'nextjs').
+        template_path: Relative path to template from templates/linters/.
+        output_name: Output filename.
+
+    Returns:
+        Tuple of (success, message).
+    """
+    presets = load_presets()
+    category_presets = presets.get(preset_category, {})
+
+    if preset not in category_presets:
+        preset = "strict"
+
+    values = category_presets[preset].copy()
+    values["preset"] = preset
+    values.update(overrides)
+
+    template_file = get_plugin_root() / "templates" / "linters" / template_path
+    if not template_file.exists():
+        return False, f"Template not found: {template_path}"
+
+    template = template_file.read_text()
+    content = render_template(template, values)
+
+    output_file = root / output_name
+    output_file.write_text(content)
+    return True, f"Generated {output_file}"
 
 
 def sync_ruff(root: Path, preset: str, overrides: dict) -> tuple[bool, str]:
     """Generate ruff.toml for Python projects."""
-    presets = load_presets()
-    python_presets = presets.get("python", {})
-
-    if preset not in python_presets:
-        preset = "strict"
-
-    values = python_presets[preset].copy()
-    values["preset"] = preset
-    values.update(overrides)
-
-    template_file = get_plugin_root() / "templates" / "linters" / "python" / "ruff.toml.template"
-    if not template_file.exists():
-        return False, "Template not found: ruff.toml.template"
-
-    template = template_file.read_text()
-    content = render_template(template, values)
-
-    output_file = root / "ruff.toml"
-    output_file.write_text(content)
-    return True, f"Generated {output_file}"
+    return _sync_linter_config(
+        root, preset, overrides,
+        preset_category="python",
+        template_path="python/ruff.toml.template",
+        output_name="ruff.toml",
+    )
 
 
 def sync_eslint(root: Path, preset: str, overrides: dict) -> tuple[bool, str]:
     """Generate .eslintrc.json for Next.js projects."""
-    presets = load_presets()
-    nextjs_presets = presets.get("nextjs", {})
-
-    if preset not in nextjs_presets:
-        preset = "strict"
-
-    values = nextjs_presets[preset].copy()
-    values["preset"] = preset
-    values.update(overrides)
-
-    template_file = get_plugin_root() / "templates" / "linters" / "nextjs" / "eslint.json.template"
-    if not template_file.exists():
-        return False, "Template not found: eslint.json.template"
-
-    template = template_file.read_text()
-    content = render_template(template, values)
-
-    output_file = root / ".eslintrc.json"
-    output_file.write_text(content)
-    return True, f"Generated {output_file}"
+    return _sync_linter_config(
+        root, preset, overrides,
+        preset_category="nextjs",
+        template_path="nextjs/eslint.json.template",
+        output_name=".eslintrc.json",
+    )
 
 
 def sync_prettier(root: Path, preset: str, overrides: dict) -> tuple[bool, str]:
     """Generate .prettierrc for Next.js projects."""
-    presets = load_presets()
-    nextjs_presets = presets.get("nextjs", {})
-
-    if preset not in nextjs_presets:
-        preset = "strict"
-
-    values = nextjs_presets[preset].copy()
-    values["preset"] = preset
-    values.update(overrides)
-
-    template_file = get_plugin_root() / "templates" / "linters" / "nextjs" / "prettier.json.template"
-    if not template_file.exists():
-        return False, "Template not found: prettier.json.template"
-
-    template = template_file.read_text()
-    content = render_template(template, values)
-
-    output_file = root / ".prettierrc"
-    output_file.write_text(content)
-    return True, f"Generated {output_file}"
+    return _sync_linter_config(
+        root, preset, overrides,
+        preset_category="nextjs",
+        template_path="nextjs/prettier.json.template",
+        output_name=".prettierrc",
+    )
 
 
 def sync_markdownlint(root: Path, preset: str, overrides: dict) -> tuple[bool, str]:
     """Generate .markdownlint.json for all projects."""
-    presets = load_presets()
-    common_presets = presets.get("common", {})
-
-    if preset not in common_presets:
-        preset = "strict"
-
-    values = common_presets[preset].copy()
-    values["preset"] = preset
-    values.update(overrides)
-
-    template_file = get_plugin_root() / "templates" / "linters" / "common" / "markdownlint.json.template"
-    if not template_file.exists():
-        return False, "Template not found: markdownlint.json.template"
-
-    template = template_file.read_text()
-    content = render_template(template, values)
-
-    output_file = root / ".markdownlint.json"
-    output_file.write_text(content)
-    return True, f"Generated {output_file}"
+    return _sync_linter_config(
+        root, preset, overrides,
+        preset_category="common",
+        template_path="common/markdownlint.json.template",
+        output_name=".markdownlint.json",
+    )
 
 
 def sync_gitignore(root: Path, project_type: str) -> tuple[bool, str]:

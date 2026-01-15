@@ -6,6 +6,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
+from lib.config import strip_jsonc_comments
 from lib.setup import (
     create_config,
     git_init,
@@ -13,6 +14,12 @@ from lib.setup import (
     setup_github,
     update_github_settings,
 )
+
+
+def load_jsonc(path: Path) -> dict:
+    """Load JSONC file, stripping comments."""
+    content = path.read_text()
+    return json.loads(strip_jsonc_comments(content))
 
 
 class TestCreateConfig:
@@ -23,10 +30,10 @@ class TestCreateConfig:
         success, msg = create_config(tmp_path, "test-project", "python")
 
         assert success is True
-        config_file = tmp_path / ".claude" / ".devkit" / "config.json"
+        config_file = tmp_path / ".claude" / ".devkit" / "config.jsonc"
         assert config_file.exists()
 
-        config = json.loads(config_file.read_text())
+        config = load_jsonc(config_file)
         assert config["project"]["name"] == "test-project"
         assert config["project"]["type"] == "python"
         assert config["project"]["version"] == "0.0.0"
@@ -37,8 +44,8 @@ class TestCreateConfig:
         success, msg = create_config(tmp_path, "test-node", "node")
 
         assert success is True
-        config_file = tmp_path / ".claude" / ".devkit" / "config.json"
-        config = json.loads(config_file.read_text())
+        config_file = tmp_path / ".claude" / ".devkit" / "config.jsonc"
+        config = load_jsonc(config_file)
 
         assert config["project"]["type"] == "node"
         assert config["testing"]["framework"] == "vitest"
@@ -49,8 +56,8 @@ class TestCreateConfig:
             tmp_path, "test-project", "python", github_repo="user/repo"
         )
 
-        config_file = tmp_path / ".claude" / ".devkit" / "config.json"
-        config = json.loads(config_file.read_text())
+        config_file = tmp_path / ".claude" / ".devkit" / "config.jsonc"
+        config = load_jsonc(config_file)
 
         assert config["github"]["url"] == "https://github.com/user/repo"
 
@@ -58,8 +65,8 @@ class TestCreateConfig:
         """Should include Python-specific managed files."""
         create_config(tmp_path, "test", "python")
 
-        config_file = tmp_path / ".claude" / ".devkit" / "config.json"
-        config = json.loads(config_file.read_text())
+        config_file = tmp_path / ".claude" / ".devkit" / "config.jsonc"
+        config = load_jsonc(config_file)
 
         assert "ruff.toml" in config["managed"]["linters"]
         assert "release-python" in config["managed"]["github"][".github/workflows/release.yml"]["template"]
@@ -68,8 +75,8 @@ class TestCreateConfig:
         """Should include Node-specific managed files."""
         create_config(tmp_path, "test", "node")
 
-        config_file = tmp_path / ".claude" / ".devkit" / "config.json"
-        config = json.loads(config_file.read_text())
+        config_file = tmp_path / ".claude" / ".devkit" / "config.jsonc"
+        config = load_jsonc(config_file)
 
         assert "ruff.toml" not in config["managed"]["linters"]
         assert "release-node" in config["managed"]["github"][".github/workflows/release.yml"]["template"]
@@ -169,7 +176,7 @@ class TestGitUpdate:
 
         clear_cache()
 
-        # Create config
+        # Create config (JSONC format)
         config_dir = tmp_path / ".claude" / ".devkit"
         config_dir.mkdir(parents=True)
         config = {
@@ -177,7 +184,7 @@ class TestGitUpdate:
             "github": {"url": ""},
             "managed": {},
         }
-        (config_dir / "config.json").write_text(json.dumps(config))
+        (config_dir / "config.jsonc").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
         with patch("lib.setup.sync_all", return_value=[("file.txt", True, "Synced")]) as mock_sync:
@@ -191,7 +198,7 @@ class TestGitUpdate:
 
         clear_cache()
 
-        # Create config with GitHub URL
+        # Create config with GitHub URL (JSONC format)
         config_dir = tmp_path / ".claude" / ".devkit"
         config_dir.mkdir(parents=True)
         config = {
@@ -199,7 +206,7 @@ class TestGitUpdate:
             "github": {"url": "https://github.com/user/repo"},
             "managed": {},
         }
-        (config_dir / "config.json").write_text(json.dumps(config))
+        (config_dir / "config.jsonc").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
         with patch("lib.setup.sync_all", return_value=[]):
@@ -249,11 +256,13 @@ class TestUpdateGithubSettings:
         """Should configure squash merge only."""
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
-            results = update_github_settings("user/repo")
+            with patch("lib.setup.is_org_repo", return_value=False):
+                results = update_github_settings("user/repo")
 
-        # Check for squash merge setting
-        patch_call = mock_run.call_args_list[0]
-        args = patch_call[0][0]
+        # Find the PATCH call for repo settings (after is_org_repo check)
+        patch_calls = [c for c in mock_run.call_args_list if "-X" in c[0][0] and "PATCH" in c[0][0]]
+        assert len(patch_calls) >= 1
+        args = patch_calls[0][0][0]
         assert "allow_squash_merge=true" in args
         assert "allow_merge_commit=false" in args
 
@@ -261,22 +270,30 @@ class TestUpdateGithubSettings:
         """Should configure branch protection."""
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
-            results = update_github_settings("user/repo")
+            with patch("lib.setup.is_org_repo", return_value=False):
+                results = update_github_settings("user/repo")
 
         # Check for branch protection call
-        protection_call = mock_run.call_args_list[1]
-        args = protection_call[0][0]
+        protection_calls = [c for c in mock_run.call_args_list if "protection" in " ".join(c[0][0])]
+        assert len(protection_calls) >= 1
+        args = protection_calls[0][0][0]
         assert "branches/main/protection" in " ".join(args)
 
     def test_update_github_settings_handles_errors(self):
         """Should handle API errors gracefully."""
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = subprocess.CalledProcessError(1, "gh", stderr=b"API error")
-            results = update_github_settings("user/repo")
+            with patch("lib.setup.is_org_repo", return_value=False):
+                results = update_github_settings("user/repo")
 
-        assert len(results) == 2
-        assert results[0][1] is False
+        # Should have release_token + repo_settings + branch_protection = 3 results
+        assert len(results) == 3
+        # First is release token info (always succeeds)
+        assert results[0][0] == "release token"
+        assert results[0][1] is True
+        # Repo settings and branch protection should fail
         assert results[1][1] is False
+        assert results[2][1] is False
 
 
 # Import subprocess for CalledProcessError

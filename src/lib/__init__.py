@@ -10,12 +10,11 @@ from lib.docs import (
     get_docs_status,
     merge_sections,
     parse_sections,
-    render_template,
     update_claude_md,
     update_plugin_md,
 )
 from lib.git import git_branch, git_commit, git_status, is_protected_branch, run_git
-from lib.sync import check_sync_status, sync_all, sync_docs, sync_linters
+from lib.sync import check_sync_status, render_template, sync_all, sync_docs, sync_linters
 from lib.tools import detect_project_type, format_file, notify, run_linter
 
 __all__ = [

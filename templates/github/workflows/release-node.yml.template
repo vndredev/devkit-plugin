@@ -32,10 +32,18 @@ jobs:
           const fs = require('fs');
           const { execSync } = require('child_process');
 
-          // Load config from .claude/.devkit/config.json
+          // Strip JSONC comments (// and /* */)
+          function stripJsoncComments(text) {
+            return text
+              .replace(/(?<!:)\/\/.*$/gm, '')  // Single-line comments
+              .replace(/\/\*[\s\S]*?\*\//g, ''); // Multi-line comments
+          }
+
+          // Load config from .claude/.devkit/config.jsonc
           let config = {};
           try {
-            config = JSON.parse(fs.readFileSync('.claude/.devkit/config.json', 'utf8'));
+            const raw = fs.readFileSync('.claude/.devkit/config.jsonc', 'utf8');
+            config = JSON.parse(stripJsoncComments(raw));
           } catch (e) {}
 
           // Get internal scopes from config (with fallback)
