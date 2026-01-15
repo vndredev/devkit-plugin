@@ -128,3 +128,40 @@ def detect_project_type(root: Path) -> ProjectType:
         return ProjectType.JAVASCRIPT
 
     return ProjectType.UNKNOWN
+
+
+def detect_project_version(root: Path) -> str:
+    """Detect project version from package.json or pyproject.toml.
+
+    Args:
+        root: Project root directory.
+
+    Returns:
+        Version string or "0.0.0" if not found.
+    """
+    import json
+
+    # Try pyproject.toml first
+    pyproject = root / "pyproject.toml"
+    if pyproject.exists():
+        try:
+            import tomllib
+            data = tomllib.loads(pyproject.read_text())
+            version = data.get("project", {}).get("version")
+            if version:
+                return version
+        except Exception:
+            pass
+
+    # Try package.json
+    package_json = root / "package.json"
+    if package_json.exists():
+        try:
+            data = json.loads(package_json.read_text())
+            version = data.get("version")
+            if version:
+                return version
+        except Exception:
+            pass
+
+    return "0.0.0"

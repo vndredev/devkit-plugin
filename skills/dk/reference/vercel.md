@@ -1,78 +1,156 @@
-# Vercel Module
+# /dk vercel
 
-Connect and manage Vercel deployments.
+Vercel deployment setup and management.
 
 ## Commands
 
-| Command              | Description                |
-| -------------------- | -------------------------- |
-| `/dk vercel connect` | Link project to Vercel     |
-| `/dk vercel env`     | Sync environment variables |
+| Command | Description |
+|---------|-------------|
+| `/dk vercel connect` | Full Vercel setup (link, GitHub, env, Neon) |
+| `/dk vercel status` | Show current Vercel project status |
+| `/dk vercel deploy` | Deploy to preview |
+| `/dk vercel deploy --prod` | Deploy to production |
+| `/dk vercel env sync` | Sync .env.local to Vercel |
+| `/dk vercel env pull` | Pull env vars from Vercel |
+
+---
 
 ## /dk vercel connect
 
-Link the current project to Vercel for automatic deployments:
+Full automated Vercel setup:
 
 ```bash
-# Check if already linked
-if [ -d ".vercel" ]; then
-    echo "✓ Project already linked to Vercel"
-    vercel project ls 2>/dev/null | head -5
-    exit 0
-fi
-
-# Link project
-echo "Linking project to Vercel..."
-vercel link
-
-# Show project info
-echo ""
-echo "Project linked! Next steps:"
-echo "1. Push to GitHub to trigger automatic deployments"
-echo "2. Or run 'vercel deploy' for manual deployment"
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
+from lib.vercel import vercel_connect
+for step, ok, msg in vercel_connect():
+    icon = '✓' if ok else '✗'
+    print(f'{icon} {step}: {msg}')
+"
 ```
 
-After linking:
+**Workflow:**
 
-- `.vercel/` directory created
-- Project connected to Vercel dashboard
-- Automatic deployments on push (if GitHub connected)
+1. Check Vercel CLI installed & authenticated
+2. Link project (or create new)
+3. **Connect GitHub** (auto-connects if not connected)
+4. Check production domain
+5. Sync environment variables from `.env.local`
+6. Check Neon integration (if DATABASE_URL exists)
 
-## /dk vercel env
+**Output Example:**
+
+```
+✓ vercel cli: 50.1.3 (logged in as dfineio)
+✓ vercel link: Already linked to dfine-streaming
+✓ project info: dfine-streaming @ dfineio
+✓ github integration: Connected to vndredev/dfine-streaming
+✓ production domain: streaming.dfine.app
+✓ env sync: All vars already synced
+✓ neon integration: Neon integration active (per-branch DB)
+```
+
+---
+
+## /dk vercel status
+
+Show current project status:
+
+```bash
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
+from lib.vercel import vercel_status
+import json
+status = vercel_status()
+print(json.dumps(status, indent=2))
+"
+```
+
+---
+
+## /dk vercel deploy
+
+Deploy to Vercel:
+
+```bash
+# Preview deployment
+vercel deploy
+
+# Production deployment
+vercel deploy --prod
+```
+
+---
+
+## /dk vercel env sync
 
 Sync environment variables from `.env.local` to Vercel:
 
 ```bash
-# Check for .env.local
-if [ ! -f ".env.local" ]; then
-    echo "No .env.local found"
-    exit 1
-fi
-
-echo "Syncing environment variables to Vercel..."
-echo "Select environment: development, preview, or production"
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
+from lib.vercel import sync_env_vars
+from pathlib import Path
+for step, ok, msg in sync_env_vars(Path.cwd()):
+    icon = '✓' if ok else '✗'
+    print(f'{icon} {step}: {msg}')
+"
 ```
 
-Claude will:
+**Security:** Sensitive vars are skipped automatically:
+- Variables containing `SECRET`, `KEY`, `TOKEN`, `PASSWORD`, `PRIVATE`
+- These must be added manually via `vercel env add`
 
-1. Read `.env.local` (excluding secrets like API keys)
-2. Ask which environment to sync to
-3. Use `vercel env add` for each variable
+---
 
-**Security Note**: Never sync sensitive keys automatically. Claude will skip variables containing:
+## /dk vercel env pull
 
-- `SECRET`
-- `KEY`
-- `TOKEN`
-- `PASSWORD`
+Pull environment variables from Vercel to local:
+
+```bash
+vercel env pull .env.local
+```
+
+---
 
 ## Prerequisites
 
-- Vercel account
-- `vercel` CLI installed: `npm i -g vercel`
-- Authenticated: `vercel login`
+| Tool | Install | Check |
+|------|---------|-------|
+| Vercel CLI | `npm i -g vercel` | `vercel --version` |
+| Authenticated | `vercel login` | `vercel whoami` |
 
-## Vercel Project Structure
+---
+
+## Integration with GitHub
+
+After `/dk vercel connect`:
+
+- Push to `main` → Production deployment
+- Push to feature branch → Preview deployment
+- PR created → Preview URL in PR comments
+
+**Setup GitHub Integration:**
+
+1. Go to Vercel Dashboard → Project → Settings → Git
+2. Connect repository
+3. Enable "Auto-deploy on push"
+
+---
+
+## Integration with NeonDB
+
+For automatic database branches per preview deployment:
+
+1. Go to Vercel Dashboard → Integrations → Neon
+2. Connect your Neon project
+3. Enable "Create branch per preview"
+
+**Benefits:**
+- Creates DB branch per Vercel preview deployment
+- Sets `DATABASE_URL` automatically per environment
+- Cleans up branches when deployments are deleted
+
+---
+
+## Project Structure
 
 After `/dk vercel connect`:
 
@@ -82,16 +160,13 @@ After `/dk vercel connect`:
 └── README.txt      # Vercel info
 ```
 
-## Integration with NeonDB
+---
 
-For automatic database branches per preview deployment, use the **native Neon-Vercel integration**:
+## Troubleshooting
 
-1. Go to Vercel Dashboard → Integrations → Neon
-2. Connect your Neon project
-3. Enable "Create branch per preview"
-
-This integration:
-
-- Creates DB branch per Vercel preview deployment
-- Sets `DATABASE_URL` automatically
-- Cleans up branches when deployments are deleted
+| Issue | Solution |
+|-------|----------|
+| "Not logged in" | `vercel login` |
+| "Project not found" | `vercel link` |
+| "Permission denied" | Check team membership |
+| "Build failed" | Check `vercel logs` |

@@ -10,7 +10,7 @@ from pathlib import Path
 from lib.config import get, load_config, clear_cache
 from lib.git import run_git
 from lib.sync import sync_all, get_plugin_root
-from lib.tools import detect_project_type
+from lib.tools import detect_project_type, detect_project_version
 
 
 def git_init(
@@ -180,7 +180,7 @@ def create_config(
         "ignore": {},
     }
 
-    # Type-specific files
+    # Type-specific configuration
     if project_type == "python":
         managed["linters"]["ruff.toml"] = {
             "template": "linters/python/ruff.toml.template",
@@ -195,6 +195,28 @@ def create_config(
             "enabled": True,
         }
         test_framework = "pytest"
+        # Python projects can't be deployed to Vercel (use Railway, Render, Fly.io)
+        deployment = {
+            "enabled": False,
+            "platforms": ["railway", "render", "fly"],
+            "note": "Python projects cannot be deployed to Vercel. Use Railway, Render, or Fly.io.",
+        }
+    elif project_type == "plugin":
+        # Claude plugins are not deployed
+        managed["github"][".github/workflows/release.yml"] = {
+            "template": "github/workflows/release-python.yml.template",
+            "enabled": True,
+        }
+        managed["ignore"][".gitignore"] = {
+            "template": ["gitignore/common.gitignore", "gitignore/python.gitignore"],
+            "enabled": True,
+        }
+        test_framework = "pytest"
+        deployment = {
+            "enabled": False,
+            "platforms": [],
+            "note": "Claude plugins are not deployed. They run locally via Claude Code.",
+        }
     else:  # node, nextjs, typescript, javascript
         managed["github"][".github/workflows/release.yml"] = {
             "template": "github/workflows/release-node.yml.template",
@@ -205,17 +227,29 @@ def create_config(
             "enabled": True,
         }
         test_framework = "vitest"
+        # Node/Next.js projects can be deployed to Vercel
+        deployment = {
+            "enabled": True,
+            "platform": "vercel",
+            "platforms": ["vercel", "railway", "render", "netlify"],
+            "framework": "nextjs" if project_type == "nextjs" else "other",
+            "env_sync": True,
+            "production_domain": "",
+        }
 
     # Build github URL and visibility
     github_url = f"https://github.com/{github_repo}" if github_repo else ""
     github_visibility = "public"  # Default to public for branch protection support
+
+    # Detect version from package.json or pyproject.toml
+    version = detect_project_version(root)
 
     config = {
         "$schema": "./config.schema.json",
         "project": {
             "name": name,
             "type": project_type,
-            "version": "0.0.0",
+            "version": version,
         },
         "hooks": {
             "session": {"enabled": True, "show_git_status": True},
@@ -245,6 +279,7 @@ def create_config(
             },
         },
         "github": {"url": github_url, "visibility": github_visibility},
+        "deployment": deployment,
         "arch": {"layers": {}},
         "linters": {"preset": "strict", "overrides": {}},
         "managed": managed,
@@ -308,6 +343,70 @@ def setup_github(repo: str, visibility: str = "public") -> list[tuple[str, bool,
     return results
 
 
+def is_org_repo(repo: str) -> bool:
+    """Check if repo belongs to an organization (not personal).
+
+    Args:
+        repo: GitHub repo in format owner/repo
+
+    Returns:
+        True if org repo, False if personal
+    """
+    owner = repo.split("/")[0]
+    try:
+        result = subprocess.run(
+            ["gh", "api", f"/users/{owner}"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        import json
+        data = json.loads(result.stdout)
+        return data.get("type") == "Organization"
+    except Exception:
+        return False
+
+
+def configure_actions_permissions(repo: str) -> tuple[bool, str]:
+    """Configure GitHub Actions permissions for org repos.
+
+    Enables workflow write permissions so GITHUB_TOKEN can push commits.
+
+    Args:
+        repo: GitHub repo in format owner/repo
+
+    Returns:
+        Tuple of (success, message)
+    """
+    try:
+        # Enable Actions and set permissions
+        subprocess.run(
+            [
+                "gh", "api", "-X", "PUT",
+                f"/repos/{repo}/actions/permissions",
+                "-f", "enabled=true",
+                "-f", "allowed_actions=all",
+            ],
+            capture_output=True,
+            check=True,
+        )
+        # Set workflow permissions to read-write
+        subprocess.run(
+            [
+                "gh", "api", "-X", "PUT",
+                f"/repos/{repo}/actions/permissions/workflow",
+                "-f", "default_workflow_permissions=write",
+                "-F", "can_approve_pull_request_reviews=true",
+            ],
+            capture_output=True,
+            check=True,
+        )
+        return True, "Actions permissions configured (write access)"
+    except subprocess.CalledProcessError as e:
+        stderr = e.stderr.decode() if e.stderr else str(e)
+        return False, f"Failed: {stderr}"
+
+
 def update_github_settings(repo: str) -> list[tuple[str, bool, str]]:
     """Update GitHub repo settings and branch protection.
 
@@ -318,6 +417,14 @@ def update_github_settings(repo: str) -> list[tuple[str, bool, str]]:
         List of (step, success, message) tuples
     """
     results = []
+
+    # Check if org repo and configure Actions permissions
+    if is_org_repo(repo):
+        ok, msg = configure_actions_permissions(repo)
+        results.append(("actions permissions", ok, msg))
+        results.append(("release token", True, "Using GITHUB_TOKEN (org repo)"))
+    else:
+        results.append(("release token", True, "Needs RELEASE_PAT secret (personal repo)"))
 
     # Repo settings: squash merge only
     try:
