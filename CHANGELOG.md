@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.7.1] - 2026-01-15
+## [v0.7.2] - 2026-01-15
 
 ### Fixed
 
+- **Events**: Add pythonpath=src to uv run commands
 - **Events**: Use uv run for hook commands
 
 ### Changed
