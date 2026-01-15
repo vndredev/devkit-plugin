@@ -1,143 +1,200 @@
-# /dk docs - Auto Documentation
+# /dk docs - Documentation Management
 
-Manage CLAUDE.md with AUTO-generated and CUSTOM sections.
+Manage all project documentation: CLAUDE.md, ARCHITECTURE.md, PLUGIN.md.
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `/dk docs` | Show current CLAUDE.md status |
-| `/dk docs update` | Update AUTO sections from config |
-| `/dk docs init` | Create CLAUDE.md from template |
+| Command           | Description                     |
+| ----------------- | ------------------------------- |
+| `/dk docs`        | Show docs status (all files)    |
+| `/dk docs update` | Update all docs from config     |
+| `/dk docs init`   | Create missing docs             |
+| `/dk docs arch`   | Generate/update ARCHITECTURE.md |
+| `/dk docs plugin` | Generate/update PLUGIN.md       |
+| `/dk docs claude` | Generate/update CLAUDE.md       |
 
-## Section Types
+## Managed Files
 
-### AUTO Sections
-
-Generated from config.jsonc - **DO NOT EDIT MANUALLY**:
-
-```markdown
-<!-- AUTO:START -->
-## Commands
-...generated from skills...
-
-## Architecture
-...generated from config...
-
-## Tech Stack
-...detected from project...
-<!-- AUTO:END -->
-```
-
-### CUSTOM Sections
-
-User/Claude maintained - preserved during updates:
-
-```markdown
-<!-- CUSTOM:START -->
-## Project Specific
-...your documentation...
-<!-- CUSTOM:END -->
-```
+| File                   | Type        | Description                     |
+| ---------------------- | ----------- | ------------------------------- |
+| `CLAUDE.md`            | AUTO+CUSTOM | Project instructions for Claude |
+| `docs/ARCHITECTURE.md` | AUTO        | Layer dependencies + diagrams   |
+| `docs/PLUGIN.md`       | AUTO        | Plugin features documentation   |
 
 ## Workflow
 
 ### /dk docs
 
-Show CLAUDE.md status:
+Show status of all documentation:
 
 ```bash
-# Check if CLAUDE.md exists and show section status
-if [ -f "CLAUDE.md" ]; then
-    echo "CLAUDE.md exists"
-    grep -c "AUTO:START" CLAUDE.md && echo "Has AUTO section"
-    grep -c "CUSTOM:START" CLAUDE.md && echo "Has CUSTOM section"
-else
-    echo "CLAUDE.md not found - run /dk docs init"
-fi
+echo "=== Documentation Status ==="
+echo ""
+[ -f "CLAUDE.md" ] && echo "✓ CLAUDE.md" || echo "✗ CLAUDE.md (missing)"
+[ -f "docs/ARCHITECTURE.md" ] && echo "✓ docs/ARCHITECTURE.md" || echo "✗ docs/ARCHITECTURE.md (missing)"
+[ -f "docs/PLUGIN.md" ] && echo "✓ docs/PLUGIN.md" || echo "✗ docs/PLUGIN.md (missing)"
 ```
 
 ### /dk docs update
 
-Update only the AUTO sections:
+Update all documentation from config:
 
-1. Read current CLAUDE.md
-2. Extract CUSTOM sections (preserve them)
-3. Regenerate AUTO sections from config
-4. Merge: new AUTO + preserved CUSTOM
-5. Write updated CLAUDE.md
+```bash
+cd "${PLUGIN_ROOT}" && PYTHONPATH=src uv run python -c "
+from lib.docs import update_claude_md, update_plugin_md
+from arch.docs import update_architecture_md
+from pathlib import Path
+import os
 
-```python
-# Pseudo-code
-def update_docs():
-    content = read_file("CLAUDE.md")
-    custom_sections = extract_between(content, "CUSTOM:START", "CUSTOM:END")
+os.chdir('${PROJECT_ROOT}')
 
-    auto_content = generate_auto_sections()
+print('Updating CLAUDE.md...')
+ok, msg = update_claude_md()
+print(f'  {\"✓\" if ok else \"✗\"} {msg}')
 
-    new_content = f"""# {project_name}
+print('Updating docs/PLUGIN.md...')
+ok, msg = update_plugin_md()
+print(f'  {\"✓\" if ok else \"✗\"} {msg}')
 
-{auto_content}
-
-{custom_sections}
-"""
-    write_file("CLAUDE.md", new_content)
+print('Updating docs/ARCHITECTURE.md...')
+ok, msg = update_architecture_md()
+print(f'  {\"✓\" if ok else \"✗\"} {msg}')
+"
 ```
 
 ### /dk docs init
 
-Create CLAUDE.md from template:
+Create all missing documentation:
 
-```python
-# Use template from ${PLUGIN_ROOT}/templates/CLAUDE.md.template
-# Replace placeholders with config values
-# Preserve any existing CUSTOM sections
+```bash
+cd "${PLUGIN_ROOT}" && PYTHONPATH=src uv run python -c "
+from lib.docs import update_claude_md, update_plugin_md
+from arch.docs import update_architecture_md
+from pathlib import Path
+import os
+
+os.chdir('${PROJECT_ROOT}')
+
+# Create docs/ directory if needed
+Path('docs').mkdir(exist_ok=True)
+
+print('Initializing documentation...')
+
+if not Path('CLAUDE.md').exists():
+    ok, msg = update_claude_md()
+    print(f'  Created CLAUDE.md: {\"✓\" if ok else \"✗\"}')
+else:
+    print('  CLAUDE.md already exists')
+
+if not Path('docs/PLUGIN.md').exists():
+    ok, msg = update_plugin_md()
+    print(f'  Created docs/PLUGIN.md: {\"✓\" if ok else \"✗\"}')
+else:
+    print('  docs/PLUGIN.md already exists')
+
+if not Path('docs/ARCHITECTURE.md').exists():
+    ok, msg = update_architecture_md()
+    print(f'  Created docs/ARCHITECTURE.md: {\"✓\" if ok else \"✗\"}')
+else:
+    print('  docs/ARCHITECTURE.md already exists')
+"
 ```
 
-## AUTO Section Generation
+### /dk docs arch
 
-### Commands Section
+Generate/update ARCHITECTURE.md specifically:
 
-Generated from skills/dk/SKILL.md command table:
-
-```markdown
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `/dk` | Show status and available commands |
-| `/dk dev feat <desc>` | Develop new feature |
-...
+```bash
+cd "${PLUGIN_ROOT}" && PYTHONPATH=src uv run python -c "
+from arch.docs import update_architecture_md
+import os
+os.chdir('${PROJECT_ROOT}')
+ok, msg = update_architecture_md()
+print(f'{\"✓\" if ok else \"✗\"} {msg}')
+"
 ```
 
-### Architecture Section
+### /dk docs plugin
 
-Generated from config.jsonc arch settings:
+Generate/update PLUGIN.md specifically:
+
+```bash
+cd "${PLUGIN_ROOT}" && PYTHONPATH=src uv run python -c "
+from lib.docs import update_plugin_md
+import os
+os.chdir('${PROJECT_ROOT}')
+ok, msg = update_plugin_md()
+print(f'{\"✓\" if ok else \"✗\"} {msg}')
+"
+```
+
+### /dk docs claude
+
+Generate/update CLAUDE.md specifically:
+
+```bash
+cd "${PLUGIN_ROOT}" && PYTHONPATH=src uv run python -c "
+from lib.docs import update_claude_md
+import os
+os.chdir('${PROJECT_ROOT}')
+ok, msg = update_claude_md()
+print(f'{\"✓\" if ok else \"✗\"} {msg}')
+"
+```
+
+## CLAUDE.md Structure
+
+### AUTO Sections (generated)
 
 ```markdown
+<!-- AUTO:START - Generated by devkit-plugin. DO NOT EDIT. -->
+
+## Principles
+
 ## Architecture
 
-- **Type:** python
-- **Layers:** 4 (core, lib, arch, events)
-- **Pattern:** Clean Architecture
+## Git Conventions
+
+## Commands
+
+## Development
+
+<!-- AUTO:END -->
 ```
 
-### Tech Stack Section
-
-Auto-detected from project files:
+### CUSTOM Sections (preserved)
 
 ```markdown
-## Tech Stack
+<!-- CUSTOM:START - Your documentation below. Preserved during updates. -->
 
-- **Language:** Python 3.10+
-- **Runtime:** Claude Code Hooks
-- **Package Manager:** uv
-- **Linters:** ruff, markdownlint
+## Project Specific
+
+_Add your documentation here._
+
+<!-- CUSTOM:END -->
 ```
+
+## ARCHITECTURE.md Content
+
+Generated from `arch.layers` config + dependency analysis:
+
+- Layer diagram (Mermaid)
+- Dependency matrix
+- Import rules
+- Violation warnings
+
+## PLUGIN.md Content
+
+Generated from plugin configuration:
+
+- Feature list
+- Available commands
+- Hook descriptions
+- Configuration options
 
 ## Key Rules
 
-1. **NEVER edit AUTO sections manually** - they get overwritten
-2. **ALWAYS put custom docs in CUSTOM sections** - they're preserved
-3. **Run /dk docs update after config changes** - keeps docs in sync
-4. **Use /dk docs init for new projects** - creates proper structure
+1. **Run `/dk docs update` after config changes** - keeps all docs in sync
+2. **NEVER edit AUTO sections manually** - they get overwritten
+3. **Put custom docs in CUSTOM sections** - they're preserved
+4. **Use `/dk docs init` for new projects** - creates proper structure
