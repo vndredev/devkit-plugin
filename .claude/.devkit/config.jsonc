@@ -62,7 +62,8 @@
         "staged": "⚡{count} staged",
         "modified": "✏️{count} modified",
         "untracked": "❓{count} untracked",
-        "hint": "Use `/dk` for commands, `/dk dev` for workflow"
+        "hint": "Use `/dk` for commands, `/dk dev` for workflow",
+        "system_warning": "⚠️ Project has issues - check with /dk plugin check"
       }
     },
 

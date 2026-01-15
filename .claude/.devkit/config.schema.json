@@ -54,7 +54,8 @@
                 "staged": { "type": "string", "default": "⚡{count} staged", "description": "Staged files template" },
                 "modified": { "type": "string", "default": "✏️{count} modified", "description": "Modified files template" },
                 "untracked": { "type": "string", "default": "❓{count} untracked", "description": "Untracked files template" },
-                "hint": { "type": "string", "default": "Use `/dk` for commands, `/dk dev` for workflow", "description": "Help hint" }
+                "hint": { "type": "string", "default": "Use `/dk` for commands, `/dk dev` for workflow", "description": "Help hint" },
+                "system_warning": { "type": "string", "default": "⚠️ Project has issues - check with /dk plugin check", "description": "Warning shown directly to user when issues detected" }
               }
             }
           }

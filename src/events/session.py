@@ -75,6 +75,14 @@ def main() -> None:
         "hook": HookType.SESSION_START.value,
         "output": "\n".join(output_lines),
     }
+
+    # Show systemMessage to user for important warnings
+    if has_issues:
+        warning_tpl = prompts.get(
+            "system_warning", "⚠️ Project has issues - check with /dk plugin check"
+        )
+        result["systemMessage"] = warning_tpl
+
     print(json.dumps(result))
 
 
