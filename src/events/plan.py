@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ExitPlanMode hook handler.
 
-Injects loop instructions when exiting plan mode.
+Injects implementation instructions when exiting plan mode.
 """
 
 import json
@@ -19,11 +19,42 @@ DEFAULT_INSTRUCTIONS = [
     "Ask if blocked or unclear",
 ]
 
-DEFAULT_TYPE_HINTS = {
-    "python": "💡 Use `uv run pytest` for tests, `uv run ruff check` for linting",
-    "nextjs": "💡 Use `npm test` for tests, `npm run lint` for linting",
-    "node": "💡 Use `npm test` for tests, `npm run lint` for linting",
-}
+
+def get_tool_hint() -> str | None:
+    """Generate tool hint dynamically from config.
+
+    Returns:
+        Tool hint string or None if not applicable.
+    """
+    project_type = get("project.type", "unknown")
+    testing_framework = get("testing.framework", "")
+    testing_enabled = get("testing.enabled", False)
+
+    # Build test command based on framework
+    test_cmd = ""
+    if testing_enabled and testing_framework:
+        if testing_framework == "pytest":
+            test_cmd = "`uv run pytest`"
+        elif testing_framework in ("jest", "vitest"):
+            test_cmd = f"`npm run test` ({testing_framework})"
+
+    # Build lint command based on project type
+    lint_cmd = ""
+    if project_type == "python":
+        lint_cmd = "`uv run ruff check`"
+    elif project_type in ("node", "nextjs", "typescript", "javascript"):
+        lint_cmd = "`npm run lint`"
+
+    # Combine into hint
+    parts = []
+    if test_cmd:
+        parts.append(f"{test_cmd} for tests")
+    if lint_cmd:
+        parts.append(f"{lint_cmd} for linting")
+
+    if parts:
+        return "💡 " + ", ".join(parts)
+    return None
 
 
 def build_instructions() -> str:
@@ -32,23 +63,29 @@ def build_instructions() -> str:
     Returns:
         Formatted instruction string.
     """
-    # Load prompts from config
-    prompts = get("hooks.plan.prompts", {})
-    header = prompts.get("header", "## Implementation Phase")
-    instructions = prompts.get("instructions", DEFAULT_INSTRUCTIONS)
-    type_hints = prompts.get("type_hints", DEFAULT_TYPE_HINTS)
-
-    project_type = get("project.type", "unknown")
+    # Load from new config structure
+    implementation = get("hooks.plan.implementation", {})
+    header = implementation.get("header", "## Implementation Phase")
+    instructions = implementation.get("instructions", DEFAULT_INSTRUCTIONS)
+    hints = get("hooks.plan.hints", [])
 
     lines = [header, ""]
 
+    # Add numbered instructions
     for i, instruction in enumerate(instructions, 1):
         lines.append(f"{i}. {instruction}")
 
-    # Add type-specific hint
-    if project_type in type_hints:
+    # Add project-specific hints
+    if hints:
         lines.append("")
-        lines.append(type_hints[project_type])
+        lines.append("**Project hints:**")
+        lines.extend(f"- {hint}" for hint in hints)
+
+    # Add dynamic tool hint
+    tool_hint = get_tool_hint()
+    if tool_hint:
+        lines.append("")
+        lines.append(tool_hint)
 
     return "\n".join(lines)
 

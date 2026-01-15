@@ -12,7 +12,14 @@
         "name": { "type": "string", "description": "Project name" },
         "type": {
           "type": "string",
-          "enum": ["python", "node", "nextjs", "typescript", "javascript", "plugin"],
+          "enum": [
+            "python",
+            "node",
+            "nextjs",
+            "typescript",
+            "javascript",
+            "plugin"
+          ],
           "description": "Project type (python, node-based, or Claude plugin)"
         },
         "version": {
@@ -50,12 +57,36 @@
               "type": "object",
               "description": "Customizable output templates",
               "properties": {
-                "branch": { "type": "string", "default": "📍 {branch}", "description": "Branch display template" },
-                "staged": { "type": "string", "default": "⚡{count} staged", "description": "Staged files template" },
-                "modified": { "type": "string", "default": "✏️{count} modified", "description": "Modified files template" },
-                "untracked": { "type": "string", "default": "❓{count} untracked", "description": "Untracked files template" },
-                "hint": { "type": "string", "default": "Use `/dk` for commands, `/dk dev` for workflow", "description": "Help hint" },
-                "system_warning": { "type": "string", "default": "⚠️ Project has issues - check with /dk plugin check", "description": "Warning shown directly to user when issues detected" }
+                "branch": {
+                  "type": "string",
+                  "default": "📍 {branch}",
+                  "description": "Branch display template"
+                },
+                "staged": {
+                  "type": "string",
+                  "default": "⚡{count} staged",
+                  "description": "Staged files template"
+                },
+                "modified": {
+                  "type": "string",
+                  "default": "✏️{count} modified",
+                  "description": "Modified files template"
+                },
+                "untracked": {
+                  "type": "string",
+                  "default": "❓{count} untracked",
+                  "description": "Untracked files template"
+                },
+                "hint": {
+                  "type": "string",
+                  "default": "Use `/dk` for commands, `/dk dev` for workflow",
+                  "description": "Help hint"
+                },
+                "system_warning": {
+                  "type": "string",
+                  "default": "⚠️ Project has issues - check with /dk plugin check",
+                  "description": "Warning shown directly to user when issues detected"
+                }
               }
             }
           }
@@ -75,12 +106,36 @@
               "type": "object",
               "description": "Customizable error messages",
               "properties": {
-                "branch_invalid": { "type": "string", "default": "Branch '{branch}' should match: {pattern}", "description": "Invalid branch name error" },
-                "commit_invalid": { "type": "string", "default": "Commit should match: type(scope): message (types: {types})", "description": "Invalid commit message error" },
-                "scope_invalid": { "type": "string", "default": "Unknown scope '{scope}'. Allowed: {allowed}", "description": "Invalid scope error" },
-                "force_push_blocked": { "type": "string", "default": "Force push is blocked. Use --force-with-lease if needed.", "description": "Force push blocked message" },
-                "gh_blocked": { "type": "string", "default": "Blocked: '{cmd}' - too dangerous for automatic execution", "description": "Blocked gh command message" },
-                "pr_missing_body": { "type": "string", "default": "gh pr create requires --body with PR template", "description": "Missing PR body error" }
+                "branch_invalid": {
+                  "type": "string",
+                  "default": "Branch '{branch}' should match: {pattern}",
+                  "description": "Invalid branch name error"
+                },
+                "commit_invalid": {
+                  "type": "string",
+                  "default": "Commit should match: type(scope): message (types: {types})",
+                  "description": "Invalid commit message error"
+                },
+                "scope_invalid": {
+                  "type": "string",
+                  "default": "Unknown scope '{scope}'. Allowed: {allowed}",
+                  "description": "Invalid scope error"
+                },
+                "force_push_blocked": {
+                  "type": "string",
+                  "default": "Force push is blocked. Use --force-with-lease if needed.",
+                  "description": "Force push blocked message"
+                },
+                "gh_blocked": {
+                  "type": "string",
+                  "default": "Blocked: '{cmd}' - too dangerous for automatic execution",
+                  "description": "Blocked gh command message"
+                },
+                "pr_missing_body": {
+                  "type": "string",
+                  "default": "gh pr create requires --body with PR template",
+                  "description": "Missing PR body error"
+                }
               }
             }
           }
@@ -105,35 +160,71 @@
               "type": "object",
               "description": "Customizable output templates",
               "properties": {
-                "formatted": { "type": "string", "default": "✓ Formatted: {file}", "description": "File formatted message" },
-                "test_reminder": { "type": "string", "default": "💡 New file - consider adding: tests/{file}", "description": "Test reminder for new files" },
-                "arch_violation": { "type": "string", "default": "⚠️ Arch violation: {message}", "description": "Architecture violation warning" },
-                "arch_synced": { "type": "string", "default": "📄 Updated docs/ARCHITECTURE.md", "description": "Architecture doc updated message" }
+                "formatted": {
+                  "type": "string",
+                  "default": "✓ Formatted: {file}",
+                  "description": "File formatted message"
+                },
+                "test_reminder": {
+                  "type": "string",
+                  "default": "💡 New file - consider adding: tests/{file}",
+                  "description": "Test reminder for new files"
+                },
+                "arch_violation": {
+                  "type": "string",
+                  "default": "⚠️ Arch violation: {message}",
+                  "description": "Architecture violation warning"
+                },
+                "arch_synced": {
+                  "type": "string",
+                  "default": "📄 Updated docs/ARCHITECTURE.md",
+                  "description": "Architecture doc updated message"
+                }
               }
             }
           }
         },
         "plan": {
           "type": "object",
-          "description": "PostToolUse hook - shows implementation instructions after ExitPlanMode",
+          "description": "PostToolUse hook - guides planning and implementation phases",
           "properties": {
             "enabled": { "type": "boolean", "default": true },
-            "prompts": {
+            "planning": {
               "type": "object",
-              "description": "Customizable implementation phase content",
+              "description": "Guidelines for creating plans (before ExitPlanMode)",
               "properties": {
-                "header": { "type": "string", "default": "## Implementation Phase", "description": "Section header" },
+                "requirements": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Things to check/consider while planning"
+                },
+                "structure": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Sections a plan should contain"
+                }
+              }
+            },
+            "implementation": {
+              "type": "object",
+              "description": "Instructions shown after ExitPlanMode",
+              "properties": {
+                "header": {
+                  "type": "string",
+                  "default": "## Implementation Phase",
+                  "description": "Section header"
+                },
                 "instructions": {
                   "type": "array",
                   "items": { "type": "string" },
                   "description": "Implementation steps (empty = use defaults)"
-                },
-                "type_hints": {
-                  "type": "object",
-                  "description": "Project-type specific hints",
-                  "additionalProperties": { "type": "string" }
                 }
               }
+            },
+            "hints": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Project-specific planning hints (shown in both phases)"
             }
           }
         }
@@ -155,7 +246,16 @@
             "types": {
               "type": "array",
               "items": { "type": "string" },
-              "default": ["feat", "fix", "chore", "refactor", "test", "docs", "perf", "ci"],
+              "default": [
+                "feat",
+                "fix",
+                "chore",
+                "refactor",
+                "test",
+                "docs",
+                "perf",
+                "ci"
+              ],
               "description": "Allowed commit/branch types"
             },
             "scopes": {
@@ -418,7 +518,10 @@
     "managedFile": {
       "type": "object",
       "properties": {
-        "template": { "type": "string", "description": "Template path relative to templates/" },
+        "template": {
+          "type": "string",
+          "description": "Template path relative to templates/"
+        },
         "enabled": { "type": "boolean", "default": true }
       },
       "required": ["template"]

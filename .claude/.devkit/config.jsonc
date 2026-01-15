@@ -99,7 +99,26 @@
     // === Plan Hook (PostToolUse: ExitPlanMode) ===
     "plan": {
       "enabled": true,
-      "prompts": {
+
+      // Guidelines for creating plans
+      "planning": {
+        "requirements": [
+          "Identify affected layers (check arch.layers)",
+          "List files to modify vs. create",
+          "Consider edge cases and error handling",
+          "Check for breaking changes"
+        ],
+        "structure": [
+          "## Overview - What and why",
+          "## Affected Files - List with rationale",
+          "## Implementation Steps - Ordered tasks",
+          "## Testing Strategy - How to verify",
+          "## Risks - What could go wrong"
+        ]
+      },
+
+      // Instructions shown after plan approval
+      "implementation": {
         "header": "## Implementation Phase",
         "instructions": [
           "Complete one task at a time, mark done in todo list",
@@ -107,13 +126,15 @@
           "Run tests if available",
           "Use conventional commits: type(scope): message",
           "Ask if blocked or unclear"
-        ],
-        "type_hints": {
-          "python": "💡 Use `uv run pytest` for tests, `uv run ruff check` for linting",
-          "nextjs": "💡 Use `npm test` for tests, `npm run lint` for linting",
-          "node": "💡 Use `npm test` for tests, `npm run lint` for linting"
-        }
-      }
+        ]
+      },
+
+      // Project-specific hints (shown in both phases)
+      "hints": [
+        "Clean Architecture - respect layer boundaries (see arch.layers)",
+        "New modules need tests in tests/",
+        "Public API changes need CHANGELOG consideration"
+      ]
     }
   },
 
