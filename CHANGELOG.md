@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.14.0] - 2026-01-15
+## [v0.15.0] - 2026-01-15
 
 ### Fixed
 
@@ -14,6 +14,7 @@
 
 ### Added
 
+- **Config**: Add project identity and improve config upgrade
 - **Plugin**: Add smart comments to config sections
 - **Plugin**: Expand recommended_defaults with all hook prompts
 - **Plugin**: Add config upgrade and completeness check
