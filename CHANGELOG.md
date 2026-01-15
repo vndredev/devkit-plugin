@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.6.0] - 2026-01-15
+## [v0.6.1] - 2026-01-15
+
+### Changed
+
+- **Events**: Move all hook prompts to config for transparency
 
 ### Added
 
