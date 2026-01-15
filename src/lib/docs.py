@@ -104,10 +104,12 @@ def generate_auto_section() -> str:
 
     if project_principles:
         # Use configured principles
-        lines.extend(
-            f"- **{p.split(' - ')[0]}**: {' - '.join(p.split(' - ')[1:])}" if " - " in p else f"- {p}"
-            for p in project_principles
-        )
+        for p in project_principles:
+            if " - " in p:
+                title, desc = p.split(" - ", 1)
+                lines.append(f"- **{title}**: {desc}")
+            else:
+                lines.append(f"- {p}")
     else:
         # Default principles
         lines.extend([
@@ -181,7 +183,8 @@ def generate_auto_section() -> str:
             lines.append("")
 
         if internal_scopes:
-            lines.append(f"**Internal Scopes (skip release notes):** `{', '.join(internal_scopes)}`")
+            scopes_str = ", ".join(internal_scopes)
+            lines.append(f"**Internal Scopes (skip release notes):** `{scopes_str}`")
             lines.append("")
 
         # Branch pattern
@@ -208,7 +211,8 @@ def generate_auto_section() -> str:
         ])
 
         if required_modules:
-            lines.append(f"**Required Tests:** {len(required_modules)} modules, {total_funcs} functions")
+            mod_count = len(required_modules)
+            lines.append(f"**Required Tests:** {mod_count} modules, {total_funcs} functions")
             lines.append("")
 
     lines.extend([
@@ -385,133 +389,278 @@ def get_docs_status(root: Path | None = None) -> dict:
 
 
 def generate_plugin_md() -> str:
-    """Generate PLUGIN.md - documents plugin internals.
+    """Generate PLUGIN.md - documents project internals.
+
+    Adapts content based on project type:
+    - plugin: Claude Code plugin documentation
+    - python: Python project documentation
+    - node/nextjs: Next.js/Node project documentation
 
     Returns:
         Generated PLUGIN.md content.
     """
-    project_name = get("project.name", "Plugin")
+    project_name = get("project.name", "Project")
     project_type = get("project.type", "unknown")
+    project_description = get("project.description", "")
     layers = get("arch.layers", {})
 
+    # Title based on project type
+    if project_type == "plugin":
+        title = f"{project_name} - Plugin Internals"
+        overview = "Claude Code plugin documentation."
+    elif project_type in ("node", "nextjs", "typescript", "javascript"):
+        title = f"{project_name} - Project Reference"
+        overview = project_description or f"{project_type.title()} project."
+    else:
+        title = f"{project_name} - Project Reference"
+        overview = project_description or f"{project_type.title()} project."
+
     lines = [
-        f"# {project_name} - Plugin Internals",
+        f"# {title}",
         "",
         "> Auto-generated documentation. Do not edit manually.",
         "",
-        "## Overview",
+        overview,
         "",
-        f"Claude Code plugin for {project_type} projects.",
+    ]
+
+    # Quick Start section (project-type specific)
+    lines.extend(["## Quick Start", ""])
+
+    if project_type in ("node", "nextjs", "typescript", "javascript"):
+        lines.extend([
+            "```bash",
+            "npm install          # Install dependencies",
+            "npm run dev          # Start development server",
+            "npm run build        # Build for production",
+            "```",
+        ])
+    elif project_type == "python":
+        lines.extend([
+            "```bash",
+            "uv sync              # Install dependencies",
+            "uv run pytest        # Run tests",
+            "uv run python src/   # Run application",
+            "```",
+        ])
+    else:
+        lines.extend(["See README.md for setup instructions."])
+
+    # Architecture section
+    lines.extend([
         "",
         "## Architecture",
         "",
-        "Clean Architecture with dependency rule: higher tiers import from lower only.",
-        "",
-        "```",
-    ]
-
-    # Layer diagram
-    sorted_layers = sorted(layers.items(), key=lambda x: x[1].get("tier", 0))
-    for name, info in sorted_layers:
-        tier = info.get("tier", 0)
-        lines.append(f"src/{name}/  (TIER {tier})")
-
-    lines.extend([
-        "```",
-        "",
-        "| Layer | Tier | Responsibility |",
-        "|-------|------|----------------|",
     ])
 
-    layer_descriptions = {
-        "core": "Pure functions, no I/O",
-        "lib": "I/O adapters (config, git, tools)",
-        "arch": "Architecture analysis",
-        "events": "Claude Code hook handlers",
-    }
+    if layers:
+        lines.append(f"Clean Architecture with {len(layers)} layers.")
+        lines.extend(["", "```"])
 
-    for name, info in sorted_layers:
-        tier = info.get("tier", 0)
-        desc = layer_descriptions.get(name, "-")
-        lines.append(f"| {name} | {tier} | {desc} |")
+        sorted_layers = sorted(layers.items(), key=lambda x: x[1].get("tier", 0))
+        for name, info in sorted_layers:
+            tier = info.get("tier", 0)
+            lines.append(f"src/{name}/  (TIER {tier})")
 
-    # Events section
-    lines.extend([
-        "",
-        "## Events (Hooks)",
-        "",
-        "| Event | Handler | Action |",
-        "|-------|---------|--------|",
-    ])
+        lines.extend([
+            "```",
+            "",
+            "**Rule**: Higher tiers may only import from lower tiers.",
+            "",
+            "| Layer | Tier | Responsibility |",
+            "|-------|------|----------------|",
+        ])
 
-    event_handlers = [
-        ("SessionStart", "session.py", "Show git status, load config"),
-        ("PreToolUse", "validate.py", "Block force push, validate commits"),
-        ("PostToolUse", "format.py", "Auto-format edited files"),
-        ("ExitPlanMode", "plan.py", "Inject development instructions"),
-    ]
+        # Layer descriptions based on common names
+        layer_descriptions = {
+            "core": "Pure types, no I/O",
+            "lib": "Utilities, helpers",
+            "arch": "Architecture analysis",
+            "events": "Event handlers",
+            "components": "UI components",
+            "app": "Pages, routes",
+            "api": "API endpoints",
+            "services": "Business logic",
+            "models": "Data models",
+            "utils": "Utility functions",
+        }
 
-    for event, handler, action in event_handlers:
-        lines.append(f"| {event} | {handler} | {action} |")
+        for name, info in sorted_layers:
+            tier = info.get("tier", 0)
+            desc = layer_descriptions.get(name, "-")
+            lines.append(f"| {name} | {tier} | {desc} |")
+    else:
+        lines.append("No layers configured. Add layers in config.jsonc.")
 
-    # Config section
+    # Configuration section
     lines.extend([
         "",
         "## Configuration",
         "",
-        "Location: `.claude/.devkit/config.json`",
+        "Location: `.claude/.devkit/config.jsonc`",
         "",
-        "### Project",
+    ])
+
+    # Key settings
+    github_pr = get("github.pr", {})
+    changelog = get("changelog", {})
+    scopes = get("git.conventions.scopes", {})
+
+    lines.extend([
+        "### Key Settings",
         "",
-        "| Field | Description |",
-        "|-------|-------------|",
-        "| `project.name` | Project name |",
-        "| `project.type` | python, nextjs, typescript, javascript |",
-        "| `project.slogan` | Tagline for docs |",
-        "| `project.description` | Brief description |",
-        "| `project.principles` | Array of principles |",
+        "| Setting | Value |",
+        "|---------|-------|",
+        f"| `project.type` | {project_type} |",
+        f"| `github.pr.auto_merge` | {github_pr.get('auto_merge', False)} |",
+        f"| `github.pr.merge_method` | {github_pr.get('merge_method', 'squash')} |",
+        f"| `changelog.audience` | {changelog.get('audience', 'developer')} |",
         "",
-        "### Git Conventions",
+    ])
+
+    # Allowed scopes
+    allowed_scopes = scopes.get("allowed", [])
+    if allowed_scopes:
+        lines.extend([
+            "### Allowed Scopes",
+            "",
+            "| Scope | Usage |",
+            "|-------|-------|",
+        ])
+
+        scope_descriptions = {
+            "ui": "UI components, styling",
+            "api": "API routes, endpoints",
+            "auth": "Authentication",
+            "db": "Database",
+            "stream": "Streaming features",
+            "config": "Configuration",
+            "deps": "Dependencies",
+            "git": "Git workflow",
+            "arch": "Architecture",
+            "lib": "Library layer",
+            "core": "Core layer",
+            "docs": "Documentation",
+        }
+
+        for scope in allowed_scopes:
+            desc = scope_descriptions.get(scope, "-")
+            lines.append(f"| `{scope}` | {desc} |")
+        lines.append("")
+
+    # Commands section
+    lines.extend([
+        "## Commands",
         "",
-        "| Field | Description |",
-        "|-------|-------------|",
-        "| `git.protected_branches` | Branches protected from force push |",
-        "| `git.conventions.types` | Allowed commit types |",
-        "| `git.conventions.scopes.mode` | strict, warn, or off |",
-        "| `git.conventions.scopes.allowed` | Allowed scope names |",
-        "| `git.conventions.scopes.internal` | Scopes that skip release notes |",
+        "All commands via `/dk`:".format(),
         "",
-        "### Architecture",
+        "| Command | Description |",
+        "|---------|-------------|",
+        "| `/dk dev feat <desc>` | New feature |",
+        "| `/dk dev fix <desc>` | Bug fix |",
+        "| `/dk git pr` | Create PR |",
+        "| `/dk git pr merge` | Merge PR |",
+    ])
+
+    # Add deployment commands for node projects
+    deployment = get("deployment", {})
+    if deployment.get("enabled"):
+        platform = deployment.get("platform", "vercel")
+        lines.append(f"| `/dk {platform} connect` | Link to {platform.title()} |")
+        lines.append("| `/dk env sync` | Sync env vars |")
+
+    lines.extend([
+        "| `/dk neon branch list` | List DB branches |",
         "",
-        "| Field | Description |",
-        "|-------|-------------|",
-        "| `arch.layers.<name>.tier` | Layer tier (0=innermost) |",
+        "## GitHub Workflows",
         "",
-        "### Managed Files",
-        "",
-        "| Field | Description |",
-        "|-------|-------------|",
-        "| `managed.linters` | Linter config files |",
-        "| `managed.github` | Workflows, issue templates |",
-        "| `managed.docs` | Documentation files |",
-        "| `managed.ignore` | Ignore files |",
-        "",
-        "## Skills",
-        "",
-        "All commands via `/dk <module>`. See `/dk` for full list.",
-        "",
-        "| Module | Purpose |",
-        "|--------|---------|",
-        "| dev | Feature development workflow |",
-        "| git | PR, branch, issue management |",
-        "| arch | Layer analysis, scaffolding |",
-        "| docs | Documentation generation |",
-        "| env | Environment variable sync |",
-        "| vercel | Deployment |",
-        "| neon | Database branch management |",
+        "| Workflow | Trigger | Description |",
+        "|----------|---------|-------------|",
+        "| release.yml | push to main | Auto-release with changelog |",
+        "| claude-code-review.yml | PR | AI code review |",
+        "| claude.yml | @claude mention | Claude assistant |",
     ])
 
     return "\n".join(lines)
+
+
+def generate_readme_values() -> dict:
+    """Generate values for README.md template.
+
+    Returns:
+        Dict with template values.
+    """
+    project_type = get("project.type", "unknown")
+
+    # Package manager and commands based on project type
+    if project_type == "python":
+        package_manager = "uv"
+        install_command = "uv sync"
+        dev_command = "uv run python src/"
+        build_command = "uv run pytest"
+    else:  # node, nextjs, typescript, javascript
+        package_manager = "npm"
+        install_command = "npm install"
+        dev_command = "npm run dev"
+        build_command = "npm run build"
+
+    return {
+        "project_name": get("project.name", "Project"),
+        "project_slogan": get("project.slogan", ""),
+        "project_description": get("project.description", ""),
+        "project_type": project_type,
+        "package_manager": package_manager,
+        "install_command": install_command,
+        "dev_command": dev_command,
+        "build_command": build_command,
+    }
+
+
+def update_readme_md(root: Path | None = None) -> tuple[bool, str]:
+    """Update README.md - regenerate AUTO sections, keep CUSTOM.
+
+    Args:
+        root: Project root directory. Uses config root if not provided.
+
+    Returns:
+        Tuple of (success, message).
+    """
+    if root is None:
+        root = get_project_root()
+
+    readme_file = root / "README.md"
+
+    try:
+        # Get template
+        from lib.sync import get_plugin_root, render_template
+        plugin_root = get_plugin_root()
+        template_file = plugin_root / "templates" / "docs" / "README.md.template"
+
+        if not template_file.exists():
+            return False, "README.md template not found"
+
+        template = template_file.read_text()
+        values = generate_readme_values()
+        new_content = render_template(template, values)
+
+        # If existing file, preserve CUSTOM sections
+        if readme_file.exists():
+            old_content = readme_file.read_text()
+            old_sections = parse_sections(old_content)
+
+            if old_sections["custom"]:
+                # Replace CUSTOM section in new content with old custom
+                new_content = re.sub(
+                    r"<!-- CUSTOM:START[^>]*-->.*?<!-- CUSTOM:END -->",
+                    f"<!-- CUSTOM:START - Your documentation below. Preserved during updates. -->\n{old_sections['custom']}\n<!-- CUSTOM:END -->",
+                    new_content,
+                    flags=re.DOTALL,
+                )
+
+        readme_file.write_text(new_content)
+        return True, f"Updated {readme_file}"
+    except Exception as e:
+        return False, f"Failed to update README.md: {e}"
 
 
 def update_plugin_md(root: Path | None = None) -> tuple[bool, str]:

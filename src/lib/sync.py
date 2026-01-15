@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from lib.config import get, get_project_root
-from lib.docs import update_claude_md, update_plugin_md
+from lib.docs import update_claude_md, update_plugin_md, update_readme_md
 
 
 def get_plugin_root() -> Path:
@@ -391,12 +391,35 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
     for output_path, config in managed.get("docs", {}).items():
         if not config.get("enabled", True):
             continue
+
+        doc_type = config.get("type", "")
+
+        # Ensure parent directory exists
+        output_file = root / output_path
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+
         if output_path == "CLAUDE.md":
+            # CLAUDE.md: auto_sections (project-specific, preserves CUSTOM)
             success, msg = update_claude_md(root)
+        elif output_path == "README.md":
+            # README.md: auto_sections (template + CUSTOM)
+            success, msg = update_readme_md(root)
+        elif doc_type == "template":
+            # Template-based docs (like PLUGIN.md) - copy from plugin
+            template_path = config.get("template", "")
+            if template_path:
+                result = _sync_template_file(
+                    root, plugin_root, output_path, template_path, values
+                )
+                output_path, success, msg = result
+            else:
+                success, msg = False, f"No template specified for {output_path}"
         elif output_path == "docs/PLUGIN.md":
+            # Legacy: auto_generate PLUGIN.md (fallback)
             success, msg = update_plugin_md(root)
         else:
             success, msg = False, f"Unknown doc type: {output_path}"
+
         results.append((output_path, success, msg))
 
     return results

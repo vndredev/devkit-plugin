@@ -1,0 +1,159 @@
+{
+  "$schema": "./config.schema.json",
+
+  // ============================================================================
+  // IDENTITY - Project information
+  // ============================================================================
+  "project": {
+    "name": "devkit-plugin",
+    "type": "python",
+    "version": "0.1.0"
+  },
+
+  // ============================================================================
+  // DEVELOPMENT - Git and GitHub configuration
+  // ============================================================================
+  "git": {
+    "protected_branches": ["main"],
+    "conventions": {
+      "types": ["feat", "fix", "chore", "refactor", "test", "docs", "perf", "ci"],
+      "scopes": {
+        "mode": "strict",      // strict=error, warn=warning, off=disabled
+        "allowed": [],         // Project-specific scopes
+        "internal": ["internal", "review", "ci", "deps"]  // Skip release notes
+      },
+      "branch_pattern": "{type}/{description}"
+    }
+  },
+
+  "github": {
+    "url": "https://github.com/vndredev/devkit-plugin",
+    "visibility": "public",
+    "pr": {
+      "auto_merge": true,      // Enable auto-merge when PR is created
+      "delete_branch": true,   // Delete branch after merge
+      "merge_method": "squash" // squash, merge, or rebase
+    }
+  },
+
+  // ============================================================================
+  // QUALITY - Linters and testing
+  // ============================================================================
+  "linters": {
+    "preset": "strict",        // strict, relaxed, minimal
+    "overrides": {}
+  },
+
+  "testing": {
+    "enabled": false,
+    "framework": "pytest"
+  },
+
+  // ============================================================================
+  // AUTOMATION - Hooks and changelog
+  // ============================================================================
+  "hooks": {
+    "session": {
+      "enabled": true,
+      "show_git_status": true
+    },
+    "validate": {
+      "enabled": true,
+      "block_force_push": true,
+      "block_dangerous_gh": true
+    },
+    "format": {
+      "enabled": true,
+      "auto_format": true
+    },
+    "plan": {
+      "enabled": true
+    }
+  },
+
+  "changelog": {
+    "audience": "developer"    // developer=technical, user=simple
+  },
+
+  // ============================================================================
+  // ARCHITECTURE - Layer configuration
+  // ============================================================================
+  "arch": {
+    "layers": {
+      "core": { "tier": 0 },   // Types, errors, constants - no imports
+      "lib": { "tier": 1 },    // Config, git, tools, sync, docs
+      "arch": { "tier": 2 },   // Architecture analysis
+      "events": { "tier": 3 }  // Claude Code hook handlers
+    }
+  },
+
+  // ============================================================================
+  // MANAGED FILES - Auto-generated files manifest
+  // ============================================================================
+  "managed": {
+    "linters": {
+      ".markdownlint.json": {
+        "template": "linters/common/markdownlint.json.template",
+        "enabled": true
+      },
+      ".markdownlintignore": {
+        "template": "gitignore/markdownlint.ignore",
+        "enabled": true
+      },
+      "ruff.toml": {
+        "template": "linters/python/ruff.toml.template",
+        "enabled": true
+      }
+    },
+    "github": {
+      ".github/workflows/claude.yml": {
+        "template": "github/workflows/claude.yml.template",
+        "enabled": true
+      },
+      ".github/workflows/claude-code-review.yml": {
+        "template": "github/workflows/claude-code-review.yml.template",
+        "enabled": true
+      },
+      ".github/ISSUE_TEMPLATE/bug_report.yml": {
+        "template": "github/ISSUE_TEMPLATE/bug_report.yml.template",
+        "enabled": true
+      },
+      ".github/ISSUE_TEMPLATE/feature_request.yml": {
+        "template": "github/ISSUE_TEMPLATE/feature_request.yml.template",
+        "enabled": true
+      },
+      ".github/ISSUE_TEMPLATE/config.yml": {
+        "template": "github/ISSUE_TEMPLATE/config.yml.template",
+        "enabled": true
+      },
+      ".github/workflows/release.yml": {
+        "template": "github/workflows/release-python.yml.template",
+        "enabled": true
+      }
+    },
+    "docs": {
+      "README.md": {
+        "type": "auto_sections",  // Template + CUSTOM sections
+        "enabled": true
+      },
+      "CLAUDE.md": {
+        "type": "auto_sections",  // auto_sections preserves CUSTOM blocks
+        "enabled": true
+      },
+      "docs/PLUGIN.md": {
+        "type": "template",       // 100% from plugin template
+        "template": "docs/PLUGIN.md.template",
+        "enabled": false          // Disabled for devkit-plugin (it's the source)
+      }
+    },
+    "ignore": {
+      ".gitignore": {
+        "template": [
+          "gitignore/common.gitignore",
+          "gitignore/python.gitignore"
+        ],
+        "enabled": true
+      }
+    }
+  }
+}

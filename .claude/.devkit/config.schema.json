@@ -134,6 +134,12 @@
           "format": "uri",
           "description": "GitHub repository URL"
         },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "private", "internal"],
+          "default": "public",
+          "description": "Repository visibility"
+        },
         "pr": {
           "type": "object",
           "description": "Pull request settings",
@@ -155,6 +161,44 @@
               "description": "Merge method: squash (recommended), merge, or rebase"
             }
           }
+        }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "description": "Deployment platform configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable deployment features"
+        },
+        "platform": {
+          "type": "string",
+          "enum": ["vercel", "railway", "render", "fly", "netlify"],
+          "description": "Primary deployment platform"
+        },
+        "platforms": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Available deployment platforms"
+        },
+        "framework": {
+          "type": "string",
+          "description": "Framework type (nextjs, other)"
+        },
+        "env_sync": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sync environment variables to platform"
+        },
+        "production_domain": {
+          "type": "string",
+          "description": "Production domain URL"
+        },
+        "note": {
+          "type": "string",
+          "description": "Deployment notes or restrictions"
         }
       }
     },
@@ -310,8 +354,12 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["auto_sections", "auto_generate"],
-          "description": "auto_sections preserves CUSTOM blocks, auto_generate replaces entire file"
+          "enum": ["auto_sections", "auto_generate", "template"],
+          "description": "auto_sections preserves CUSTOM blocks, auto_generate generates from config, template copies from plugin"
+        },
+        "template": {
+          "type": "string",
+          "description": "Template path for type=template (relative to templates/)"
         },
         "enabled": { "type": "boolean", "default": true }
       },

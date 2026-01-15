@@ -14,7 +14,7 @@ Manage CLAUDE.md with AUTO-generated and CUSTOM sections.
 
 ### AUTO Sections
 
-Generated from config.json - **DO NOT EDIT MANUALLY**:
+Generated from config.jsonc - **DO NOT EDIT MANUALLY**:
 
 ```markdown
 <!-- AUTO:START -->
@@ -112,7 +112,7 @@ Generated from skills/dk/SKILL.md command table:
 
 ### Architecture Section
 
-Generated from config.json arch settings:
+Generated from config.jsonc arch settings:
 
 ```markdown
 ## Architecture

@@ -61,7 +61,7 @@ Initialize a new project with full setup:
 
 1. `git init` (if not already initialized)
 2. Detect project type (pyproject.toml → python, package.json → node)
-3. Create `.claude/.devkit/config.json`
+3. Create `.claude/.devkit/config.jsonc`
 4. Sync all managed files (linters, workflows, templates, CLAUDE.md)
 5. Create first commit: `chore: initial commit`
 6. (Optional) Create GitHub repo + configure settings
@@ -88,7 +88,7 @@ Sync managed files and GitHub settings for existing project:
 
 **Workflow:**
 
-1. Validate config.json exists
+1. Validate config.jsonc exists
 2. Sync managed files (only changed)
 3. Update GitHub settings if remote configured
 
@@ -107,7 +107,7 @@ for step, ok, msg in git_update():
 
 Create PR for current branch using the PR template.
 
-**Reads config from `.claude/.devkit/config.json`:**
+**Reads config from `.claude/.devkit/config.jsonc`:**
 - `github.pr.auto_merge` - Enable auto-merge (default: false)
 - `github.pr.delete_branch` - Delete branch after merge (default: true)
 - `github.pr.merge_method` - squash/merge/rebase (default: squash)
@@ -121,7 +121,7 @@ TITLE=$(git log -1 --format=%s)
 COMMITS=$(git log main..$BRANCH --format='- %s' | head -10)
 
 # Read PR config
-CONFIG_FILE=".claude/.devkit/config.json"
+CONFIG_FILE=".claude/.devkit/config.jsonc"
 AUTO_MERGE=$(jq -r '.github.pr.auto_merge // false' "$CONFIG_FILE" 2>/dev/null || echo "false")
 DELETE_BRANCH=$(jq -r '.github.pr.delete_branch // true' "$CONFIG_FILE" 2>/dev/null || echo "true")
 MERGE_METHOD=$(jq -r '.github.pr.merge_method // "squash"' "$CONFIG_FILE" 2>/dev/null || echo "squash")
@@ -205,7 +205,7 @@ Merge PR using config settings:
 PR_NUM=${1:-$(gh pr view --json number -q .number)}
 
 # Read PR config
-CONFIG_FILE=".claude/.devkit/config.json"
+CONFIG_FILE=".claude/.devkit/config.jsonc"
 DELETE_BRANCH=$(jq -r '.github.pr.delete_branch // true' "$CONFIG_FILE" 2>/dev/null || echo "true")
 MERGE_METHOD=$(jq -r '.github.pr.merge_method // "squash"' "$CONFIG_FILE" 2>/dev/null || echo "squash")
 

@@ -96,7 +96,7 @@ Shows project status and available commands:
 uv run python -c "
 import json
 from pathlib import Path
-config = json.loads(Path('.claude/.devkit/config.json').read_text())
+config = json.loads(Path('.claude/.devkit/config.jsonc').read_text())
 project = config.get('project', {})
 linters = config.get('linters', {})
 print(f'Project: {project.get(\"name\", \"unknown\")}')

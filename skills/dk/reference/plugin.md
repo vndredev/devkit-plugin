@@ -86,7 +86,7 @@ Action: /dk plugin update
 
 ## /dk plugin update
 
-Sync all managed files based on `config.json`:
+Sync all managed files based on `config.jsonc`:
 - Linter configs (ruff.toml, .markdownlint.json, etc.)
 - GitHub workflows and issue templates
 - Documentation (CLAUDE.md, docs/PLUGIN.md)
@@ -115,7 +115,7 @@ Initialize a new project with devkit-plugin configuration.
 
 **Steps:**
 1. Detect project type (python, nextjs, typescript, javascript)
-2. Create `.claude/.devkit/config.json` with `managed` section
+2. Create `.claude/.devkit/config.jsonc` with `managed` section
 3. Run `/dk plugin update` to generate all files
 
 ```bash
@@ -195,7 +195,7 @@ config = {
     'managed': managed
 }
 
-config_file = config_dir / 'config.json'
+config_file = config_dir / 'config.jsonc'
 config_file.write_text(json.dumps(config, indent=2))
 print(f'Created: {config_file}')
 print()
@@ -207,7 +207,7 @@ print('Run /dk plugin update to generate all files.')
 
 ## Config Structure
 
-The `config.json` is the single source of truth:
+The `config.jsonc` is the single source of truth:
 
 ```json
 {

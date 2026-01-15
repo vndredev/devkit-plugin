@@ -13,6 +13,138 @@ from lib.sync import get_plugin_root, sync_all
 from lib.tools import detect_project_type, detect_project_version
 
 
+def generate_config_jsonc(
+    name: str,
+    project_type: str,
+    version: str,
+    github_url: str,
+    github_visibility: str,
+    deployment: dict,
+    managed: dict,
+    test_framework: str,
+) -> str:
+    """Generate JSONC config with comments and grouped sections.
+
+    Args:
+        name: Project name
+        project_type: python, node, nextjs, etc.
+        version: Semantic version
+        github_url: GitHub repository URL
+        github_visibility: public, private, internal
+        deployment: Deployment configuration dict
+        managed: Managed files manifest dict
+        test_framework: pytest, vitest, jest
+
+    Returns:
+        JSONC content string with comments
+    """
+    managed_json = json.dumps(managed, indent=2)
+    # Indent managed section for embedding
+    managed_lines = managed_json.split('\n')
+    managed_indented = '\n'.join(['    ' + line if i > 0 else '    ' + line
+                                   for i, line in enumerate(managed_lines)])
+    # Fix the first line
+    managed_indented = '  ' + managed_json.replace('\n', '\n  ')
+
+    deployment_json = json.dumps(deployment, indent=2).replace('\n', '\n  ')
+
+    return f'''{{
+  "$schema": "./config.schema.json",
+
+  // ============================================================================
+  // IDENTITY - Project information
+  // ============================================================================
+  "project": {{
+    "name": "{name}",
+    "type": "{project_type}",
+    "version": "{version}"
+  }},
+
+  // ============================================================================
+  // DEVELOPMENT - Git and GitHub configuration
+  // ============================================================================
+  "git": {{
+    "protected_branches": ["main"],
+    "conventions": {{
+      "types": ["feat", "fix", "chore", "refactor", "test", "docs", "perf", "ci"],
+      "scopes": {{
+        "mode": "strict",      // strict=error, warn=warning, off=disabled
+        "allowed": [],         // Project-specific scopes
+        "internal": ["internal", "review", "ci", "deps"]  // Skip release notes
+      }},
+      "branch_pattern": "{{type}}/{{description}}"
+    }}
+  }},
+
+  "github": {{
+    "url": "{github_url}",
+    "visibility": "{github_visibility}",
+    "pr": {{
+      "auto_merge": false,     // Enable auto-merge when PR is created
+      "delete_branch": true,   // Delete branch after merge
+      "merge_method": "squash" // squash, merge, or rebase
+    }}
+  }},
+
+  // ============================================================================
+  // QUALITY - Linters and testing
+  // ============================================================================
+  "linters": {{
+    "preset": "strict",        // strict, relaxed, minimal
+    "overrides": {{}}
+  }},
+
+  "testing": {{
+    "enabled": false,
+    "framework": "{test_framework}"
+  }},
+
+  // ============================================================================
+  // AUTOMATION - Hooks and changelog
+  // ============================================================================
+  "hooks": {{
+    "session": {{
+      "enabled": true,
+      "show_git_status": true
+    }},
+    "validate": {{
+      "enabled": true,
+      "block_force_push": true,
+      "block_dangerous_gh": true
+    }},
+    "format": {{
+      "enabled": true,
+      "auto_format": true
+    }},
+    "plan": {{
+      "enabled": true
+    }}
+  }},
+
+  "changelog": {{
+    "audience": "developer"    // developer=technical, user=simple
+  }},
+
+  // ============================================================================
+  // DEPLOYMENT - Platform configuration
+  // ============================================================================
+  "deployment": {deployment_json},
+
+  // ============================================================================
+  // ARCHITECTURE - Layer configuration
+  // ============================================================================
+  "arch": {{
+    "layers": {{}}               // Define layers: {{ "core": {{ "tier": 0 }} }}
+  }},
+
+  // ============================================================================
+  // MANAGED FILES - Auto-generated files manifest
+  // ============================================================================
+  "managed": {managed_indented}
+}}
+'''
+
+
 def git_init(
     name: str | None = None,
     project_type: str | None = None,
@@ -51,7 +183,7 @@ def git_init(
 
     # 3. Create config
     success, msg = create_config(root, name or root.name, project_type, github_repo)
-    results.append(("config.json", success, msg))
+    results.append(("config.jsonc", success, msg))
 
     if not success:
         return results
@@ -97,7 +229,7 @@ def git_update(force: bool = False) -> list[tuple[str, bool, str]]:
     try:
         config = load_config()
         if not config:
-            return [("config", False, "No config.json found - run /dk git init first")]
+            return [("config", False, "No config found - run /dk git init first")]
     except Exception as e:
         return [("config", False, f"Config error: {e}")]
 
@@ -176,7 +308,21 @@ def create_config(
                 "enabled": True,
             },
         },
-        "docs": {"CLAUDE.md": {"type": "auto_sections", "enabled": True}},
+        "docs": {
+            "README.md": {
+                "type": "auto_sections",
+                "enabled": True,
+            },
+            "CLAUDE.md": {
+                "type": "auto_sections",
+                "enabled": True,
+            },
+            "docs/PLUGIN.md": {
+                "type": "template",
+                "template": "docs/PLUGIN.md.template",
+                "enabled": True,
+            },
+        },
         "ignore": {},
     }
 
@@ -244,59 +390,20 @@ def create_config(
     # Detect version from package.json or pyproject.toml
     version = detect_project_version(root)
 
-    config = {
-        "$schema": "./config.schema.json",
-        "project": {
-            "name": name,
-            "type": project_type,
-            "version": version,
-        },
-        "hooks": {
-            "session": {"enabled": True, "show_git_status": True},
-            "validate": {"enabled": True, "block_force_push": True, "block_dangerous_gh": True},
-            "format": {"enabled": True, "auto_format": True},
-            "plan": {"enabled": True},
-        },
-        "git": {
-            "protected_branches": ["main"],
-            "conventions": {
-                "types": [
-                    "feat",
-                    "fix",
-                    "chore",
-                    "refactor",
-                    "test",
-                    "docs",
-                    "perf",
-                    "ci",
-                ],
-                "scopes": {
-                    "mode": "strict",
-                    "allowed": [],
-                    "internal": ["internal", "review", "ci", "deps"],
-                },
-                "branch_pattern": "{type}/{description}",
-            },
-        },
-        "github": {
-            "url": github_url,
-            "visibility": github_visibility,
-            "pr": {
-                "auto_merge": False,
-                "delete_branch": True,
-                "merge_method": "squash",
-            },
-        },
-        "deployment": deployment,
-        "arch": {"layers": {}},
-        "linters": {"preset": "strict", "overrides": {}},
-        "managed": managed,
-        "testing": {"enabled": False, "framework": test_framework},
-        "changelog": {"audience": "developer"},
-    }
+    # Generate JSONC with comments
+    jsonc_content = generate_config_jsonc(
+        name=name,
+        project_type=project_type,
+        version=version,
+        github_url=github_url,
+        github_visibility=github_visibility,
+        deployment=deployment,
+        managed=managed,
+        test_framework=test_framework,
+    )
 
-    config_file = config_dir / "config.json"
-    config_file.write_text(json.dumps(config, indent=2))
+    config_file = config_dir / "config.jsonc"
+    config_file.write_text(jsonc_content)
 
     # Copy schema
     try:
@@ -321,7 +428,8 @@ def setup_github(repo: str, visibility: str = "public") -> list[tuple[str, bool,
         List of (step, success, message) tuples
     """
     results = []
-    visibility_flag = f"--{visibility}" if visibility in ("public", "private", "internal") else "--public"
+    valid_vis = ("public", "private", "internal")
+    visibility_flag = f"--{visibility}" if visibility in valid_vis else "--public"
 
     try:
         # Create or connect repo
@@ -472,7 +580,8 @@ def update_github_settings(repo: str) -> list[tuple[str, bool, str]]:
             check=True,
             capture_output=True,
         )
-        results.append(("repo settings", True, f"merge={merge_method}, delete_branch={delete_branch}"))
+        msg = f"merge={merge_method}, delete_branch={delete_branch}"
+        results.append(("repo settings", True, msg))
     except subprocess.CalledProcessError as e:
         stderr = e.stderr.decode() if e.stderr else str(e)
         results.append(("repo settings", False, stderr))
