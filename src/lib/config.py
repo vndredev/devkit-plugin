@@ -213,6 +213,34 @@ def clear_cache() -> None:
 # Recommended defaults for optional config sections
 # These are added when running /dk plugin update on older configs
 RECOMMENDED_DEFAULTS = {
+    # === Session Hook ===
+    "hooks.session.prompts": {
+        "branch": "📍 {branch}",
+        "staged": "⚡{count} staged",
+        "modified": "✏️{count} modified",
+        "untracked": "❓{count} untracked",
+        "hint": "Use `/dk` for commands, `/dk dev` for workflow",
+        "system_warning": "⚠️ Project has issues - check with /dk plugin check",
+    },
+    # === Validate Hook ===
+    "hooks.validate.prompts": {
+        "branch_invalid": "Branch '{branch}' should match: {pattern}",
+        "commit_invalid": "Commit should match: type(scope): message (types: {types})",
+        "scope_invalid": "Unknown scope '{scope}'. Allowed: {allowed}",
+        "force_push_blocked": "Force push is blocked. Use --force-with-lease if needed.",
+        "gh_blocked": "Blocked: '{cmd}' - too dangerous for automatic execution",
+        "pr_missing_body": "gh pr create requires --body with PR template",
+    },
+    # === Format Hook ===
+    "hooks.format.arch_check": True,
+    "hooks.format.auto_sync_arch": True,
+    "hooks.format.prompts": {
+        "formatted": "✓ Formatted: {file}",
+        "test_reminder": "💡 New file - consider adding: tests/{file}",
+        "arch_violation": "⚠️ Arch violation: {message}",
+        "arch_synced": "📄 Updated docs/ARCHITECTURE.md",
+    },
+    # === Plan Hook ===
     "hooks.plan.planning": {
         "requirements": [
             "Identify affected layers (check arch.layers)",
@@ -238,7 +266,12 @@ RECOMMENDED_DEFAULTS = {
             "Ask if blocked or unclear",
         ],
     },
-    "hooks.plan.hints": [],  # Empty array, project should customize
+    "hooks.plan.hints": [
+        "Respect layer boundaries if arch.layers is configured",
+        "New modules should have corresponding tests",
+        "Public API changes need CHANGELOG consideration",
+    ],
+    # === Git Conventions ===
     "git.conventions": {
         "types": ["feat", "fix", "chore", "refactor", "test", "docs", "perf", "ci"],
         "scopes": {
