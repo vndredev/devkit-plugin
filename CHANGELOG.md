@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.7.2] - 2026-01-15
+## [v0.8.0] - 2026-01-15
 
 ### Fixed
 
@@ -13,6 +13,7 @@
 
 ### Added
 
+- **Events**: Always show systemmessage in user terminal
 - **Events**: Add systemmessage for user-visible warnings
 - **Docs**: Add auto-generated architecture.md
 - **Arch**: Add ports/protocols and runtime layer guard
