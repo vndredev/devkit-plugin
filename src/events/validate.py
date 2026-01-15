@@ -15,11 +15,12 @@ from lib.config import get
 DEFAULT_TYPES = ["feat", "fix", "chore", "refactor", "test", "docs", "perf", "ci"]
 
 
-def validate_branch_name(branch: str) -> tuple[bool, str]:
+def validate_branch_name(branch: str, prompt_tpl: str) -> tuple[bool, str]:
     """Validate branch name follows convention from config.
 
     Args:
         branch: Branch name to validate.
+        prompt_tpl: Template for error message with {branch} and {pattern} placeholders.
 
     Returns:
         Tuple of (valid, message).
@@ -34,16 +35,20 @@ def validate_branch_name(branch: str) -> tuple[bool, str]:
     pattern = rf"^({types_pattern})/[\w-]+$"
 
     if not re.match(pattern, branch):
-        return False, f"Branch '{branch}' should match: {{{types_pattern}}}/description"
+        return False, prompt_tpl.format(branch=branch, pattern=f"{{{types_pattern}}}/description")
 
     return True, "Valid branch name"
 
 
-def validate_commit_message(msg: str) -> tuple[bool, str]:
+def validate_commit_message(
+    msg: str, commit_invalid_tpl: str, scope_invalid_tpl: str
+) -> tuple[bool, str]:
     """Validate commit message follows convention from config.
 
     Args:
         msg: Commit message to validate (first line only).
+        commit_invalid_tpl: Template for invalid commit with {types} placeholder.
+        scope_invalid_tpl: Template for invalid scope with {scope} and {allowed} placeholders.
 
     Returns:
         Tuple of (valid, message).
@@ -63,14 +68,14 @@ def validate_commit_message(msg: str) -> tuple[bool, str]:
 
     match = re.match(pattern, first_line)
     if not match:
-        return False, f"Commit should match: type(scope): message (types: {types_pattern})"
+        return False, commit_invalid_tpl.format(types=types_pattern)
 
     # Validate scope if present and mode is strict
     if scope_mode == "strict" and match.group(2):
         scope = match.group(2)[1:-1]  # Remove parentheses
         all_valid = allowed_scopes + internal_scopes
         if all_valid and scope not in all_valid:
-            return False, f"Unknown scope '{scope}'. Allowed: {', '.join(all_valid)}"
+            return False, scope_invalid_tpl.format(scope=scope, allowed=", ".join(all_valid))
 
     return True, "Valid commit message"
 
@@ -133,13 +138,15 @@ BLOCKED_GH_COMMANDS = [
 ]
 
 
-def validate_gh_command(cmd: str) -> tuple[bool, str]:
+def validate_gh_command(cmd: str, gh_blocked_tpl: str, pr_missing_body_tpl: str) -> tuple[bool, str]:
     """Validate gh CLI commands.
 
     Blocks dangerous commands like repo delete, secret delete.
 
     Args:
         cmd: Full command string.
+        gh_blocked_tpl: Template for blocked command with {cmd} placeholder.
+        pr_missing_body_tpl: Template for missing PR body.
 
     Returns:
         Tuple of (valid, message).
@@ -147,11 +154,11 @@ def validate_gh_command(cmd: str) -> tuple[bool, str]:
     # Check for blocked commands
     for blocked in BLOCKED_GH_COMMANDS:
         if blocked in cmd:
-            return False, f"Blocked: '{blocked}' - too dangerous for automatic execution"
+            return False, gh_blocked_tpl.format(cmd=blocked)
 
     # Warn if pr create without --body (should use template)
     if "gh pr create" in cmd and "--body" not in cmd:
-        return False, "gh pr create requires --body with PR template"
+        return False, pr_missing_body_tpl
 
     return True, "Valid gh command"
 
@@ -175,13 +182,22 @@ def main() -> None:
     if tool_name != "Bash":
         return
 
+    # Load prompts from config
+    prompts = get("hooks.validate.prompts", {})
+    branch_invalid_tpl = prompts.get("branch_invalid", "Branch '{branch}' should match: {pattern}")
+    commit_invalid_tpl = prompts.get("commit_invalid", "Commit should match: type(scope): message (types: {types})")
+    scope_invalid_tpl = prompts.get("scope_invalid", "Unknown scope '{scope}'. Allowed: {allowed}")
+    force_push_tpl = prompts.get("force_push_blocked", "Force push is blocked. Use --force-with-lease if needed.")
+    gh_blocked_tpl = prompts.get("gh_blocked", "Blocked: '{cmd}' - too dangerous for automatic execution")
+    pr_missing_body_tpl = prompts.get("pr_missing_body", "gh pr create requires --body with PR template")
+
     command = tool_input.get("command", "")
 
     # Validate gh commands
     if command.startswith("gh "):
         block_gh = get("hooks.validate.block_dangerous_gh", True)
         if block_gh:
-            valid, msg = validate_gh_command(command)
+            valid, msg = validate_gh_command(command, gh_blocked_tpl, pr_missing_body_tpl)
             if not valid:
                 result = {
                     "hook": HookType.PRE_TOOL_USE.value,
@@ -205,7 +221,7 @@ def main() -> None:
         result = {
             "hook": HookType.PRE_TOOL_USE.value,
             "action": HookAction.DENY.value,
-            "message": "Force push is blocked. Use --force-with-lease if needed.",
+            "message": force_push_tpl,
         }
         print(json.dumps(result))
         sys.exit(0)
@@ -216,7 +232,7 @@ def main() -> None:
             idx = args.index("-b")
             if idx + 1 < len(args):
                 branch = args[idx + 1]
-                valid, msg = validate_branch_name(branch)
+                valid, msg = validate_branch_name(branch, branch_invalid_tpl)
                 if not valid:
                     result = {
                         "hook": HookType.PRE_TOOL_USE.value,
@@ -232,7 +248,7 @@ def main() -> None:
     if subcmd == "commit" and "-m" in command:
         msg = extract_commit_message(command)
         if msg:
-            valid, err = validate_commit_message(msg)
+            valid, err = validate_commit_message(msg, commit_invalid_tpl, scope_invalid_tpl)
             if not valid:
                 result = {
                     "hook": HookType.PRE_TOOL_USE.value,

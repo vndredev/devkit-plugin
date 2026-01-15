@@ -42,13 +42,26 @@
       "properties": {
         "session": {
           "type": "object",
+          "description": "SessionStart hook - shows project status",
           "properties": {
             "enabled": { "type": "boolean", "default": true },
-            "show_git_status": { "type": "boolean", "default": true }
+            "show_git_status": { "type": "boolean", "default": true },
+            "prompts": {
+              "type": "object",
+              "description": "Customizable output templates",
+              "properties": {
+                "branch": { "type": "string", "default": "📍 {branch}", "description": "Branch display template" },
+                "staged": { "type": "string", "default": "⚡{count} staged", "description": "Staged files template" },
+                "modified": { "type": "string", "default": "✏️{count} modified", "description": "Modified files template" },
+                "untracked": { "type": "string", "default": "❓{count} untracked", "description": "Untracked files template" },
+                "hint": { "type": "string", "default": "Use `/dk` for commands, `/dk dev` for workflow", "description": "Help hint" }
+              }
+            }
           }
         },
         "validate": {
           "type": "object",
+          "description": "PreToolUse hook - validates git/gh commands",
           "properties": {
             "enabled": { "type": "boolean", "default": true },
             "block_force_push": { "type": "boolean", "default": true },
@@ -56,11 +69,24 @@
               "type": "boolean",
               "default": true,
               "description": "Block dangerous gh CLI commands (repo delete, secret delete)"
+            },
+            "prompts": {
+              "type": "object",
+              "description": "Customizable error messages",
+              "properties": {
+                "branch_invalid": { "type": "string", "default": "Branch '{branch}' should match: {pattern}", "description": "Invalid branch name error" },
+                "commit_invalid": { "type": "string", "default": "Commit should match: type(scope): message (types: {types})", "description": "Invalid commit message error" },
+                "scope_invalid": { "type": "string", "default": "Unknown scope '{scope}'. Allowed: {allowed}", "description": "Invalid scope error" },
+                "force_push_blocked": { "type": "string", "default": "Force push is blocked. Use --force-with-lease if needed.", "description": "Force push blocked message" },
+                "gh_blocked": { "type": "string", "default": "Blocked: '{cmd}' - too dangerous for automatic execution", "description": "Blocked gh command message" },
+                "pr_missing_body": { "type": "string", "default": "gh pr create requires --body with PR template", "description": "Missing PR body error" }
+              }
             }
           }
         },
         "format": {
           "type": "object",
+          "description": "PostToolUse hook - formats files and checks architecture",
           "properties": {
             "enabled": { "type": "boolean", "default": true },
             "auto_format": { "type": "boolean", "default": true },
@@ -73,18 +99,40 @@
               "type": "boolean",
               "default": true,
               "description": "Auto-update ARCHITECTURE.md when config or arch files change"
+            },
+            "prompts": {
+              "type": "object",
+              "description": "Customizable output templates",
+              "properties": {
+                "formatted": { "type": "string", "default": "✓ Formatted: {file}", "description": "File formatted message" },
+                "test_reminder": { "type": "string", "default": "💡 New file - consider adding: tests/{file}", "description": "Test reminder for new files" },
+                "arch_violation": { "type": "string", "default": "⚠️ Arch violation: {message}", "description": "Architecture violation warning" },
+                "arch_synced": { "type": "string", "default": "📄 Updated docs/ARCHITECTURE.md", "description": "Architecture doc updated message" }
+              }
             }
           }
         },
         "plan": {
           "type": "object",
+          "description": "PostToolUse hook - shows implementation instructions after ExitPlanMode",
           "properties": {
             "enabled": { "type": "boolean", "default": true },
-            "instructions": {
-              "type": "array",
-              "items": { "type": "string" },
-              "default": [],
-              "description": "Custom implementation phase instructions (empty = use defaults)"
+            "prompts": {
+              "type": "object",
+              "description": "Customizable implementation phase content",
+              "properties": {
+                "header": { "type": "string", "default": "## Implementation Phase", "description": "Section header" },
+                "instructions": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Implementation steps (empty = use defaults)"
+                },
+                "type_hints": {
+                  "type": "object",
+                  "description": "Project-type specific hints",
+                  "additionalProperties": { "type": "string" }
+                }
+              }
             }
           }
         }

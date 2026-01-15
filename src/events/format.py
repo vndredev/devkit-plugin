@@ -13,11 +13,12 @@ from lib.config import get
 from lib.tools import format_file
 
 
-def check_arch_violation(file_path: str) -> str | None:
+def check_arch_violation(file_path: str, prompt_tpl: str) -> str | None:
     """Check if file change introduces architecture violation.
 
     Args:
         file_path: Path to the changed file.
+        prompt_tpl: Template for violation message with {message} placeholder.
 
     Returns:
         Warning message if violation found, None otherwise.
@@ -34,14 +35,14 @@ def check_arch_violation(file_path: str) -> str | None:
             # Find violations related to this file
             for v in result["violations"]:
                 if file_path.endswith(v["file"].lstrip("./")):
-                    return f"⚠️ Arch violation: {v['message']}"
+                    return prompt_tpl.format(message=v["message"])
 
         return None
     except Exception:  # noqa: S110
         return None
 
 
-def sync_architecture_md(file_path: str) -> str | None:
+def sync_architecture_md(file_path: str, prompt_tpl: str) -> str | None:
     """Auto-update ARCHITECTURE.md when arch-related files change.
 
     Triggers on:
@@ -50,6 +51,7 @@ def sync_architecture_md(file_path: str) -> str | None:
 
     Args:
         file_path: Path to the changed file.
+        prompt_tpl: Template for success message.
 
     Returns:
         Status message if updated, None otherwise.
@@ -68,7 +70,7 @@ def sync_architecture_md(file_path: str) -> str | None:
         from arch.docs import update_architecture_md
         success, msg = update_architecture_md()
         if success:
-            return "📄 Updated docs/ARCHITECTURE.md"
+            return prompt_tpl
         return None
     except Exception:  # noqa: S110
         return None
@@ -98,6 +100,13 @@ def main() -> None:
     if not file_path:
         return
 
+    # Load prompts from config
+    prompts = get("hooks.format.prompts", {})
+    formatted_tpl = prompts.get("formatted", "✓ Formatted: {file}")
+    test_reminder_tpl = prompts.get("test_reminder", "💡 New file - consider adding: tests/{file}")
+    arch_violation_tpl = prompts.get("arch_violation", "⚠️ Arch violation: {message}")
+    arch_synced_tpl = prompts.get("arch_synced", "📄 Updated docs/ARCHITECTURE.md")
+
     messages = []
 
     # Auto-format
@@ -105,7 +114,7 @@ def main() -> None:
     if auto_format:
         success, _msg = format_file(file_path)
         if success:
-            messages.append(f"✓ Formatted: {Path(file_path).name}")
+            messages.append(formatted_tpl.format(file=Path(file_path).name))
 
     # Check for missing tests - only for NEW files in src/
     filepath = Path(file_path)
@@ -123,19 +132,19 @@ def main() -> None:
         test_file = tests_dir / test_file_name
 
         if not test_file.exists():
-            messages.append(f"💡 New file - consider adding: tests/{test_file_name}")
+            messages.append(test_reminder_tpl.format(file=test_file_name))
 
     # Check architecture violations for src/ files
     arch_check = get("hooks.format.arch_check", True)
     if arch_check:
-        arch_warning = check_arch_violation(file_path)
+        arch_warning = check_arch_violation(file_path, arch_violation_tpl)
         if arch_warning:
             messages.append(arch_warning)
 
     # Auto-update ARCHITECTURE.md when arch-related files change
     auto_sync_arch = get("hooks.format.auto_sync_arch", True)
     if auto_sync_arch:
-        sync_msg = sync_architecture_md(file_path)
+        sync_msg = sync_architecture_md(file_path, arch_synced_tpl)
         if sync_msg:
             messages.append(sync_msg)
 

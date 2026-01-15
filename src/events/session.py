@@ -24,6 +24,14 @@ def main() -> None:
     if not get("hooks.session.enabled", True):
         return
 
+    # Load prompts from config
+    prompts = get("hooks.session.prompts", {})
+    branch_tpl = prompts.get("branch", "📍 {branch}")
+    staged_tpl = prompts.get("staged", "⚡{count} staged")
+    modified_tpl = prompts.get("modified", "✏️{count} modified")
+    untracked_tpl = prompts.get("untracked", "❓{count} untracked")
+    hint_tpl = prompts.get("hint", "Use `/dk` for commands, `/dk dev` for workflow")
+
     # Gather context - only show what's relevant
     output_lines = []
     has_issues = False
@@ -34,13 +42,13 @@ def main() -> None:
             branch = git_branch()
             status = git_status()
 
-            git_parts = [f"📍 {branch}"]
+            git_parts = [branch_tpl.format(branch=branch)]
             if status["staged"]:
-                git_parts.append(f"⚡{len(status['staged'])} staged")
+                git_parts.append(staged_tpl.format(count=len(status["staged"])))
             if status["modified"]:
-                git_parts.append(f"✏️{len(status['modified'])} modified")
+                git_parts.append(modified_tpl.format(count=len(status["modified"])))
             if status["untracked"]:
-                git_parts.append(f"❓{len(status['untracked'])} untracked")
+                git_parts.append(untracked_tpl.format(count=len(status["untracked"])))
 
             output_lines.append(" | ".join(git_parts))
         except Exception:  # noqa: S110
@@ -60,7 +68,7 @@ def main() -> None:
     # Commands hint - only if no issues (otherwise they know what to fix)
     if not has_issues:
         output_lines.append("")
-        output_lines.append("Use `/dk` for commands, `/dk dev` for workflow")
+        output_lines.append(hint_tpl)
 
     # Output
     result = {

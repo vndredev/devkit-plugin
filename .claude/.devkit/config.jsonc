@@ -53,25 +53,66 @@
   // AUTOMATION - Hooks and changelog
   // ============================================================================
   "hooks": {
+    // === Session Hook (SessionStart) ===
     "session": {
       "enabled": true,
-      "show_git_status": true
+      "show_git_status": true,
+      "prompts": {
+        "branch": "📍 {branch}",
+        "staged": "⚡{count} staged",
+        "modified": "✏️{count} modified",
+        "untracked": "❓{count} untracked",
+        "hint": "Use `/dk` for commands, `/dk dev` for workflow"
+      }
     },
+
+    // === Validate Hook (PreToolUse: Bash) ===
     "validate": {
       "enabled": true,
       "block_force_push": true,
-      "block_dangerous_gh": true
+      "block_dangerous_gh": true,
+      "prompts": {
+        "branch_invalid": "Branch '{branch}' should match: {pattern}",
+        "commit_invalid": "Commit should match: type(scope): message (types: {types})",
+        "scope_invalid": "Unknown scope '{scope}'. Allowed: {allowed}",
+        "force_push_blocked": "Force push is blocked. Use --force-with-lease if needed.",
+        "gh_blocked": "Blocked: '{cmd}' - too dangerous for automatic execution",
+        "pr_missing_body": "gh pr create requires --body with PR template"
+      }
     },
+
+    // === Format Hook (PostToolUse: Write/Edit) ===
     "format": {
       "enabled": true,
       "auto_format": true,
-      "arch_check": true,        // Check arch violations after src/ changes
-      "auto_sync_arch": true     // Auto-update ARCHITECTURE.md
+      "arch_check": true,
+      "auto_sync_arch": true,
+      "prompts": {
+        "formatted": "✓ Formatted: {file}",
+        "test_reminder": "💡 New file - consider adding: tests/{file}",
+        "arch_violation": "⚠️ Arch violation: {message}",
+        "arch_synced": "📄 Updated docs/ARCHITECTURE.md"
+      }
     },
+
+    // === Plan Hook (PostToolUse: ExitPlanMode) ===
     "plan": {
       "enabled": true,
-      "instructions": []         // Custom implementation steps (empty = defaults)
-      // Example: ["Run tests after changes", "Use /dk arch check"]
+      "prompts": {
+        "header": "## Implementation Phase",
+        "instructions": [
+          "Complete one task at a time, mark done in todo list",
+          "Run linters after code changes",
+          "Run tests if available",
+          "Use conventional commits: type(scope): message",
+          "Ask if blocked or unclear"
+        ],
+        "type_hints": {
+          "python": "💡 Use `uv run pytest` for tests, `uv run ruff check` for linting",
+          "nextjs": "💡 Use `npm test` for tests, `npm run lint` for linting",
+          "node": "💡 Use `npm test` for tests, `npm run lint` for linting"
+        }
+      }
     }
   },
 

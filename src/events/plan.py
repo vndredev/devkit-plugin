@@ -19,6 +19,12 @@ DEFAULT_INSTRUCTIONS = [
     "Ask if blocked or unclear",
 ]
 
+DEFAULT_TYPE_HINTS = {
+    "python": "💡 Use `uv run pytest` for tests, `uv run ruff check` for linting",
+    "nextjs": "💡 Use `npm test` for tests, `npm run lint` for linting",
+    "node": "💡 Use `npm test` for tests, `npm run lint` for linting",
+}
+
 
 def build_instructions() -> str:
     """Build implementation instructions from config or defaults.
@@ -26,24 +32,15 @@ def build_instructions() -> str:
     Returns:
         Formatted instruction string.
     """
-    # Get project-specific instructions from config
-    custom_instructions = get("hooks.plan.instructions", [])
+    # Load prompts from config
+    prompts = get("hooks.plan.prompts", {})
+    header = prompts.get("header", "## Implementation Phase")
+    instructions = prompts.get("instructions", DEFAULT_INSTRUCTIONS)
+    type_hints = prompts.get("type_hints", DEFAULT_TYPE_HINTS)
+
     project_type = get("project.type", "unknown")
 
-    # Use custom if provided, otherwise defaults
-    instructions = custom_instructions if custom_instructions else DEFAULT_INSTRUCTIONS
-
-    # Add project-type specific hints
-    type_hints = {
-        "python": "Use `uv run pytest` for tests, `uv run ruff check` for linting",
-        "nextjs": "Use `npm test` for tests, `npm run lint` for linting",
-        "node": "Use `npm test` for tests, `npm run lint` for linting",
-    }
-
-    lines = [
-        "## Implementation Phase",
-        "",
-    ]
+    lines = [header, ""]
 
     for i, instruction in enumerate(instructions, 1):
         lines.append(f"{i}. {instruction}")
@@ -51,7 +48,7 @@ def build_instructions() -> str:
     # Add type-specific hint
     if project_type in type_hints:
         lines.append("")
-        lines.append(f"💡 {type_hints[project_type]}")
+        lines.append(type_hints[project_type])
 
     return "\n".join(lines)
 

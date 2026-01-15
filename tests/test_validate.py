@@ -7,6 +7,11 @@ import pytest
 
 from events.validate import validate_branch_name, validate_commit_message
 
+# Default templates for testing (same as in validate.py defaults)
+BRANCH_INVALID_TPL = "Branch '{branch}' should match: {pattern}"
+COMMIT_INVALID_TPL = "Commit should match: type(scope): message (types: {types})"
+SCOPE_INVALID_TPL = "Unknown scope '{scope}'. Allowed: {allowed}"
+
 
 class TestValidateBranchName:
     """Tests for validate_branch_name()."""
@@ -28,7 +33,7 @@ class TestValidateBranchName:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_branch_name("feat/add-feature")
+        valid, msg = validate_branch_name("feat/add-feature", BRANCH_INVALID_TPL)
 
         assert valid is True
 
@@ -49,7 +54,7 @@ class TestValidateBranchName:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_branch_name("fix/bug-123")
+        valid, msg = validate_branch_name("fix/bug-123", BRANCH_INVALID_TPL)
 
         assert valid is True
 
@@ -67,7 +72,7 @@ class TestValidateBranchName:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_branch_name("main")
+        valid, msg = validate_branch_name("main", BRANCH_INVALID_TPL)
 
         assert valid is True
 
@@ -88,7 +93,7 @@ class TestValidateBranchName:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_branch_name("invalid-branch")
+        valid, msg = validate_branch_name("invalid-branch", BRANCH_INVALID_TPL)
 
         assert valid is False
 
@@ -109,7 +114,7 @@ class TestValidateBranchName:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_branch_name("unknown/branch")
+        valid, msg = validate_branch_name("unknown/branch", BRANCH_INVALID_TPL)
 
         assert valid is False
 
@@ -130,7 +135,7 @@ class TestValidateBranchName:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_branch_name("chore/update-dependencies-v2")
+        valid, msg = validate_branch_name("chore/update-dependencies-v2", BRANCH_INVALID_TPL)
 
         assert valid is True
 
@@ -157,7 +162,7 @@ class TestValidateCommitMessage:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_commit_message("feat: add new feature")
+        valid, msg = validate_commit_message("feat: add new feature", COMMIT_INVALID_TPL, SCOPE_INVALID_TPL)
 
         assert valid is True
 
@@ -184,7 +189,7 @@ class TestValidateCommitMessage:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_commit_message("fix(core): fix bug")
+        valid, msg = validate_commit_message("fix(core): fix bug", COMMIT_INVALID_TPL, SCOPE_INVALID_TPL)
 
         assert valid is True
 
@@ -207,7 +212,7 @@ class TestValidateCommitMessage:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_commit_message("invalid: message")
+        valid, msg = validate_commit_message("invalid: message", COMMIT_INVALID_TPL, SCOPE_INVALID_TPL)
 
         assert valid is False
 
@@ -225,7 +230,7 @@ class TestValidateCommitMessage:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_commit_message("no colon here")
+        valid, msg = validate_commit_message("no colon here", COMMIT_INVALID_TPL, SCOPE_INVALID_TPL)
 
         assert valid is False
 
@@ -252,7 +257,7 @@ class TestValidateCommitMessage:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_commit_message("feat(unknown): message")
+        valid, msg = validate_commit_message("feat(unknown): message", COMMIT_INVALID_TPL, SCOPE_INVALID_TPL)
 
         assert valid is False
         assert "unknown" in msg.lower() or "Unknown" in msg
@@ -280,7 +285,7 @@ class TestValidateCommitMessage:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_commit_message("chore(ci): update workflow")
+        valid, msg = validate_commit_message("chore(ci): update workflow", COMMIT_INVALID_TPL, SCOPE_INVALID_TPL)
 
         assert valid is True
 
@@ -307,7 +312,7 @@ class TestValidateCommitMessage:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_commit_message("feat(unknown): message")
+        valid, msg = validate_commit_message("feat(unknown): message", COMMIT_INVALID_TPL, SCOPE_INVALID_TPL)
 
         # In warn mode, validation should pass
         assert valid is True
@@ -335,6 +340,6 @@ class TestValidateCommitMessage:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        valid, msg = validate_commit_message("feat(anything): message")
+        valid, msg = validate_commit_message("feat(anything): message", COMMIT_INVALID_TPL, SCOPE_INVALID_TPL)
 
         assert valid is True
