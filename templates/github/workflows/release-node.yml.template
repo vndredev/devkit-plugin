@@ -32,14 +32,37 @@ jobs:
           const fs = require('fs');
           const { execSync } = require('child_process');
 
-          const SECTION_MAP = {
+          // Load config from .claude/.devkit/config.json
+          let config = {};
+          try {
+            config = JSON.parse(fs.readFileSync('.claude/.devkit/config.json', 'utf8'));
+          } catch (e) {}
+
+          // Get internal scopes from config (with fallback)
+          const INTERNAL_SCOPES = config?.git?.conventions?.scopes?.internal || ['internal', 'review', 'ci', 'deps'];
+
+          // Get changelog audience from config (with fallback)
+          const AUDIENCE = config?.changelog?.audience || 'developer';
+
+          // Section maps for different audiences
+          const SECTION_MAP_DEVELOPER = {
             feat: '### Added',
             fix: '### Fixed',
             refactor: '### Changed',
             perf: '### Changed',
           };
+
+          const SECTION_MAP_USER = {
+            feat: "### What's New",
+            fix: '### Bug Fixes',
+            refactor: '### Improvements',
+            perf: '### Performance',
+          };
+
+          // Select section map based on audience
+          const SECTION_MAP = AUDIENCE === 'user' ? SECTION_MAP_USER : SECTION_MAP_DEVELOPER;
+
           const SKIP_TYPES = ['chore', 'docs', 'ci', 'test'];
-          const INTERNAL_SCOPES = ['internal', 'review', 'ci', 'deps'];
 
           function getCommitType(msg) {
             const match = msg.match(/^(\w+)(?:\(.+\))?(!)?:/);
@@ -51,12 +74,25 @@ jobs:
             return match ? match[1].toLowerCase() : null;
           }
 
-          function formatEntry(msg) {
+          function formatEntry(msg, audience = 'developer') {
             const match = msg.match(/^(\w+)(?:\(([^)]+)\))?(!)?:\s*(.+)$/);
             if (!match) return msg.charAt(0).toUpperCase() + msg.slice(1);
             const scope = match[2];
-            const desc = match[4].charAt(0).toUpperCase() + match[4].slice(1);
-            return scope ? `**${scope.charAt(0).toUpperCase() + scope.slice(1)}**: ${desc}` : desc;
+            const breaking = match[3];
+            let desc = match[4].charAt(0).toUpperCase() + match[4].slice(1);
+
+            // Add breaking indicator
+            if (breaking) {
+              const prefix = audience === 'developer' ? 'BREAKING: ' : 'Important: ';
+              desc = prefix + desc;
+            }
+
+            // Developer: show scope in bold
+            // User: hide scope, just show description
+            if (audience === 'developer' && scope) {
+              return `**${scope.charAt(0).toUpperCase() + scope.slice(1)}**: ${desc}`;
+            }
+            return desc;
           }
 
           function bumpVersion(version, type, breaking) {
@@ -104,7 +140,7 @@ jobs:
 
           // Update changelog
           const section = SECTION_MAP[commitType];
-          const entry = `- ${formatEntry(msg)}`;
+          const entry = `- ${formatEntry(msg, AUDIENCE)}`;
           const today = new Date().toISOString().split('T')[0];
           const header = `## [v${newVersion}] - ${today}`;
 
@@ -152,6 +188,7 @@ jobs:
 
           console.log(`Version: v${newVersion}`);
           console.log(`Entry: ${entry}`);
+          console.log(`Audience: ${AUDIENCE}`);
           EOF
 
       - name: Commit Version Bump

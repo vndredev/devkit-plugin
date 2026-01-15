@@ -121,5 +121,8 @@
   "testing": {
     "enabled": false,
     "framework": "pytest"
+  },
+  "changelog": {
+    "audience": "developer"
   }
 }

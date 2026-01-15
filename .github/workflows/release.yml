@@ -32,6 +32,7 @@ jobs:
         id: release
         run: |
           python3 << 'EOF'
+          import json
           import os
           import re
           import subprocess
@@ -44,7 +45,28 @@ jobs:
           except ImportError:
               HAS_TOML = False
 
-          SECTION_MAP = {
+          # Load config from .claude/.devkit/config.json
+          config = {}
+          config_path = Path(".claude/.devkit/config.json")
+          if config_path.exists():
+              try:
+                  config = json.loads(config_path.read_text())
+              except Exception:
+                  pass
+
+          # Get internal scopes from config (with fallback)
+          INTERNAL_SCOPES = (
+              config.get("git", {})
+              .get("conventions", {})
+              .get("scopes", {})
+              .get("internal", ["internal", "review", "ci", "deps"])
+          )
+
+          # Get changelog audience from config (with fallback)
+          AUDIENCE = config.get("changelog", {}).get("audience", "developer")
+
+          # Section maps for different audiences
+          SECTION_MAP_DEVELOPER = {
               "feat": "### Added",
               "fix": "### Fixed",
               "refactor": "### Changed",
@@ -54,7 +76,20 @@ jobs:
               "ci": None,
               "test": None,
           }
-          INTERNAL_SCOPES = ["internal", "review", "ci", "deps"]
+
+          SECTION_MAP_USER = {
+              "feat": "### What's New",
+              "fix": "### Bug Fixes",
+              "refactor": "### Improvements",
+              "perf": "### Performance",
+              "chore": None,
+              "docs": None,
+              "ci": None,
+              "test": None,
+          }
+
+          # Select section map based on audience
+          SECTION_MAP = SECTION_MAP_USER if AUDIENCE == "user" else SECTION_MAP_DEVELOPER
 
           def get_commit_type(msg):
               match = re.match(r"^(\w+)(?:\(.+\))?(!)?:", msg)
@@ -64,13 +99,22 @@ jobs:
               match = re.match(r"^\w+\(([^)]+)\)", msg)
               return match.group(1).lower() if match else None
 
-          def format_entry(msg):
+          def format_entry(msg, audience="developer"):
               match = re.match(r"^(\w+)(?:\(([^)]+)\))?(!)?:\s*(.+)$", msg)
               if not match:
                   return msg.capitalize()
               scope = match.group(2)
+              breaking = match.group(3)
               description = match.group(4).capitalize()
-              if scope:
+
+              # Add breaking indicator
+              if breaking:
+                  prefix = "BREAKING: " if audience == "developer" else "Important: "
+                  description = prefix + description
+
+              # Developer: show scope in bold
+              # User: hide scope, just show description
+              if audience == "developer" and scope:
                   return f"**{scope.capitalize()}**: {description}"
               return description
 
@@ -131,7 +175,7 @@ jobs:
 
           # Update changelog
           section = SECTION_MAP.get(commit_type)
-          entry = f"- {format_entry(msg)}"
+          entry = f"- {format_entry(msg, AUDIENCE)}"
           today = date.today().isoformat()
 
           changelog = Path("CHANGELOG.md")
@@ -175,6 +219,7 @@ jobs:
           Path("release_notes.md").write_text(release_notes)
           print(f"Version: v{new_version}")
           print(f"Entry: {entry}")
+          print(f"Audience: {AUDIENCE}")
           EOF
 
       - name: Commit Version Bump

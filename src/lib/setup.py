@@ -284,6 +284,7 @@ def create_config(
         "linters": {"preset": "strict", "overrides": {}},
         "managed": managed,
         "testing": {"enabled": False, "framework": test_framework},
+        "changelog": {"audience": "developer"},
     }
 
     config_file = config_dir / "config.json"

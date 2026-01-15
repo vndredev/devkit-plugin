@@ -245,6 +245,28 @@
           }
         }
       }
+    },
+    "changelog": {
+      "type": "object",
+      "description": "Changelog generation settings",
+      "properties": {
+        "audience": {
+          "type": "string",
+          "enum": ["developer", "user"],
+          "default": "developer",
+          "description": "Target audience: developer (technical, shows scopes) or user (simple, clean)"
+        },
+        "sections": {
+          "type": "object",
+          "description": "Custom section headers per commit type",
+          "properties": {
+            "feat": { "type": "string", "default": "Added" },
+            "fix": { "type": "string", "default": "Fixed" },
+            "refactor": { "type": "string", "default": "Changed" },
+            "perf": { "type": "string", "default": "Changed" }
+          }
+        }
+      }
     }
   },
   "$defs": {
