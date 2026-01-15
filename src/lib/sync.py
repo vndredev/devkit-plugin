@@ -7,7 +7,7 @@ import json
 import re
 from pathlib import Path
 
-from lib.config import get, get_project_root
+from lib.config import get, get_project_root, upgrade_config
 
 # NOTE: lib.docs imports are done lazily in functions to avoid circular imports
 # (docs.py imports get_plugin_root and render_template from sync.py)
@@ -105,7 +105,9 @@ def _sync_linter_config(
 def sync_ruff(root: Path, preset: str, overrides: dict) -> tuple[bool, str]:
     """Generate ruff.toml for Python projects."""
     return _sync_linter_config(
-        root, preset, overrides,
+        root,
+        preset,
+        overrides,
         preset_category="python",
         template_path="python/ruff.toml.template",
         output_name="ruff.toml",
@@ -115,7 +117,9 @@ def sync_ruff(root: Path, preset: str, overrides: dict) -> tuple[bool, str]:
 def sync_eslint(root: Path, preset: str, overrides: dict) -> tuple[bool, str]:
     """Generate .eslintrc.json for Next.js projects."""
     return _sync_linter_config(
-        root, preset, overrides,
+        root,
+        preset,
+        overrides,
         preset_category="nextjs",
         template_path="nextjs/eslint.json.template",
         output_name=".eslintrc.json",
@@ -125,7 +129,9 @@ def sync_eslint(root: Path, preset: str, overrides: dict) -> tuple[bool, str]:
 def sync_prettier(root: Path, preset: str, overrides: dict) -> tuple[bool, str]:
     """Generate .prettierrc for Next.js projects."""
     return _sync_linter_config(
-        root, preset, overrides,
+        root,
+        preset,
+        overrides,
         preset_category="nextjs",
         template_path="nextjs/prettier.json.template",
         output_name=".prettierrc",
@@ -135,7 +141,9 @@ def sync_prettier(root: Path, preset: str, overrides: dict) -> tuple[bool, str]:
 def sync_markdownlint(root: Path, preset: str, overrides: dict) -> tuple[bool, str]:
     """Generate .markdownlint.json for all projects."""
     return _sync_linter_config(
-        root, preset, overrides,
+        root,
+        preset,
+        overrides,
         preset_category="common",
         template_path="common/markdownlint.json.template",
         output_name=".markdownlint.json",
@@ -268,7 +276,9 @@ def sync_github(root: Path) -> list[tuple[str, bool, str]]:
             content = render_template(template, values)
             output_file = issue_template_dir / output_name
             output_file.write_text(content)
-            results.append((f".github/ISSUE_TEMPLATE/{output_name}", True, f"Generated {output_file}"))
+            results.append(
+                (f".github/ISSUE_TEMPLATE/{output_name}", True, f"Generated {output_file}")
+            )
 
     return results
 
@@ -325,6 +335,7 @@ def sync_docs(root: Path | None = None) -> list[tuple[str, bool, str]]:
 def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
     """Sync all generated files based on managed config.
 
+    Also upgrades config.jsonc with missing optional sections.
     Reads from config.managed to determine what to sync.
     Falls back to project-type based sync if managed section is missing.
     """
@@ -339,17 +350,24 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
     if root is None:
         root = get_project_root()
 
+    results = []
+
+    # First: upgrade config with missing sections
+    _ok, upgraded_sections = upgrade_config()
+    if upgraded_sections:
+        results.extend(
+            (f"config: {section}", True, "added default") for section in upgraded_sections
+        )
+
     managed = get("managed", {})
 
     # If no managed section, use legacy behavior
     if not managed:
-        results = []
         results.extend(sync_docs(root))
         results.extend(sync_linters(root))
         results.extend(sync_github(root))
         return results
 
-    results = []
     plugin_root = get_plugin_root()
 
     # Get values for template rendering
@@ -447,9 +465,7 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
             # Template-based docs (like PLUGIN.md) - copy from plugin
             template_path = config.get("template", "")
             if template_path:
-                result = _sync_template_file(
-                    root, plugin_root, output_path, template_path, values
-                )
+                result = _sync_template_file(root, plugin_root, output_path, template_path, values)
                 output_path, success, msg = result
             else:
                 success, msg = False, f"No template specified for {output_path}"

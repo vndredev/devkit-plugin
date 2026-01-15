@@ -4,12 +4,12 @@ Plugin management, health check, and sync system.
 
 ## Commands
 
-| Command | Action |
-|---------|--------|
-| `/dk plugin` | Quick status |
-| `/dk plugin check` | Full health check with content verification |
-| `/dk plugin update` | Sync all managed files |
-| `/dk plugin init` | Initialize new project |
+| Command             | Action                                      |
+| ------------------- | ------------------------------------------- |
+| `/dk plugin`        | Quick status                                |
+| `/dk plugin check`  | Full health check with content verification |
+| `/dk plugin update` | Sync all managed files                      |
+| `/dk plugin init`   | Initialize new project                      |
 
 ---
 
@@ -47,9 +47,11 @@ else:
 ## /dk plugin check
 
 Full health check with content verification:
-- **Config:** Schema validation, required fields
+
+- **Config:** Schema validation, required fields, missing optional sections
 - **Sync:** Content comparison against templates
 - **Architecture:** Layer rule compliance
+- **Upgradable:** Detects if config can be upgraded with new features
 
 ```bash
 PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
@@ -66,6 +68,12 @@ print(format_report(results))
 ── Config ──────────────────────────
 ✓ Schema valid
 ✓ Required fields present
+
+⚠ Missing optional sections (3):
+  - hooks.plan.planning
+  - hooks.plan.implementation
+  - hooks.plan.hints
+  → Run: /dk plugin update (adds defaults)
 
 ── Sync ────────────────────────────
 ✓ ruff.toml (in sync)
@@ -86,11 +94,13 @@ Action: /dk plugin update
 
 ## /dk plugin update
 
-Sync all managed files based on `config.jsonc`:
-- Linter configs (ruff.toml, .markdownlint.json, etc.)
-- GitHub workflows and issue templates
-- Documentation (CLAUDE.md, docs/PLUGIN.md)
-- Ignore files (.gitignore, etc.)
+Sync all managed files and upgrade config:
+
+1. **Config upgrade:** Adds missing optional sections with defaults
+2. **Linters:** ruff.toml, .markdownlint.json, etc.
+3. **GitHub:** Workflows and issue templates
+4. **Docs:** CLAUDE.md, docs/PLUGIN.md
+5. **Ignore:** .gitignore, etc.
 
 ```bash
 PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
@@ -114,6 +124,7 @@ print('Done!')
 Initialize a new project with devkit-plugin configuration.
 
 **Steps:**
+
 1. Detect project type (python, nextjs, typescript, javascript)
 2. Create `.claude/.devkit/config.jsonc` with `managed` section
 3. Run `/dk plugin update` to generate all files
@@ -225,12 +236,12 @@ The `config.jsonc` is the single source of truth:
 
 ### Managed Section
 
-| Category | Description |
-|----------|-------------|
+| Category  | Description                                           |
+| --------- | ----------------------------------------------------- |
 | `linters` | Linter config files (ruff.toml, .eslintrc.json, etc.) |
-| `github` | GitHub workflows and issue templates |
-| `docs` | Documentation files (CLAUDE.md, PLUGIN.md) |
-| `ignore` | Ignore files (.gitignore, .prettierignore, etc.) |
+| `github`  | GitHub workflows and issue templates                  |
+| `docs`    | Documentation files (CLAUDE.md, PLUGIN.md)            |
+| `ignore`  | Ignore files (.gitignore, .prettierignore, etc.)      |
 
 ### Disabling Files
 

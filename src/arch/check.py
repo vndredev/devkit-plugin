@@ -5,22 +5,22 @@ TIER 2: May import from core and lib.
 
 from pathlib import Path
 
-from lib.config import get, get_project_root, load_config
+from lib.config import get, get_missing_sections, get_project_root, load_config
 from lib.sync import get_plugin_root, load_presets, render_template
 
 
-def check_config() -> tuple[bool, list[str]]:
+def check_config() -> tuple[bool, list[str], list[str]]:
     """Validate config against schema and required fields.
 
     Returns:
-        Tuple of (is_valid, list of error messages)
+        Tuple of (is_valid, list of error messages, list of missing optional sections)
     """
     errors = []
 
     try:
         config = load_config()
     except Exception as e:
-        return False, [f"Config load failed: {e}"]
+        return False, [f"Config load failed: {e}"], []
 
     # Check required fields
     if "project" not in config:
@@ -33,11 +33,14 @@ def check_config() -> tuple[bool, list[str]]:
 
     # Check project type is valid
     project_type = config.get("project", {}).get("type")
-    valid_types = ["python", "node", "nextjs", "typescript", "javascript"]
+    valid_types = ["python", "node", "nextjs", "typescript", "javascript", "plugin"]
     if project_type and project_type not in valid_types:
         errors.append(f"Invalid project.type: {project_type}")
 
-    return len(errors) == 0, errors
+    # Check for missing recommended sections
+    missing_sections = get_missing_sections()
+
+    return len(errors) == 0, errors, missing_sections
 
 
 def check_sync() -> list[tuple[str, bool, str]]:
@@ -230,10 +233,8 @@ def check_tests() -> tuple[str, list[str]]:
 
         # Check if required functions have tests
         content = test_file.read_text()
-        for func in functions:
-            # Look for test_<func> or test_*_<func>_* patterns
-            if f"test_{func}" not in content:
-                issues.append(f"Missing test: {module}:{func}()")
+        missing_funcs = [f for f in functions if f"test_{f}" not in content]
+        issues.extend(f"Missing test: {module}:{func}()" for func in missing_funcs)
 
     return "FAIL" if issues else "PASS", issues
 
@@ -244,7 +245,7 @@ def check_all() -> dict:
     Returns:
         Dict with results for each check category
     """
-    config_ok, config_errors = check_config()
+    config_ok, config_errors, missing_sections = check_config()
     sync_results = check_sync()
     arch_ok, arch_violations = check_arch()
     test_status, test_issues = check_tests()
@@ -256,7 +257,10 @@ def check_all() -> dict:
     # Test status (SKIP doesn't affect health, FAIL does)
     test_ok = test_status != "FAIL"
 
-    # Overall status
+    # Missing sections don't block health, but should be reported
+    has_missing = len(missing_sections) > 0
+
+    # Overall status (missing sections are warnings, not errors)
     all_ok = config_ok and sync_ok and arch_ok and test_ok
 
     return {
@@ -264,6 +268,7 @@ def check_all() -> dict:
         "config": {
             "ok": config_ok,
             "errors": config_errors,
+            "missing_sections": missing_sections,
         },
         "sync": {
             "ok": sync_ok,
@@ -279,6 +284,7 @@ def check_all() -> dict:
             "ok": test_ok,
             "issues": test_issues,
         },
+        "upgradable": has_missing,
     }
 
 
@@ -301,6 +307,16 @@ def format_report(results: dict) -> str:
     else:
         lines.append("✗ Config invalid:")
         lines.extend(f"  - {error}" for error in results["config"]["errors"])
+
+    # Show missing optional sections
+    missing = results["config"].get("missing_sections", [])
+    if missing:
+        lines.append("")
+        lines.append(f"⚠ Missing optional sections ({len(missing)}):")
+        lines.extend(f"  - {section}" for section in missing[:5])
+        if len(missing) > 5:
+            lines.append(f"  - ... and {len(missing) - 5} more")
+        lines.append("  → Run: /dk plugin update (adds defaults)")
 
     lines.append("")
 
@@ -362,7 +378,11 @@ def format_report(results: dict) -> str:
             len(results["config"]["errors"])
             + len(results["sync"]["issues"])
             + len(results["arch"]["violations"])
-            + (len(results.get("tests", {}).get("issues", [])) if results.get("tests", {}).get("status") == "FAIL" else 0)
+            + (
+                len(results.get("tests", {}).get("issues", []))
+                if results.get("tests", {}).get("status") == "FAIL"
+                else 0
+            )
         )
         lines.append(f"Status: {issue_count} issue(s) found")
         lines.append("Action: /dk plugin update")
