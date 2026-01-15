@@ -78,15 +78,12 @@ def main() -> None:
         "output": "\n".join(output_lines),
     }
 
-    # Show systemMessage to user - always visible in terminal
+    # Show systemMessage only for warnings (not shown to user, but in Claude context)
     if has_issues:
         warning_tpl = prompts.get(
             "system_warning", "⚠️ Project has issues - check with /dk plugin check"
         )
         result["systemMessage"] = warning_tpl
-    elif git_status_line:
-        # Show git status to user when no issues
-        result["systemMessage"] = git_status_line
 
     print(json.dumps(result))
 
