@@ -105,21 +105,60 @@ for step, ok, msg in git_update():
 
 ## /dk git pr
 
-Create PR for current branch:
+Create PR for current branch using the PR template:
 
 ```bash
 BRANCH=$(git branch --show-current)
 git push -u origin "$BRANCH"
+
+# Get commit info
 TITLE=$(git log -1 --format=%s)
-gh pr create --title "$TITLE" --body "## Summary
-$(git log main..$BRANCH --format='- %s' | head -10)
+COMMITS=$(git log main..$BRANCH --format='- %s' | head -10)
+
+# Determine change type from first commit
+TYPE=$(echo "$TITLE" | grep -oE '^(feat|fix|docs|chore|refactor|test|ci)' || echo "chore")
+
+# Map type to checkbox
+case "$TYPE" in
+  feat)     CHECKBOX="- [x] Feature - New functionality" ;;
+  fix)      CHECKBOX="- [x] Bug Fix - Fix for existing issue" ;;
+  refactor) CHECKBOX="- [x] Refactor - Code restructuring" ;;
+  docs)     CHECKBOX="- [x] Docs - Documentation only" ;;
+  *)        CHECKBOX="- [x] Chore - Maintenance/tooling" ;;
+esac
+
+# Build PR body from template structure
+BODY="## Summary
+$COMMITS
+
+## Type of Change
+$CHECKBOX
+
+## Changes
+$COMMITS
+
+## Checklist (Author)
+- [ ] Self-review completed
+- [ ] No secrets committed
+- [ ] Tests added (if needed)
+- [ ] Linter passes
+
+## Checklist (Claude Review)
+- [ ] Security OK
+- [ ] No Bugs Found
+- [ ] Code Quality OK
+- [ ] Architecture OK
 
 ## Test Plan
-- [ ] Tests pass
-- [ ] Manual testing done
+<!-- How was this tested? -->
+
+## Related Issues
+<!-- Closes #123 -->
 
 ---
-🤖 Generated with [Claude Code](https://claude.ai/code)"
+Generated with [Claude Code](https://claude.ai/code)"
+
+gh pr create --title "$TITLE" --body "$BODY"
 ```
 
 ---

@@ -51,7 +51,12 @@
           "type": "object",
           "properties": {
             "enabled": { "type": "boolean", "default": true },
-            "block_force_push": { "type": "boolean", "default": true }
+            "block_force_push": { "type": "boolean", "default": true },
+            "block_dangerous_gh": {
+              "type": "boolean",
+              "default": true,
+              "description": "Block dangerous gh CLI commands (repo delete, secret delete)"
+            }
           }
         },
         "format": {
