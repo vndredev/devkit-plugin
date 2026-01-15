@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.6.1] - 2026-01-15
+## [v0.7.0] - 2026-01-15
 
 ### Changed
 
@@ -8,6 +8,7 @@
 
 ### Added
 
+- **Events**: Add systemmessage for user-visible warnings
 - **Docs**: Add auto-generated architecture.md
 - **Arch**: Add ports/protocols and runtime layer guard
 - **Arch**: Add config-driven architecture docs and visualization
