@@ -369,8 +369,17 @@ def upgrade_config() -> tuple[bool, list[str]]:
 
 
 def _write_config_with_comments(config_path: Path, config: dict) -> None:
-    """Write config back with section comments."""
-    # Section definitions with descriptions
+    """Write config back with section comments.
+
+    For .json files, writes plain JSON without comments.
+    For .jsonc files, writes with section comments.
+    """
+    # If .json file, write plain JSON (no comments allowed)
+    if config_path.suffix == ".json":
+        config_path.write_text(json.dumps(config, indent=2))
+        return
+
+    # Section definitions with descriptions (for .jsonc files)
     sections = {
         "project": {
             "header": "IDENTITY - Project information",

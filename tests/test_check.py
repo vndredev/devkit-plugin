@@ -25,7 +25,7 @@ class TestCheckConfig:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        is_valid, errors = check_config()
+        is_valid, errors, missing = check_config()
 
         assert is_valid is True
         assert errors == []
@@ -41,7 +41,7 @@ class TestCheckConfig:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        is_valid, errors = check_config()
+        is_valid, errors, missing = check_config()
 
         assert is_valid is False
         assert any("project" in e.lower() for e in errors)
@@ -57,7 +57,7 @@ class TestCheckConfig:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        is_valid, errors = check_config()
+        is_valid, errors, missing = check_config()
 
         assert is_valid is False
         assert any("name" in e.lower() for e in errors)
@@ -73,7 +73,7 @@ class TestCheckConfig:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        is_valid, errors = check_config()
+        is_valid, errors, missing = check_config()
 
         assert is_valid is False
         assert any("type" in e.lower() for e in errors)
@@ -89,7 +89,7 @@ class TestCheckConfig:
         (config_dir / "config.json").write_text(json.dumps(config))
         monkeypatch.chdir(tmp_path)
 
-        is_valid, errors = check_config()
+        is_valid, errors, missing = check_config()
 
         assert is_valid is False
         assert any("invalid" in e.lower() for e in errors)
@@ -102,7 +102,7 @@ class TestCheckConfig:
         (tmp_path / ".claude").mkdir()
         monkeypatch.chdir(tmp_path)
 
-        is_valid, errors = check_config()
+        is_valid, errors, missing = check_config()
 
         # Empty config returns empty dict, which fails validation
         assert is_valid is False
@@ -131,10 +131,14 @@ class TestCheckSync:
         plugin_root = tmp_path / "plugin"
         presets_dir = plugin_root / "presets"
         presets_dir.mkdir(parents=True)
-        (presets_dir / "linters.json").write_text(json.dumps({
-            "python": {"strict": {}},
-            "common": {"strict": {}},
-        }))
+        (presets_dir / "linters.json").write_text(
+            json.dumps(
+                {
+                    "python": {"strict": {}},
+                    "common": {"strict": {}},
+                }
+            )
+        )
 
         monkeypatch.chdir(tmp_path)
 
@@ -174,10 +178,14 @@ class TestCheckSync:
 
         presets_dir = plugin_root / "presets"
         presets_dir.mkdir(parents=True)
-        (presets_dir / "linters.json").write_text(json.dumps({
-            "python": {"strict": {}},
-            "common": {"strict": {}},
-        }))
+        (presets_dir / "linters.json").write_text(
+            json.dumps(
+                {
+                    "python": {"strict": {}},
+                    "common": {"strict": {}},
+                }
+            )
+        )
 
         monkeypatch.chdir(tmp_path)
 
@@ -215,10 +223,14 @@ class TestCheckAll:
         plugin_root = tmp_path / "plugin"
         presets_dir = plugin_root / "presets"
         presets_dir.mkdir(parents=True)
-        (presets_dir / "linters.json").write_text(json.dumps({
-            "python": {"strict": {}},
-            "common": {"strict": {}},
-        }))
+        (presets_dir / "linters.json").write_text(
+            json.dumps(
+                {
+                    "python": {"strict": {}},
+                    "common": {"strict": {}},
+                }
+            )
+        )
 
         monkeypatch.chdir(tmp_path)
 
@@ -253,10 +265,14 @@ class TestCheckAll:
         plugin_root = tmp_path / "plugin"
         presets_dir = plugin_root / "presets"
         presets_dir.mkdir(parents=True)
-        (presets_dir / "linters.json").write_text(json.dumps({
-            "python": {"strict": {}},
-            "common": {"strict": {}},
-        }))
+        (presets_dir / "linters.json").write_text(
+            json.dumps(
+                {
+                    "python": {"strict": {}},
+                    "common": {"strict": {}},
+                }
+            )
+        )
 
         monkeypatch.chdir(tmp_path)
 
@@ -281,10 +297,14 @@ class TestCheckAll:
         plugin_root = tmp_path / "plugin"
         presets_dir = plugin_root / "presets"
         presets_dir.mkdir(parents=True)
-        (presets_dir / "linters.json").write_text(json.dumps({
-            "python": {"strict": {}},
-            "common": {"strict": {}},
-        }))
+        (presets_dir / "linters.json").write_text(
+            json.dumps(
+                {
+                    "python": {"strict": {}},
+                    "common": {"strict": {}},
+                }
+            )
+        )
 
         monkeypatch.chdir(tmp_path)
 
@@ -319,10 +339,14 @@ class TestCheckAll:
         plugin_root = tmp_path / "plugin"
         presets_dir = plugin_root / "presets"
         presets_dir.mkdir(parents=True)
-        (presets_dir / "linters.json").write_text(json.dumps({
-            "python": {"strict": {}},
-            "common": {"strict": {}},
-        }))
+        (presets_dir / "linters.json").write_text(
+            json.dumps(
+                {
+                    "python": {"strict": {}},
+                    "common": {"strict": {}},
+                }
+            )
+        )
 
         monkeypatch.chdir(tmp_path)
 
