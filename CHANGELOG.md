@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.7.0] - 2026-01-15
+## [v0.7.1] - 2026-01-15
+
+### Fixed
+
+- **Events**: Use uv run for hook commands
 
 ### Changed
 
