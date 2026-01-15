@@ -160,6 +160,10 @@
         "type": "auto_sections",  // auto_sections preserves CUSTOM blocks
         "enabled": true
       },
+      "docs/ARCHITECTURE.md": {
+        "type": "auto_generate",  // 100% generated from config
+        "enabled": true
+      },
       "docs/PLUGIN.md": {
         "type": "template",       // 100% from plugin template
         "template": "docs/PLUGIN.md.template",

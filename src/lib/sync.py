@@ -331,6 +331,7 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
     # Lazy imports to avoid circular imports
     from lib.docs import (
         generate_arch_docs,
+        update_architecture_md,
         update_claude_md,
         update_plugin_md,
         update_readme_md,
@@ -434,6 +435,9 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
         elif output_path == "README.md":
             # README.md: auto_sections (template + CUSTOM)
             success, msg = update_readme_md(root)
+        elif output_path == "docs/ARCHITECTURE.md":
+            # ARCHITECTURE.md: auto_generate (100% from config)
+            success, msg = update_architecture_md(root)
         elif doc_type == "template":
             # Template-based docs (like PLUGIN.md) - copy from plugin
             template_path = config.get("template", "")
