@@ -105,7 +105,12 @@ for step, ok, msg in git_update():
 
 ## /dk git pr
 
-Create PR for current branch using the PR template:
+Create PR for current branch using the PR template.
+
+**Reads config from `.claude/.devkit/config.json`:**
+- `github.pr.auto_merge` - Enable auto-merge (default: false)
+- `github.pr.delete_branch` - Delete branch after merge (default: true)
+- `github.pr.merge_method` - squash/merge/rebase (default: squash)
 
 ```bash
 BRANCH=$(git branch --show-current)
@@ -114,6 +119,12 @@ git push -u origin "$BRANCH"
 # Get commit info
 TITLE=$(git log -1 --format=%s)
 COMMITS=$(git log main..$BRANCH --format='- %s' | head -10)
+
+# Read PR config
+CONFIG_FILE=".claude/.devkit/config.json"
+AUTO_MERGE=$(jq -r '.github.pr.auto_merge // false' "$CONFIG_FILE" 2>/dev/null || echo "false")
+DELETE_BRANCH=$(jq -r '.github.pr.delete_branch // true' "$CONFIG_FILE" 2>/dev/null || echo "true")
+MERGE_METHOD=$(jq -r '.github.pr.merge_method // "squash"' "$CONFIG_FILE" 2>/dev/null || echo "squash")
 
 # Determine change type from first commit
 TYPE=$(echo "$TITLE" | grep -oE '^(feat|fix|docs|chore|refactor|test|ci)' || echo "chore")
@@ -158,7 +169,15 @@ $COMMITS
 ---
 Generated with [Claude Code](https://claude.ai/code)"
 
+# Create PR
 gh pr create --title "$TITLE" --body "$BODY"
+
+# Enable auto-merge if configured
+if [ "$AUTO_MERGE" = "true" ]; then
+  PR_NUM=$(gh pr view --json number -q .number)
+  gh pr merge "$PR_NUM" --auto --$MERGE_METHOD
+  echo "Auto-merge enabled ($MERGE_METHOD)"
+fi
 ```
 
 ---
@@ -180,11 +199,21 @@ gh pr checks $PR_NUM
 
 ## /dk git pr merge
 
-Squash merge and cleanup:
+Merge PR using config settings:
 
 ```bash
 PR_NUM=${1:-$(gh pr view --json number -q .number)}
-gh pr merge "$PR_NUM" --squash --delete-branch
+
+# Read PR config
+CONFIG_FILE=".claude/.devkit/config.json"
+DELETE_BRANCH=$(jq -r '.github.pr.delete_branch // true' "$CONFIG_FILE" 2>/dev/null || echo "true")
+MERGE_METHOD=$(jq -r '.github.pr.merge_method // "squash"' "$CONFIG_FILE" 2>/dev/null || echo "squash")
+
+# Build merge command
+MERGE_ARGS="--$MERGE_METHOD"
+[ "$DELETE_BRANCH" = "true" ] && MERGE_ARGS="$MERGE_ARGS --delete-branch"
+
+gh pr merge "$PR_NUM" $MERGE_ARGS
 git checkout main && git pull
 ```
 
