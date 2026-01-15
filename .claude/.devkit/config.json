@@ -1,0 +1,124 @@
+{
+  "$schema": "./config.schema.json",
+  "project": {
+    "name": "devkit-plugin",
+    "type": "python",
+    "version": "0.0.0"
+  },
+  "hooks": {
+    "session": {
+      "enabled": true,
+      "show_git_status": true
+    },
+    "validate": {
+      "enabled": true,
+      "block_force_push": true
+    },
+    "format": {
+      "enabled": true,
+      "auto_format": true
+    },
+    "plan": {
+      "enabled": true
+    }
+  },
+  "git": {
+    "protected_branches": [
+      "main"
+    ],
+    "conventions": {
+      "types": [
+        "feat",
+        "fix",
+        "chore",
+        "refactor",
+        "test",
+        "docs",
+        "perf",
+        "ci"
+      ],
+      "scopes": {
+        "mode": "strict",
+        "allowed": [],
+        "internal": [
+          "internal",
+          "review",
+          "ci",
+          "deps"
+        ]
+      },
+      "branch_pattern": "{type}/{description}"
+    }
+  },
+  "github": {
+    "url": "https://github.com/vndredev/devkit-plugin"
+  },
+  "arch": {
+    "layers": {}
+  },
+  "linters": {
+    "preset": "strict",
+    "overrides": {}
+  },
+  "managed": {
+    "linters": {
+      ".markdownlint.json": {
+        "template": "linters/common/markdownlint.json.template",
+        "enabled": true
+      },
+      ".markdownlintignore": {
+        "template": "gitignore/markdownlint.ignore",
+        "enabled": true
+      },
+      "ruff.toml": {
+        "template": "linters/python/ruff.toml.template",
+        "enabled": true
+      }
+    },
+    "github": {
+      ".github/workflows/claude.yml": {
+        "template": "github/workflows/claude.yml.template",
+        "enabled": true
+      },
+      ".github/workflows/claude-code-review.yml": {
+        "template": "github/workflows/claude-code-review.yml.template",
+        "enabled": true
+      },
+      ".github/ISSUE_TEMPLATE/bug_report.yml": {
+        "template": "github/ISSUE_TEMPLATE/bug_report.yml.template",
+        "enabled": true
+      },
+      ".github/ISSUE_TEMPLATE/feature_request.yml": {
+        "template": "github/ISSUE_TEMPLATE/feature_request.yml.template",
+        "enabled": true
+      },
+      ".github/ISSUE_TEMPLATE/config.yml": {
+        "template": "github/ISSUE_TEMPLATE/config.yml.template",
+        "enabled": true
+      },
+      ".github/workflows/release.yml": {
+        "template": "github/workflows/release-python.yml.template",
+        "enabled": true
+      }
+    },
+    "docs": {
+      "CLAUDE.md": {
+        "type": "auto_sections",
+        "enabled": true
+      }
+    },
+    "ignore": {
+      ".gitignore": {
+        "template": [
+          "gitignore/common.gitignore",
+          "gitignore/python.gitignore"
+        ],
+        "enabled": true
+      }
+    }
+  },
+  "testing": {
+    "enabled": false,
+    "framework": "pytest"
+  }
+}

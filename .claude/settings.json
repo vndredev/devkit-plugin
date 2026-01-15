@@ -1,0 +1,6 @@
+{
+  "enabledPlugins": {
+    "devkit-plugin-dev@vndredev-marketplace": true,
+    "devkit-plugin@vndredev-marketplace": false
+  }
+}

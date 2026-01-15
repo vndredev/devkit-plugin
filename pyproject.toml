@@ -1,0 +1,18 @@
+[project]
+name = "devkit-plugin"
+version = "0.0.0"
+description = "Claude Code Plugin for automatic code standards"
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = ["ruff>=0.8.0", "pytest>=8.0.0", "pytest-mock>=3.14.0"]
+
+[dependency-groups]
+dev = ["ruff>=0.8.0", "pytest>=8.0.0", "pytest-mock>=3.14.0", "pytest-subtests>=0.14.0", "bandit>=1.7.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
+
+# Ruff config in ruff.toml (canonical source)

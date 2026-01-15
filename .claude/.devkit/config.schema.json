@@ -1,0 +1,286 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DevKit Plugin Config",
+  "type": "object",
+  "required": ["project"],
+  "properties": {
+    "project": {
+      "type": "object",
+      "description": "Project information",
+      "required": ["name", "type"],
+      "properties": {
+        "name": { "type": "string", "description": "Project name" },
+        "type": {
+          "type": "string",
+          "enum": ["python", "node", "nextjs", "typescript", "javascript"],
+          "description": "Project type (python or node-based)"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+",
+          "default": "0.0.0",
+          "description": "Semantic version (starting point for releases)"
+        },
+        "slogan": {
+          "type": "string",
+          "description": "Short tagline for the project"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief project description"
+        },
+        "principles": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Project principles (KISS, YAGNI, etc.)"
+        }
+      }
+    },
+    "hooks": {
+      "type": "object",
+      "description": "Hook configuration",
+      "properties": {
+        "session": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "show_git_status": { "type": "boolean", "default": true }
+          }
+        },
+        "validate": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "block_force_push": { "type": "boolean", "default": true }
+          }
+        },
+        "format": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "auto_format": { "type": "boolean", "default": true }
+          }
+        },
+        "plan": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true }
+          }
+        }
+      }
+    },
+    "git": {
+      "type": "object",
+      "properties": {
+        "protected_branches": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["main"],
+          "description": "Branches protected from force push"
+        },
+        "conventions": {
+          "type": "object",
+          "description": "Git naming conventions for commits and branches",
+          "properties": {
+            "types": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": ["feat", "fix", "chore", "refactor", "test", "docs", "perf", "ci"],
+              "description": "Allowed commit/branch types"
+            },
+            "scopes": {
+              "type": "object",
+              "description": "Scope validation configuration",
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "enum": ["strict", "warn", "off"],
+                  "default": "strict",
+                  "description": "Validation mode: strict=error, warn=warning, off=disabled"
+                },
+                "allowed": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Allowed scope names for commits"
+                },
+                "internal": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "default": ["internal", "review", "ci", "deps"],
+                  "description": "Internal scopes (skip release notes)"
+                }
+              }
+            },
+            "branch_pattern": {
+              "type": "string",
+              "default": "{type}/{description}",
+              "description": "Branch naming pattern"
+            }
+          }
+        }
+      }
+    },
+    "github": {
+      "type": "object",
+      "description": "GitHub repository configuration",
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "GitHub repository URL"
+        }
+      }
+    },
+    "arch": {
+      "type": "object",
+      "description": "Clean Architecture layer configuration",
+      "properties": {
+        "layers": {
+          "type": "object",
+          "description": "Layer definitions with tier numbers",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "tier": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Layer tier (0=innermost, higher=outer)"
+              }
+            },
+            "required": ["tier"]
+          }
+        }
+      }
+    },
+    "linters": {
+      "type": "object",
+      "description": "Linter configuration with presets",
+      "properties": {
+        "preset": {
+          "type": "string",
+          "enum": ["strict", "relaxed", "minimal"],
+          "default": "strict",
+          "description": "Linter preset (strict, relaxed, minimal)"
+        },
+        "overrides": {
+          "type": "object",
+          "description": "Override preset values",
+          "additionalProperties": true
+        }
+      }
+    },
+    "managed": {
+      "type": "object",
+      "description": "Managed files manifest - all generated files",
+      "properties": {
+        "linters": {
+          "type": "object",
+          "description": "Linter config files",
+          "additionalProperties": {
+            "$ref": "#/$defs/managedFile"
+          }
+        },
+        "github": {
+          "type": "object",
+          "description": "GitHub workflows and templates",
+          "additionalProperties": {
+            "$ref": "#/$defs/managedFile"
+          }
+        },
+        "docs": {
+          "type": "object",
+          "description": "Documentation files",
+          "additionalProperties": {
+            "$ref": "#/$defs/managedDoc"
+          }
+        },
+        "ignore": {
+          "type": "object",
+          "description": "Ignore files (.gitignore, etc)",
+          "additionalProperties": {
+            "$ref": "#/$defs/managedIgnore"
+          }
+        }
+      }
+    },
+    "testing": {
+      "type": "object",
+      "description": "Test configuration and requirements",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable test requirement checks"
+        },
+        "framework": {
+          "type": "string",
+          "enum": ["pytest", "jest", "vitest"],
+          "description": "Test framework"
+        },
+        "coverage": {
+          "type": "object",
+          "description": "Coverage requirements",
+          "properties": {
+            "minimum": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "default": 80,
+              "description": "Minimum coverage percentage"
+            },
+            "exclude": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Patterns to exclude from coverage"
+            }
+          }
+        },
+        "required_modules": {
+          "type": "object",
+          "description": "Modules that must have tests with their required functions",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of functions that must be tested"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "managedFile": {
+      "type": "object",
+      "properties": {
+        "template": { "type": "string", "description": "Template path relative to templates/" },
+        "enabled": { "type": "boolean", "default": true }
+      },
+      "required": ["template"]
+    },
+    "managedDoc": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["auto_sections", "auto_generate"],
+          "description": "auto_sections preserves CUSTOM blocks, auto_generate replaces entire file"
+        },
+        "enabled": { "type": "boolean", "default": true }
+      },
+      "required": ["type"]
+    },
+    "managedIgnore": {
+      "type": "object",
+      "properties": {
+        "template": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ],
+          "description": "Single template or array to combine"
+        },
+        "enabled": { "type": "boolean", "default": true }
+      },
+      "required": ["template"]
+    }
+  }
+}

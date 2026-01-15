@@ -1,0 +1,81 @@
+{
+  "_comment": "Linter presets - values used to fill templates",
+  "python": {
+    "strict": {
+      "line_length": 100,
+      "select": "\"E\", \"F\", \"I\", \"W\", \"B\", \"S\", \"UP\", \"C4\", \"SIM\", \"RUF\", \"N\", \"PT\", \"PERF\", \"T20\"",
+      "ignore": "\"E501\""
+    },
+    "relaxed": {
+      "line_length": 120,
+      "select": "\"E\", \"F\", \"I\", \"B\", \"UP\"",
+      "ignore": "\"E501\""
+    },
+    "minimal": {
+      "line_length": 200,
+      "select": "\"F\"",
+      "ignore": ""
+    }
+  },
+  "nextjs": {
+    "strict": {
+      "extends": ["next/core-web-vitals", "next/typescript", "plugin:@typescript-eslint/strict", "plugin:sonarjs/recommended", "plugin:unicorn/recommended", "plugin:import/recommended", "plugin:import/typescript", "plugin:promise/recommended", "prettier"],
+      "plugins": ["sonarjs", "unicorn", "import", "promise"],
+      "semi": false,
+      "singleQuote": true,
+      "tabWidth": 2,
+      "printWidth": 100,
+      "arrowParens": "avoid",
+      "bracketSpacing": true,
+      "endOfLine": "lf"
+    },
+    "relaxed": {
+      "extends": ["next/core-web-vitals", "next/typescript", "prettier"],
+      "plugins": [],
+      "semi": true,
+      "singleQuote": false,
+      "tabWidth": 2,
+      "printWidth": 120,
+      "arrowParens": "always",
+      "bracketSpacing": true,
+      "endOfLine": "lf"
+    },
+    "minimal": {
+      "extends": ["next"],
+      "plugins": [],
+      "semi": true,
+      "singleQuote": false,
+      "tabWidth": 2,
+      "printWidth": 200,
+      "arrowParens": "always",
+      "bracketSpacing": true,
+      "endOfLine": "lf"
+    }
+  },
+  "common": {
+    "strict": {
+      "line_length": 100,
+      "md013": { "line_length": 100 },
+      "md024": { "siblings_only": true },
+      "md033": false,
+      "md041": false,
+      "md046": { "style": "fenced" }
+    },
+    "relaxed": {
+      "line_length": 120,
+      "md013": false,
+      "md024": false,
+      "md033": false,
+      "md041": false,
+      "md046": false
+    },
+    "minimal": {
+      "line_length": 200,
+      "md013": false,
+      "md024": false,
+      "md033": false,
+      "md041": false,
+      "md046": false
+    }
+  }
+}

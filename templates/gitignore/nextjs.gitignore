@@ -1,0 +1,25 @@
+# === Next.js ===
+.next/
+out/
+
+# === Node ===
+node_modules/
+.npm/
+
+# === Build ===
+build/
+dist/
+
+# === Testing ===
+coverage/
+.nyc_output/
+
+# === Vercel ===
+.vercel/
+
+# === TypeScript ===
+*.tsbuildinfo
+next-env.d.ts
+
+# === Turborepo ===
+.turbo/
