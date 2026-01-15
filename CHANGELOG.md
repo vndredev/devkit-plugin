@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.10.0] - 2026-01-15
+## [v0.11.0] - 2026-01-15
 
 ### Fixed
 
@@ -13,6 +13,7 @@
 
 ### Added
 
+- **Docs**: Update /dk docs to manage all documentation
 - **Events**: Auto-create architecture.md when missing
 - **Events**: Add statusline script with devkit integration
 - **Events**: Always show systemmessage in user terminal
