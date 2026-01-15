@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.4.0] - 2026-01-15
+## [v0.5.0] - 2026-01-15
 
 ### Added
 
+- **Arch**: Add ports/protocols and runtime layer guard
 - **Arch**: Add config-driven architecture docs and visualization
 - **Config**: Restructure config with jsonc support and docs templates
 - **Changelog**: Add config-driven changelog with audience support
