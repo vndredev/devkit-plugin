@@ -35,7 +35,30 @@ jobs:
             2. Read .claude/.devkit/config.json for project rules (if exists)
             3. Read modified files for context
             4. Check ALL categories below
-            5. Post: gh pr comment ${{ github.event.pull_request.number }} --body "REVIEW"
+            5. Post review comment: gh pr comment ${{ github.event.pull_request.number }} --body "REVIEW"
+            6. Update PR body checkboxes (see below)
+
+            ## Update PR Body Checkboxes (REQUIRED)
+            After posting your review comment, you MUST update the PR body checkboxes.
+            Check the boxes that passed your review:
+
+            ```bash
+            BODY=$(gh pr view ${{ github.event.pull_request.number }} --json body -q .body)
+
+            # Replace unchecked with checked for passing categories
+            # Security: if no security issues found
+            BODY=$(echo "$BODY" | sed 's/- \[ \] Security OK/- [x] Security OK/')
+            # Bugs: if no bugs found
+            BODY=$(echo "$BODY" | sed 's/- \[ \] No Bugs Found/- [x] No Bugs Found/')
+            # Code Quality: if acceptable
+            BODY=$(echo "$BODY" | sed 's/- \[ \] Code Quality OK/- [x] Code Quality OK/')
+            # Architecture: if acceptable
+            BODY=$(echo "$BODY" | sed 's/- \[ \] Architecture OK/- [x] Architecture OK/')
+
+            gh pr edit ${{ github.event.pull_request.number }} --body "$BODY"
+            ```
+
+            Only check boxes for categories that PASSED. Leave unchecked if issues found.
 
             ## Checklist
 

@@ -88,6 +88,37 @@ def extract_git_args(cmd: str) -> tuple[str, list[str]]:
     return parts[1], parts[2:]
 
 
+# Dangerous gh commands that are always blocked
+BLOCKED_GH_COMMANDS = [
+    "gh repo delete",
+    "gh secret delete",
+    "gh api -X DELETE",
+]
+
+
+def validate_gh_command(cmd: str) -> tuple[bool, str]:
+    """Validate gh CLI commands.
+
+    Blocks dangerous commands like repo delete, secret delete.
+
+    Args:
+        cmd: Full command string.
+
+    Returns:
+        Tuple of (valid, message).
+    """
+    # Check for blocked commands
+    for blocked in BLOCKED_GH_COMMANDS:
+        if blocked in cmd:
+            return False, f"Blocked: '{blocked}' - too dangerous for automatic execution"
+
+    # Warn if pr create without --body (should use template)
+    if "gh pr create" in cmd and "--body" not in cmd:
+        return False, "gh pr create requires --body with PR template"
+
+    return True, "Valid gh command"
+
+
 def main() -> None:
     """Handle PreToolUse hook."""
     # Read hook data
@@ -108,6 +139,23 @@ def main() -> None:
         return
 
     command = tool_input.get("command", "")
+
+    # Validate gh commands
+    if command.startswith("gh "):
+        block_gh = get("hooks.validate.block_dangerous_gh", True)
+        if block_gh:
+            valid, msg = validate_gh_command(command)
+            if not valid:
+                result = {
+                    "hook": HookType.PRE_TOOL_USE.value,
+                    "action": HookAction.DENY.value,
+                    "message": msg,
+                }
+                print(json.dumps(result))
+                sys.exit(0)
+        return
+
+    # Validate git commands
     if not command.startswith("git "):
         return
 

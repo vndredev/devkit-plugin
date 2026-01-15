@@ -12,7 +12,8 @@
     },
     "validate": {
       "enabled": true,
-      "block_force_push": true
+      "block_force_push": true,
+      "block_dangerous_gh": true
     },
     "format": {
       "enabled": true,
