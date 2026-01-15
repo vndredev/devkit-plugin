@@ -37,6 +37,7 @@ def main() -> None:
     has_issues = False
 
     # Git status - compact format
+    git_status_line = ""
     if get("hooks.session.show_git_status", True):
         try:
             branch = git_branch()
@@ -50,7 +51,8 @@ def main() -> None:
             if status["untracked"]:
                 git_parts.append(untracked_tpl.format(count=len(status["untracked"])))
 
-            output_lines.append(" | ".join(git_parts))
+            git_status_line = " | ".join(git_parts)
+            output_lines.append(git_status_line)
         except Exception:  # noqa: S110
             pass
 
@@ -76,12 +78,15 @@ def main() -> None:
         "output": "\n".join(output_lines),
     }
 
-    # Show systemMessage to user for important warnings
+    # Show systemMessage to user - always visible in terminal
     if has_issues:
         warning_tpl = prompts.get(
             "system_warning", "⚠️ Project has issues - check with /dk plugin check"
         )
         result["systemMessage"] = warning_tpl
+    elif git_status_line:
+        # Show git status to user when no issues
+        result["systemMessage"] = git_status_line
 
     print(json.dumps(result))
 
