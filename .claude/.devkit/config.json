@@ -53,7 +53,12 @@
   },
   "github": {
     "url": "https://github.com/vndredev/devkit-plugin",
-    "visibility": "public"
+    "visibility": "public",
+    "pr": {
+      "auto_merge": true,
+      "delete_branch": true,
+      "merge_method": "squash"
+    }
   },
   "arch": {
     "layers": {}

@@ -133,6 +133,28 @@
           "type": "string",
           "format": "uri",
           "description": "GitHub repository URL"
+        },
+        "pr": {
+          "type": "object",
+          "description": "Pull request settings",
+          "properties": {
+            "auto_merge": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable auto-merge when PR is created (requires branch protection)"
+            },
+            "delete_branch": {
+              "type": "boolean",
+              "default": true,
+              "description": "Delete branch after merge"
+            },
+            "merge_method": {
+              "type": "string",
+              "enum": ["squash", "merge", "rebase"],
+              "default": "squash",
+              "description": "Merge method: squash (recommended), merge, or rebase"
+            }
+          }
         }
       }
     },

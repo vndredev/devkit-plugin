@@ -7,9 +7,9 @@ import json
 import subprocess
 from pathlib import Path
 
-from lib.config import get, load_config, clear_cache
+from lib.config import clear_cache, get, load_config
 from lib.git import run_git
-from lib.sync import sync_all, get_plugin_root
+from lib.sync import get_plugin_root, sync_all
 from lib.tools import detect_project_type, detect_project_version
 
 
@@ -253,7 +253,7 @@ def create_config(
         },
         "hooks": {
             "session": {"enabled": True, "show_git_status": True},
-            "validate": {"enabled": True, "block_force_push": True},
+            "validate": {"enabled": True, "block_force_push": True, "block_dangerous_gh": True},
             "format": {"enabled": True, "auto_format": True},
             "plan": {"enabled": True},
         },
@@ -278,7 +278,15 @@ def create_config(
                 "branch_pattern": "{type}/{description}",
             },
         },
-        "github": {"url": github_url, "visibility": github_visibility},
+        "github": {
+            "url": github_url,
+            "visibility": github_visibility,
+            "pr": {
+                "auto_merge": False,
+                "delete_branch": True,
+                "merge_method": "squash",
+            },
+        },
         "deployment": deployment,
         "arch": {"layers": {}},
         "linters": {"preset": "strict", "overrides": {}},
@@ -411,6 +419,10 @@ def configure_actions_permissions(repo: str) -> tuple[bool, str]:
 def update_github_settings(repo: str) -> list[tuple[str, bool, str]]:
     """Update GitHub repo settings and branch protection.
 
+    Reads settings from config.json:
+    - github.pr.merge_method: squash (default), merge, or rebase
+    - github.pr.delete_branch: delete branch after merge (default: true)
+
     Args:
         repo: GitHub repo in format owner/repo
 
@@ -427,7 +439,17 @@ def update_github_settings(repo: str) -> list[tuple[str, bool, str]]:
     else:
         results.append(("release token", True, "Needs RELEASE_PAT secret (personal repo)"))
 
-    # Repo settings: squash merge only
+    # Read PR settings from config
+    merge_method = get("github.pr.merge_method", "squash")
+    delete_branch = get("github.pr.delete_branch", True)
+
+    # Build merge settings based on config
+    allow_squash = "true" if merge_method == "squash" else "false"
+    allow_merge = "true" if merge_method == "merge" else "false"
+    allow_rebase = "true" if merge_method == "rebase" else "false"
+    delete_on_merge = "true" if delete_branch else "false"
+
+    # Repo settings from config
     try:
         subprocess.run(
             [
@@ -437,20 +459,20 @@ def update_github_settings(repo: str) -> list[tuple[str, bool, str]]:
                 "PATCH",
                 f"/repos/{repo}",
                 "-f",
-                "allow_squash_merge=true",
+                f"allow_squash_merge={allow_squash}",
                 "-f",
-                "allow_merge_commit=false",
+                f"allow_merge_commit={allow_merge}",
                 "-f",
-                "allow_rebase_merge=false",
+                f"allow_rebase_merge={allow_rebase}",
                 "-f",
-                "delete_branch_on_merge=true",
+                f"delete_branch_on_merge={delete_on_merge}",
                 "-f",
                 "squash_merge_commit_title=PR_TITLE",
             ],
             check=True,
             capture_output=True,
         )
-        results.append(("repo settings", True, "Squash merge only"))
+        results.append(("repo settings", True, f"merge={merge_method}, delete_branch={delete_branch}"))
     except subprocess.CalledProcessError as e:
         stderr = e.stderr.decode() if e.stderr else str(e)
         results.append(("repo settings", False, stderr))
