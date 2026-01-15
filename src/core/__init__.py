@@ -1,6 +1,10 @@
 """Core module - types, errors, constants.
 
 TIER 0: No internal imports, only Python stdlib.
+
+Exports:
+- Error types: DevkitError, ConfigError, ValidationError, GitError, ArchitectureError
+- Enums: HookType, HookAction, CommitType, ProjectType, ProjectSize
 """
 
 from core.errors import (
