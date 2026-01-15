@@ -51,7 +51,8 @@
     }
   },
   "github": {
-    "url": "https://github.com/vndredev/devkit-plugin"
+    "url": "https://github.com/vndredev/devkit-plugin",
+    "visibility": "public"
   },
   "arch": {
     "layers": {}
