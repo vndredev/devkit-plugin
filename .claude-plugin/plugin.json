@@ -29,6 +29,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "EnterPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PLUGIN_ROOT}\" && PYTHONPATH=src .venv/bin/python src/events/enter_plan.py",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PostToolUse": [
