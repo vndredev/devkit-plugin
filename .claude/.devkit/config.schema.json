@@ -63,13 +63,29 @@
           "type": "object",
           "properties": {
             "enabled": { "type": "boolean", "default": true },
-            "auto_format": { "type": "boolean", "default": true }
+            "auto_format": { "type": "boolean", "default": true },
+            "arch_check": {
+              "type": "boolean",
+              "default": true,
+              "description": "Check architecture violations after src/ file changes"
+            },
+            "auto_sync_arch": {
+              "type": "boolean",
+              "default": true,
+              "description": "Auto-update ARCHITECTURE.md when config or arch files change"
+            }
           }
         },
         "plan": {
           "type": "object",
           "properties": {
-            "enabled": { "type": "boolean", "default": true }
+            "enabled": { "type": "boolean", "default": true },
+            "instructions": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "Custom implementation phase instructions (empty = use defaults)"
+            }
           }
         }
       }

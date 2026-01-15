@@ -64,10 +64,14 @@
     },
     "format": {
       "enabled": true,
-      "auto_format": true
+      "auto_format": true,
+      "arch_check": true,        // Check arch violations after src/ changes
+      "auto_sync_arch": true     // Auto-update ARCHITECTURE.md
     },
     "plan": {
-      "enabled": true
+      "enabled": true,
+      "instructions": []         // Custom implementation steps (empty = defaults)
+      // Example: ["Run tests after changes", "Use /dk arch check"]
     }
   },
 
