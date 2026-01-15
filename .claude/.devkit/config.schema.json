@@ -12,8 +12,8 @@
         "name": { "type": "string", "description": "Project name" },
         "type": {
           "type": "string",
-          "enum": ["python", "node", "nextjs", "typescript", "javascript"],
-          "description": "Project type (python or node-based)"
+          "enum": ["python", "node", "nextjs", "typescript", "javascript", "plugin"],
+          "description": "Project type (python, node-based, or Claude plugin)"
         },
         "version": {
           "type": "string",

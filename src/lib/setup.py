@@ -307,6 +307,10 @@ def create_config(
                 "template": "github/ISSUE_TEMPLATE/config.yml.template",
                 "enabled": True,
             },
+            ".github/PULL_REQUEST_TEMPLATE.md": {
+                "template": "github/PULL_REQUEST_TEMPLATE.md.template",
+                "enabled": True,
+            },
         },
         "docs": {
             "README.md": {

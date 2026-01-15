@@ -15,12 +15,13 @@ from lib.docs import (
 )
 from lib.git import git_branch, git_commit, git_status, is_protected_branch, run_git
 from lib.sync import check_sync_status, render_template, sync_all, sync_docs, sync_linters
-from lib.tools import detect_project_type, format_file, notify, run_linter
+from lib.tools import detect_project_type, detect_project_version, format_file, notify, run_linter
 
 __all__ = [
     "check_sync_status",
     "clear_cache",
     "detect_project_type",
+    "detect_project_version",
     "format_file",
     "generate_claude_md",
     "generate_plugin_md",

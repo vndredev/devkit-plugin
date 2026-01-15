@@ -126,6 +126,10 @@
         "template": "github/ISSUE_TEMPLATE/config.yml.template",
         "enabled": true
       },
+      ".github/PULL_REQUEST_TEMPLATE.md": {
+        "template": "github/PULL_REQUEST_TEMPLATE.md.template",
+        "enabled": true
+      },
       ".github/workflows/release.yml": {
         "template": "github/workflows/release-python.yml.template",
         "enabled": true
