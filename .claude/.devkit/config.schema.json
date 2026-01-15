@@ -208,7 +208,7 @@
       "properties": {
         "layers": {
           "type": "object",
-          "description": "Layer definitions with tier numbers",
+          "description": "Layer definitions with tier numbers, patterns, and descriptions",
           "additionalProperties": {
             "type": "object",
             "properties": {
@@ -216,6 +216,15 @@
                 "type": "integer",
                 "minimum": 0,
                 "description": "Layer tier (0=innermost, higher=outer)"
+              },
+              "patterns": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Glob patterns for layer files (e.g., src/core/**)"
+              },
+              "description": {
+                "type": "string",
+                "description": "Human-readable layer description for documentation"
               }
             },
             "required": ["tier"]

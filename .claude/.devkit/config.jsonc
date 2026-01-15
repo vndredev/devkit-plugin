@@ -76,14 +76,30 @@
   },
 
   // ============================================================================
-  // ARCHITECTURE - Layer configuration
+  // ARCHITECTURE - Layer configuration (Clean Architecture)
   // ============================================================================
   "arch": {
     "layers": {
-      "core": { "tier": 0 },   // Types, errors, constants - no imports
-      "lib": { "tier": 1 },    // Config, git, tools, sync, docs
-      "arch": { "tier": 2 },   // Architecture analysis
-      "events": { "tier": 3 }  // Claude Code hook handlers
+      "core": {
+        "tier": 0,
+        "patterns": ["src/core/**"],
+        "description": "Types, errors, constants - nur stdlib"
+      },
+      "lib": {
+        "tier": 1,
+        "patterns": ["src/lib/**"],
+        "description": "I/O-Adapter: config, git, tools, sync"
+      },
+      "arch": {
+        "tier": 2,
+        "patterns": ["src/arch/**"],
+        "description": "Architecture-Analyse und Visualisierung"
+      },
+      "events": {
+        "tier": 3,
+        "patterns": ["src/events/**"],
+        "description": "Claude Code Hook-Handler"
+      }
     }
   },
 

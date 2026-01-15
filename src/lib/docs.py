@@ -9,6 +9,79 @@ from pathlib import Path
 from lib.config import get, get_project_root
 
 
+def generate_arch_docs(format: str = "full") -> str:
+    """Generate architecture documentation from config.jsonc.
+
+    Generates layer documentation in different formats for use in
+    CLAUDE.md, docs/PLUGIN.md, and README.md.
+
+    Args:
+        format: Output format:
+            - "full": Complete with Mermaid diagram (for CLAUDE.md)
+            - "compact": Table only (for README.md)
+            - "minimal": Single line summary
+
+    Returns:
+        Markdown-formatted architecture documentation.
+    """
+    layers = get("arch.layers", {})
+    if not layers:
+        return ""
+
+    sorted_layers = sorted(layers.items(), key=lambda x: x[1].get("tier", 0))
+
+    if format == "minimal":
+        layer_names = " → ".join(name for name, _ in sorted_layers)
+        return f"**Layers:** {len(layers)} ({layer_names})"
+
+    if format == "compact":
+        lines = [
+            "| Layer | Tier | Description |",
+            "|-------|------|-------------|",
+        ]
+        for name, info in sorted_layers:
+            tier = info.get("tier", 0)
+            desc = info.get("description", "-")
+            lines.append(f"| `{name}` | {tier} | {desc} |")
+        return "\n".join(lines)
+
+    # format == "full" - with Mermaid diagram
+    lines = [
+        "## Architecture",
+        "",
+        "Clean Architecture: Imports nur von niedrigeren Tiers erlaubt.",
+        "",
+        "| Layer | Tier | Description | May Import |",
+        "|-------|------|-------------|------------|",
+    ]
+
+    for name, info in sorted_layers:
+        tier = info.get("tier", 0)
+        desc = info.get("description", "-")
+        # Calculate which layers this layer may import from
+        may_import = ", ".join(
+            n for n, i in sorted_layers if i.get("tier", 0) < tier
+        ) or "stdlib only"
+        lines.append(f"| `{name}` | {tier} | {desc} | {may_import} |")
+
+    # Mermaid Diagram
+    lines.extend([
+        "",
+        "```mermaid",
+        "graph TD",
+    ])
+
+    for i, (name, info) in enumerate(sorted_layers):
+        lines.append(f"    {name}[{name}]")
+        if i > 0:
+            prev_name = sorted_layers[i - 1][0]
+            lines.append(f"    {prev_name} --> {name}")
+
+    lines.append("```")
+
+    return "\n".join(lines)
+
+
 def parse_sections(content: str) -> dict[str, str]:
     """Parse AUTO and CUSTOM sections from markdown.
 
@@ -92,21 +165,11 @@ def generate_auto_section() -> str:
             "- **Core isolated**: Business logic without external dependencies",
         ])
 
-    lines.extend([
-        "",
-        "## Architecture",
-        "",
-        f"- **Type:** {project_type}",
-        f"- **Layers:** {layer_count}",
-    ])
-
-    if layers:
+    # Architecture section (generated from config)
+    arch_docs = generate_arch_docs(format="full")
+    if arch_docs:
         lines.append("")
-        lines.append("| Layer | Tier |")
-        lines.append("|-------|------|")
-        for name, info in sorted(layers.items(), key=lambda x: x[1].get("tier", 0)):
-            tier = info.get("tier", 0)
-            lines.append(f"| {name} | {tier} |")
+        lines.extend(arch_docs.split("\n"))
 
     # Git Conventions section
     conventions = get("git.conventions", {})
@@ -587,6 +650,10 @@ def generate_readme_values() -> dict:
         "install_command": install_command,
         "dev_command": dev_command,
         "build_command": build_command,
+        # Architecture documentation
+        "arch_docs_full": generate_arch_docs(format="full"),
+        "arch_docs_compact": generate_arch_docs(format="compact"),
+        "arch_docs_minimal": generate_arch_docs(format="minimal"),
     }
 
 

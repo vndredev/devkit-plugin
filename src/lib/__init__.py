@@ -5,6 +5,7 @@ TIER 1: May import from core only.
 
 from lib.config import clear_cache, get, get_project_root, load_config
 from lib.docs import (
+    generate_arch_docs,
     generate_claude_md,
     generate_plugin_md,
     get_docs_status,
@@ -23,6 +24,7 @@ __all__ = [
     "detect_project_type",
     "detect_project_version",
     "format_file",
+    "generate_arch_docs",
     "generate_claude_md",
     "generate_plugin_md",
     "get",

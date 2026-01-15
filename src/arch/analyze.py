@@ -359,6 +359,94 @@ def analyze_dependencies(root: Path) -> dict:
     }
 
 
+def analyze_transitive_dependencies(root: Path) -> dict:
+    """Find transitive layer violations (A→B→C chains).
+
+    Detects indirect violations where A imports B and B imports C,
+    but A should not have access to C based on layer rules.
+
+    Args:
+        root: Project root directory.
+
+    Returns:
+        Dict with transitive violations and dependency chains.
+    """
+    project_type = detect_project_type(root)
+    graph = get_dependency_graph(root, project_type)
+
+    # Load layer rules from config
+    layer_config = get("arch.layers", {})
+    if layer_config:
+        layer_order = {name: cfg.get("tier", 0) for name, cfg in layer_config.items()}
+    else:
+        layer_order = {
+            "core": 0, "lib": 1, "arch": 2, "events": 3,
+            "domain": 1, "adapters": 2, "usecases": 3, "entry": 4,
+        }
+
+    # Build layer-to-layer dependency map
+    layer_deps: dict[str, set[str]] = defaultdict(set)
+
+    for file_path, imports in graph.items():
+        parts = Path(file_path).parts
+        if len(parts) < 2:
+            continue
+        source_layer = parts[1]
+        for imp in imports:
+            if imp in layer_order:
+                layer_deps[source_layer].add(imp)
+
+    # Find transitive dependencies (A→B→C)
+    transitive_violations = []
+    chains = []
+
+    for layer_a, direct_deps in layer_deps.items():
+        tier_a = layer_order.get(layer_a, -1)
+        if tier_a == -1:
+            continue
+
+        for layer_b in direct_deps:
+            tier_b = layer_order.get(layer_b, -1)
+            if tier_b == -1:
+                continue
+
+            # Check what B imports (transitive)
+            for layer_c in layer_deps.get(layer_b, set()):
+                tier_c = layer_order.get(layer_c, -1)
+                if tier_c == -1:
+                    continue
+
+                # Record chain
+                chain = f"{layer_a} → {layer_b} → {layer_c}"
+                chains.append({
+                    "chain": chain,
+                    "tiers": f"T{tier_a} → T{tier_b} → T{tier_c}",
+                })
+
+                # Check for transitive violation
+                # (A imports B imports C, but A should not access C directly)
+                if tier_c < tier_a:
+                    transitive_violations.append({
+                        "source": layer_a,
+                        "via": layer_b,
+                        "target": layer_c,
+                        "message": (
+                            f"{layer_a} (T{tier_a}) has transitive access to "
+                            f"{layer_c} (T{tier_c}) via {layer_b}"
+                        ),
+                    })
+
+    return {
+        "layer_dependencies": {k: list(v) for k, v in layer_deps.items()},
+        "chains": chains,
+        "transitive_violations": transitive_violations,
+        "stats": {
+            "total_chains": len(chains),
+            "violation_count": len(transitive_violations),
+        },
+    }
+
+
 def format_analysis_report(analysis: dict) -> str:
     """Format analysis result as readable report.
 

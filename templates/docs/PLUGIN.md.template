@@ -297,25 +297,7 @@ Claude assistant on issues/PRs:
 - Responds to @claude mentions
 - Answers questions about code
 
-## Architecture
-
-Clean Architecture with dependency rule.
-
-```
-src/core/   (TIER 0) - Types, errors, constants
-src/lib/    (TIER 1) - Config, git, tools, sync
-src/arch/   (TIER 2) - Architecture analysis
-src/events/ (TIER 3) - Claude Code hook handlers
-```
-
-**Rule**: Higher tiers may only import from lower tiers.
-
-| Layer | Tier | Responsibility |
-|-------|------|----------------|
-| core | 0 | Pure types, no I/O |
-| lib | 1 | I/O adapters (config, git, sync) |
-| arch | 2 | Dependency analysis |
-| events | 3 | Hook event handlers |
+{{arch_docs_full}}
 
 ## Commit Conventions
 

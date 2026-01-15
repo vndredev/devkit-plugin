@@ -18,6 +18,10 @@
 {{build_command}}
 ```
 
+## Architecture
+
+{{arch_docs_compact}}
+
 ## Commands
 
 All devkit commands via `/dk`:

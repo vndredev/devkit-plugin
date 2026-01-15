@@ -8,7 +8,9 @@ import re
 from pathlib import Path
 
 from lib.config import get, get_project_root
-from lib.docs import update_claude_md, update_plugin_md, update_readme_md
+
+# NOTE: lib.docs imports are done lazily in functions to avoid circular imports
+# (docs.py imports get_plugin_root and render_template from sync.py)
 
 
 def get_plugin_root() -> Path:
@@ -193,6 +195,9 @@ def sync_prettierignore(root: Path) -> tuple[bool, str]:
 
 def sync_github(root: Path) -> list[tuple[str, bool, str]]:
     """Sync GitHub workflows and issue templates."""
+    # Lazy import to avoid circular imports
+    from lib.docs import generate_arch_docs
+
     results = []
     plugin_root = get_plugin_root()
     github_templates = plugin_root / "templates" / "github"
@@ -208,6 +213,10 @@ def sync_github(root: Path) -> list[tuple[str, bool, str]]:
     values = {
         "project_name": project_name,
         "github_url": github_url,
+        # Architecture documentation for templates
+        "arch_docs_full": generate_arch_docs(format="full"),
+        "arch_docs_compact": generate_arch_docs(format="compact"),
+        "arch_docs_minimal": generate_arch_docs(format="minimal"),
     }
 
     # Ensure .github directories exist
@@ -296,6 +305,9 @@ def sync_linters(root: Path | None = None) -> list[tuple[str, bool, str]]:
 
 def sync_docs(root: Path | None = None) -> list[tuple[str, bool, str]]:
     """Sync documentation files."""
+    # Lazy import to avoid circular imports
+    from lib.docs import update_claude_md, update_plugin_md
+
     if root is None:
         root = get_project_root()
 
@@ -316,6 +328,14 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
     Reads from config.managed to determine what to sync.
     Falls back to project-type based sync if managed section is missing.
     """
+    # Lazy imports to avoid circular imports
+    from lib.docs import (
+        generate_arch_docs,
+        update_claude_md,
+        update_plugin_md,
+        update_readme_md,
+    )
+
     if root is None:
         root = get_project_root()
 
@@ -347,6 +367,10 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
         "project_name": project_name,
         "github_url": github_url,
         "preset": preset,
+        # Architecture documentation for templates
+        "arch_docs_full": generate_arch_docs(format="full"),
+        "arch_docs_compact": generate_arch_docs(format="compact"),
+        "arch_docs_minimal": generate_arch_docs(format="minimal"),
     }
 
     # Add preset values based on project type
