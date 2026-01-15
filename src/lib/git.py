@@ -103,7 +103,7 @@ def is_protected_branch(protected: list[str] | None = None) -> bool:
         True if current branch is protected.
     """
     if protected is None:
-        protected = ["main", "master"]
+        protected = ["main"]  # Matches schema default
 
     current = git_branch()
     return current in protected

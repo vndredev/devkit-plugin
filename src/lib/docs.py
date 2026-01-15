@@ -552,7 +552,7 @@ def generate_plugin_md() -> str:
     lines.extend([
         "## Commands",
         "",
-        "All commands via `/dk`:".format(),
+        "All commands via `/dk` - run `/dk` without args to see all.",
         "",
         "| Command | Description |",
         "|---------|-------------|",

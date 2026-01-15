@@ -232,6 +232,8 @@ All commands use the `/dk` prefix.
 | `/dk vercel env` | Manage Vercel env vars |
 | `/dk neon branch list` | List NeonDB branches |
 | `/dk neon branch create` | Create NeonDB branch |
+| `/dk neon branch delete` | Delete NeonDB branch |
+| `/dk neon branch switch` | Switch NeonDB branch |
 | `/dk neon cleanup` | Clean stale branches |
 
 ### Documentation

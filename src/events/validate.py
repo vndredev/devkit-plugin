@@ -24,7 +24,7 @@ def validate_branch_name(branch: str) -> tuple[bool, str]:
     Returns:
         Tuple of (valid, message).
     """
-    protected = get("git.protected_branches", ["main", "master"])
+    protected = get("git.protected_branches", ["main"])
     if branch in protected:
         return True, "Protected branch"
 
