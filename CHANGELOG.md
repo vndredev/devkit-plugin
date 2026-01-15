@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.12.0] - 2026-01-15
+## [v0.13.0] - 2026-01-15
 
 ### Fixed
 
@@ -14,6 +14,7 @@
 
 ### Added
 
+- **Plugin**: Expand recommended_defaults with all hook prompts
 - **Plugin**: Add config upgrade and completeness check
 - **Docs**: Update /dk docs to manage all documentation
 - **Events**: Auto-create architecture.md when missing
