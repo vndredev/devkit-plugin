@@ -24,53 +24,43 @@ def main() -> None:
     if not get("hooks.session.enabled", True):
         return
 
-    # Gather context
+    # Gather context - only show what's relevant
     output_lines = []
+    has_issues = False
 
-    # Project info
-    project_name = get("project.name", "unknown")
-    project_type = get("project.type", "unknown")
-    output_lines.extend([
-        f"Project: {project_name}",
-        f"Type: {project_type}",
-        "",
-    ])
-
-    # Git status
+    # Git status - compact format
     if get("hooks.session.show_git_status", True):
         try:
             branch = git_branch()
             status = git_status()
-            output_lines.append(f"Branch: {branch}")
 
+            git_parts = [f"📍 {branch}"]
             if status["staged"]:
-                output_lines.append(f"Staged: {len(status['staged'])} files")
+                git_parts.append(f"⚡{len(status['staged'])} staged")
             if status["modified"]:
-                output_lines.append(f"Modified: {len(status['modified'])} files")
+                git_parts.append(f"✏️{len(status['modified'])} modified")
             if status["untracked"]:
-                output_lines.append(f"Untracked: {len(status['untracked'])} files")
+                git_parts.append(f"❓{len(status['untracked'])} untracked")
 
-            output_lines.append("")
+            output_lines.append(" | ".join(git_parts))
         except Exception:  # noqa: S110
             pass
 
-    # Health check
+    # Health check - only show if issues
     try:
         health_results = check_all()
         health_warning = format_compact(health_results)
         if health_warning:
-            output_lines.append(health_warning)
             output_lines.append("")
+            output_lines.append(health_warning)
+            has_issues = True
     except Exception:  # noqa: S110
         pass
 
-    # Dev workflow reminder
-    output_lines.extend([
-        "Use `/dk dev` for development workflow:",
-        "  /dk dev feat <desc>  - New feature",
-        "  /dk dev fix <desc>   - Bug fix",
-        "  /dk arch check       - Check architecture",
-    ])
+    # Commands hint - only if no issues (otherwise they know what to fix)
+    if not has_issues:
+        output_lines.append("")
+        output_lines.append("Use `/dk` for commands, `/dk dev` for workflow")
 
     # Output
     result = {

@@ -43,7 +43,7 @@ def validate_commit_message(msg: str) -> tuple[bool, str]:
     """Validate commit message follows convention from config.
 
     Args:
-        msg: Commit message to validate.
+        msg: Commit message to validate (first line only).
 
     Returns:
         Tuple of (valid, message).
@@ -54,11 +54,14 @@ def validate_commit_message(msg: str) -> tuple[bool, str]:
     allowed_scopes = get("git.conventions.scopes.allowed", [])
     internal_scopes = get("git.conventions.scopes.internal", [])
 
+    # Only validate first line (title)
+    first_line = msg.strip().split("\n")[0]
+
     # Build pattern from config types
     types_pattern = "|".join(types)
     pattern = rf"^({types_pattern})(\([^)]+\))?: .+"
 
-    match = re.match(pattern, msg)
+    match = re.match(pattern, first_line)
     if not match:
         return False, f"Commit should match: type(scope): message (types: {types_pattern})"
 
@@ -86,6 +89,40 @@ def extract_git_args(cmd: str) -> tuple[str, list[str]]:
         return "", []
 
     return parts[1], parts[2:]
+
+
+def extract_commit_message(cmd: str) -> str | None:
+    """Extract commit message from git commit command.
+
+    Handles both simple -m "msg" and HEREDOC syntax.
+
+    Args:
+        cmd: Full git commit command string.
+
+    Returns:
+        Commit message or None if not found.
+    """
+    # Try HEREDOC first: git commit -m "$(cat <<'EOF'\nmessage\nEOF\n)"
+    heredoc_patterns = [
+        r'-m\s+"\$\(cat\s+<<[\'"]?EOF[\'"]?\s*\n(.+?)\nEOF',  # <<EOF or <<'EOF'
+        r"-m\s+'\$\(cat\s+<<['\"]?EOF['\"]?\s*\n(.+?)\nEOF",  # single quotes
+    ]
+    for pattern in heredoc_patterns:
+        match = re.search(pattern, cmd, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+
+    # Try simple -m "message" or -m 'message'
+    simple_patterns = [
+        r'-m\s+"([^"]+)"',  # -m "message"
+        r"-m\s+'([^']+)'",  # -m 'message'
+    ]
+    for pattern in simple_patterns:
+        match = re.search(pattern, cmd)
+        if match:
+            return match.group(1)
+
+    return None
 
 
 # Dangerous gh commands that are always blocked
@@ -191,23 +228,19 @@ def main() -> None:
         except (ValueError, IndexError):
             pass
 
-    # Validate commit message
-    if subcmd == "commit" and "-m" in args:
-        try:
-            idx = args.index("-m")
-            if idx + 1 < len(args):
-                msg = args[idx + 1]
-                valid, err = validate_commit_message(msg)
-                if not valid:
-                    result = {
-                        "hook": HookType.PRE_TOOL_USE.value,
-                        "action": HookAction.DENY.value,
-                        "message": err,
-                    }
-                    print(json.dumps(result))
-                    sys.exit(0)
-        except (ValueError, IndexError):
-            pass
+    # Validate commit message (supports both -m "msg" and HEREDOC)
+    if subcmd == "commit" and "-m" in command:
+        msg = extract_commit_message(command)
+        if msg:
+            valid, err = validate_commit_message(msg)
+            if not valid:
+                result = {
+                    "hook": HookType.PRE_TOOL_USE.value,
+                    "action": HookAction.DENY.value,
+                    "message": err,
+                }
+                print(json.dumps(result))
+                sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -10,27 +10,50 @@ import sys
 from core.types import HookType
 from lib.config import get
 
-LOOP_INSTRUCTIONS = """
-## Implementation Phase
+# Default instructions if not configured
+DEFAULT_INSTRUCTIONS = [
+    "Complete one task at a time, mark done in todo list",
+    "Run linters after code changes",
+    "Run tests if available",
+    "Use conventional commits: type(scope): message",
+    "Ask if blocked or unclear",
+]
 
-You are now in implementation mode. Follow these steps:
 
-1. **Work through the plan systematically**
-   - Complete one task at a time
-   - Mark tasks as done in your todo list
+def build_instructions() -> str:
+    """Build implementation instructions from config or defaults.
 
-2. **Test as you go**
-   - Run linters after code changes
-   - Run tests if available
+    Returns:
+        Formatted instruction string.
+    """
+    # Get project-specific instructions from config
+    custom_instructions = get("hooks.plan.instructions", [])
+    project_type = get("project.type", "unknown")
 
-3. **Commit logical chunks**
-   - Use conventional commits: type(scope): message
-   - Don't batch too many changes
+    # Use custom if provided, otherwise defaults
+    instructions = custom_instructions if custom_instructions else DEFAULT_INSTRUCTIONS
 
-4. **Ask if blocked**
-   - If unclear about requirements, ask
-   - If hitting errors, show them
-"""
+    # Add project-type specific hints
+    type_hints = {
+        "python": "Use `uv run pytest` for tests, `uv run ruff check` for linting",
+        "nextjs": "Use `npm test` for tests, `npm run lint` for linting",
+        "node": "Use `npm test` for tests, `npm run lint` for linting",
+    }
+
+    lines = [
+        "## Implementation Phase",
+        "",
+    ]
+
+    for i, instruction in enumerate(instructions, 1):
+        lines.append(f"{i}. {instruction}")
+
+    # Add type-specific hint
+    if project_type in type_hints:
+        lines.append("")
+        lines.append(f"💡 {type_hints[project_type]}")
+
+    return "\n".join(lines)
 
 
 def main() -> None:
@@ -51,10 +74,10 @@ def main() -> None:
     if tool_name != "ExitPlanMode":
         return
 
-    # Output loop instructions
+    # Output loop instructions (from config or defaults)
     result = {
         "hook": HookType.POST_TOOL_USE.value,
-        "output": LOOP_INSTRUCTIONS.strip(),
+        "output": build_instructions(),
     }
     print(json.dumps(result))
 

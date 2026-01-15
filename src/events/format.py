@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PostToolUse hook handler for Write/Edit.
 
-Formats files and provides hints.
+Formats files, checks architecture, and provides hints.
 """
 
 import json
@@ -11,6 +11,67 @@ from pathlib import Path
 from core.types import HookType
 from lib.config import get
 from lib.tools import format_file
+
+
+def check_arch_violation(file_path: str) -> str | None:
+    """Check if file change introduces architecture violation.
+
+    Args:
+        file_path: Path to the changed file.
+
+    Returns:
+        Warning message if violation found, None otherwise.
+    """
+    # Only check src/ Python files
+    if "/src/" not in file_path or not file_path.endswith(".py"):
+        return None
+
+    try:
+        from arch.check import check_arch
+        result = check_arch()
+
+        if not result["ok"] and result["violations"]:
+            # Find violations related to this file
+            for v in result["violations"]:
+                if file_path.endswith(v["file"].lstrip("./")):
+                    return f"⚠️ Arch violation: {v['message']}"
+
+        return None
+    except Exception:  # noqa: S110
+        return None
+
+
+def sync_architecture_md(file_path: str) -> str | None:
+    """Auto-update ARCHITECTURE.md when arch-related files change.
+
+    Triggers on:
+    - config.jsonc changes (arch.layers might have changed)
+    - src/arch/ file changes
+
+    Args:
+        file_path: Path to the changed file.
+
+    Returns:
+        Status message if updated, None otherwise.
+    """
+    # Check if this is a file that affects architecture docs
+    triggers = [
+        "config.jsonc",
+        "/src/arch/",
+    ]
+
+    should_update = any(trigger in file_path for trigger in triggers)
+    if not should_update:
+        return None
+
+    try:
+        from arch.docs import update_architecture_md
+        success, msg = update_architecture_md()
+        if success:
+            return "📄 Updated docs/ARCHITECTURE.md"
+        return None
+    except Exception:  # noqa: S110
+        return None
 
 
 def main() -> None:
@@ -44,14 +105,39 @@ def main() -> None:
     if auto_format:
         success, _msg = format_file(file_path)
         if success:
-            messages.append(f"Formatted: {Path(file_path).name}")
+            messages.append(f"✓ Formatted: {Path(file_path).name}")
 
-    # Check for missing tests
+    # Check for missing tests - only for NEW files in src/
     filepath = Path(file_path)
-    if filepath.suffix == ".py" and not filepath.name.startswith("test_"):
-        test_file = filepath.parent / f"test_{filepath.name}"
+    is_new_file = tool_name == "Write"
+    is_source_file = "/src/" in file_path and filepath.suffix == ".py"
+    is_not_test = not filepath.name.startswith("test_")
+    is_not_init = filepath.name != "__init__.py"
+
+    if is_new_file and is_source_file and is_not_test and is_not_init:
+        # Check if test file exists in tests/ directory
+        # src/lib/config.py -> tests/test_config.py
+        test_file_name = f"test_{filepath.name}"
+        project_root = get("_project_root", filepath.parent.parent.parent)
+        tests_dir = Path(project_root) / "tests"
+        test_file = tests_dir / test_file_name
+
         if not test_file.exists():
-            messages.append(f"Consider adding tests: test_{filepath.name}")
+            messages.append(f"💡 New file - consider adding: tests/{test_file_name}")
+
+    # Check architecture violations for src/ files
+    arch_check = get("hooks.format.arch_check", True)
+    if arch_check:
+        arch_warning = check_arch_violation(file_path)
+        if arch_warning:
+            messages.append(arch_warning)
+
+    # Auto-update ARCHITECTURE.md when arch-related files change
+    auto_sync_arch = get("hooks.format.auto_sync_arch", True)
+    if auto_sync_arch:
+        sync_msg = sync_architecture_md(file_path)
+        if sync_msg:
+            messages.append(sync_msg)
 
     # Output
     if messages:
