@@ -6,13 +6,11 @@ TIER 1: May import from core only.
 from lib.config import clear_cache, get, get_project_root, load_config
 from lib.docs import (
     generate_arch_docs,
-    generate_architecture_md,
     generate_claude_md,
     generate_plugin_md,
     get_docs_status,
     merge_sections,
     parse_sections,
-    update_architecture_md,
     update_claude_md,
     update_plugin_md,
 )
@@ -27,7 +25,6 @@ __all__ = [
     "detect_project_version",
     "format_file",
     "generate_arch_docs",
-    "generate_architecture_md",
     "generate_claude_md",
     "generate_plugin_md",
     "get",
@@ -47,7 +44,6 @@ __all__ = [
     "sync_all",
     "sync_docs",
     "sync_linters",
-    "update_architecture_md",
     "update_claude_md",
     "update_plugin_md",
 ]
