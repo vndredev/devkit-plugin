@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.15.0] - 2026-01-15
+## [v0.16.0] - 2026-01-15
 
 ### Fixed
 
@@ -14,6 +14,7 @@
 
 ### Added
 
+- **Events**: Add pretooluse:enterplanmode hook
 - **Config**: Add project identity and improve config upgrade
 - **Plugin**: Add smart comments to config sections
 - **Plugin**: Expand recommended_defaults with all hook prompts
