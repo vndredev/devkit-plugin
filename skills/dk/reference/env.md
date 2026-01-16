@@ -1,27 +1,29 @@
 # /dk env
 
-Environment variable sync for Vercel + GitHub.
+**CRITICAL:** Environment variable sync for Vercel + GitHub.
+
+**YOU MUST use `/dk env` commands for ALL env var management.**
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `/dk env sync` | Sync env files to Vercel + GitHub |
-| `/dk env pull` | Pull env vars from Vercel |
-| `/dk env list` | List current env vars |
-| `/dk env clean` | Remove unused env vars |
+| Command         | Description                       |
+| --------------- | --------------------------------- |
+| `/dk env sync`  | Sync env files to Vercel + GitHub |
+| `/dk env pull`  | Pull env vars from Vercel         |
+| `/dk env list`  | List current env vars             |
+| `/dk env clean` | Remove unused env vars            |
 
 ---
 
 ## Environment Files
 
-| File | Purpose | Synced to | Git |
-|------|---------|-----------|-----|
-| `.env` | Shared defaults | - | ✅ commit |
-| `.env.production` | Production | Vercel Production + GitHub | ❌ gitignore |
-| `.env.preview` | Preview | Vercel Preview | ❌ gitignore |
-| `.env.development` | Development | Vercel Development | ❌ gitignore |
-| `.env.local` | Local overrides | Not synced | ❌ gitignore |
+| File               | Purpose         | Synced to                  | Git          |
+| ------------------ | --------------- | -------------------------- | ------------ |
+| `.env`             | Shared defaults | -                          | ✅ commit    |
+| `.env.production`  | Production      | Vercel Production + GitHub | ❌ gitignore |
+| `.env.preview`     | Preview         | Vercel Preview             | ❌ gitignore |
+| `.env.development` | Development     | Vercel Development         | ❌ gitignore |
+| `.env.local`       | Local overrides | Not synced                 | ❌ gitignore |
 
 ---
 
@@ -91,12 +93,12 @@ Remove env vars NOT in source files:
 
 ## Project Type Matrix
 
-| Type | Vercel | GitHub | Notes |
-|------|--------|--------|-------|
-| `nextjs` | ✅ | ✅ | Full sync |
-| `node` | ✅ | ✅ | Full sync |
-| `python` | ❌ | ✅ | No Vercel |
-| `plugin` | ❌ | ✅ | No Vercel |
+| Type     | Vercel | GitHub | Notes     |
+| -------- | ------ | ------ | --------- |
+| `nextjs` | ✅     | ✅     | Full sync |
+| `node`   | ✅     | ✅     | Full sync |
+| `python` | ❌     | ✅     | No Vercel |
+| `plugin` | ❌     | ✅     | No Vercel |
 
 ---
 
@@ -104,11 +106,11 @@ Remove env vars NOT in source files:
 
 When using Neon-Vercel integration, `DATABASE_URL` is managed automatically:
 
-| Environment | Branch | Set by |
-|-------------|--------|--------|
-| Production | `main` | Neon-Vercel Integration |
-| Preview | `preview/<branch>` | Auto per PR |
-| Development | `vercel-dev` | Neon-Vercel Integration |
+| Environment | Branch             | Set by                  |
+| ----------- | ------------------ | ----------------------- |
+| Production  | `main`             | Neon-Vercel Integration |
+| Preview     | `preview/<branch>` | Auto per PR             |
+| Development | `vercel-dev`       | Neon-Vercel Integration |
 
 **Do NOT include DATABASE_URL in `.env.production`** when using Neon-Vercel integration.
 

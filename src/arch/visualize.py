@@ -65,11 +65,13 @@ def generate_mermaid_diagram(
 
     # Style violations if requested
     if show_violations:
-        lines.extend([
-            "",
-            "    linkStyle default stroke:#333",
-            "    classDef violation stroke:#f00,stroke-width:2px",
-        ])
+        lines.extend(
+            [
+                "",
+                "    linkStyle default stroke:#333",
+                "    classDef violation stroke:#f00,stroke-width:2px",
+            ]
+        )
 
     lines.append("```")
 
@@ -157,7 +159,13 @@ def generate_dependency_matrix(deps: dict[str, list[str]], layers: dict | None =
     max_name = max(len(name) for name in layer_names)
     header = " " * (max_name + 2) + " ".join(f"{n[:3]:>3}" for n in layer_names)
 
-    lines = ["Dependency Matrix (row imports column)", "=" * len(header), "", header, "-" * len(header)]
+    lines = [
+        "Dependency Matrix (row imports column)",
+        "=" * len(header),
+        "",
+        header,
+        "-" * len(header),
+    ]
 
     for src in layer_names:
         row = f"{src:>{max_name}} │"

@@ -5,8 +5,9 @@ TIER 1: May import from core only.
 
 import json
 import re
-import tomllib
 from pathlib import Path
+
+import tomllib
 
 
 def get_version(root: Path | None = None) -> str:

@@ -59,19 +59,21 @@ def generate_arch_docs(format: str = "full") -> str:
         tier = info.get("tier", 0)
         desc = info.get("description", "-")
         # Calculate which layers this layer may import from
-        may_import = ", ".join(
-            n for n, i in sorted_layers if i.get("tier", 0) < tier
-        ) or "stdlib only"
+        may_import = (
+            ", ".join(n for n, i in sorted_layers if i.get("tier", 0) < tier) or "stdlib only"
+        )
         lines.append(f"| `{name}` | {tier} | {desc} | {may_import} |")
 
     # Mermaid Diagram
-    lines.extend([
-        "",
-        "```mermaid",
-        "graph TD",
-    ])
+    lines.extend(
+        [
+            "",
+            "```mermaid",
+            "graph TD",
+        ]
+    )
 
-    for i, (name, info) in enumerate(sorted_layers):
+    for i, (name, _info) in enumerate(sorted_layers):
         lines.append(f"    {name}[{name}]")
         if i > 0:
             prev_name = sorted_layers[i - 1][0]
@@ -135,9 +137,7 @@ def generate_auto_section() -> str:
     project_description = get("project.description", "")
     project_principles = get("project.principles", [])
 
-    # Architecture
-    layers = get("arch.layers", {})
-    layer_count = len(layers)
+    # Architecture (layers used below for arch_docs)
 
     lines = []
 
@@ -159,11 +159,13 @@ def generate_auto_section() -> str:
                 lines.append(f"- {p}")
     else:
         # Default principles
-        lines.extend([
-            "- **Dependency Rule**: Only import from lower tiers",
-            "- **Separation**: Each layer has one responsibility",
-            "- **Core isolated**: Business logic without external dependencies",
-        ])
+        lines.extend(
+            [
+                "- **Dependency Rule**: Only import from lower tiers",
+                "- **Separation**: Each layer has one responsibility",
+                "- **Core isolated**: Business logic without external dependencies",
+            ]
+        )
 
     # Architecture section (generated from config)
     arch_docs = generate_arch_docs(format="full")
@@ -174,11 +176,13 @@ def generate_auto_section() -> str:
     # Git Conventions section
     conventions = get("git.conventions", {})
     if conventions:
-        lines.extend([
-            "",
-            "## Git Conventions",
-            "",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Git Conventions",
+                "",
+            ]
+        )
 
         # Types
         types = conventions.get("types", [])
@@ -240,51 +244,72 @@ def generate_auto_section() -> str:
         required_modules = testing.get("required_modules", {})
         total_funcs = sum(len(funcs) for funcs in required_modules.values())
 
-        lines.extend([
-            "## Testing",
-            "",
-            f"**Framework:** `{framework}` | **Coverage:** ≥{coverage_min}%",
-            "",
-        ])
+        lines.extend(
+            [
+                "## Testing",
+                "",
+                f"**Framework:** `{framework}` | **Coverage:** ≥{coverage_min}%",
+                "",
+            ]
+        )
 
         if required_modules:
             mod_count = len(required_modules)
             lines.append(f"**Required Tests:** {mod_count} modules, {total_funcs} functions")
             lines.append("")
 
-    lines.extend([
-        "## Commands",
-        "",
-        "All commands via `/dk` - run `/dk` without args to see all.",
-        "",
-        "## Development",
-        "",
-    ])
+    lines.extend(
+        [
+            "## Commands",
+            "",
+            "**CRITICAL:** All commands via `/dk` - run `/dk` without args to see all.",
+            "",
+            "**YOU MUST use `/dk` commands - NEVER use raw git/gh/vercel commands directly.**",
+            "",
+            "## Development",
+            "",
+        ]
+    )
 
     # Type-specific development commands
     if project_type == "python":
-        lines.extend([
-            "```bash",
-            "# Always use uv run for Python",
-            "uv run pytest tests/",
-            "uv run python src/...",
-            "```",
-        ])
+        lines.extend(
+            [
+                "```bash",
+                "# YOU MUST use uv run for Python",
+                "uv run pytest tests/",
+                "uv run python src/...",
+                "```",
+            ]
+        )
     else:
         # Node-based projects (node, nextjs, typescript, javascript)
         test_framework = get("testing.framework", "jest")
-        lines.extend([
-            "```bash",
-            "# Development",
-            "npm run dev",
+        lines.extend(
+            [
+                "```bash",
+                "# Development",
+                "npm run dev",
+                "",
+                "# Testing",
+                f"npm test  # {test_framework}",
+                "",
+                "# Build",
+                "npm run build",
+                "```",
+            ]
+        )
+
+    # Resources section - documentation tools
+    lines.extend(
+        [
             "",
-            "# Testing",
-            f"npm test  # {test_framework}",
+            "## Resources",
             "",
-            "# Build",
-            "npm run build",
-            "```",
-        ])
+            "- **Claude Code docs**: ALWAYS use Task tool with `subagent_type=claude-code-guide`",
+            "- **Library docs**: ALWAYS use Context7 MCP (`resolve-library-id` → `query-docs`)",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -362,18 +387,20 @@ def generate_claude_md(root: Path | None = None) -> str:
     if project_slogan:
         lines.extend(["", f"> *{project_slogan}*"])
 
-    lines.extend([
-        "",
-        "<!-- AUTO:START - Generated by devkit-plugin. DO NOT EDIT. -->",
-        new_auto,
-        "<!-- AUTO:END -->",
-        "",
-        "<!-- CUSTOM:START - Your documentation below. Preserved during updates. -->",
-        "## Project Specific",
-        "",
-        "_Add your documentation here._",
-        "<!-- CUSTOM:END -->",
-    ])
+    lines.extend(
+        [
+            "",
+            "<!-- AUTO:START - Generated by devkit-plugin. DO NOT EDIT. -->",
+            new_auto,
+            "<!-- AUTO:END -->",
+            "",
+            "<!-- CUSTOM:START - Your documentation below. Preserved during updates. -->",
+            "## Project Specific",
+            "",
+            "_Add your documentation here._",
+            "<!-- CUSTOM:END -->",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -465,30 +492,36 @@ def generate_plugin_md() -> str:
     lines.extend(["## Quick Start", ""])
 
     if project_type in ("node", "nextjs", "typescript", "javascript"):
-        lines.extend([
-            "```bash",
-            "npm install          # Install dependencies",
-            "npm run dev          # Start development server",
-            "npm run build        # Build for production",
-            "```",
-        ])
+        lines.extend(
+            [
+                "```bash",
+                "npm install          # Install dependencies",
+                "npm run dev          # Start development server",
+                "npm run build        # Build for production",
+                "```",
+            ]
+        )
     elif project_type == "python":
-        lines.extend([
-            "```bash",
-            "uv sync              # Install dependencies",
-            "uv run pytest        # Run tests",
-            "uv run python src/   # Run application",
-            "```",
-        ])
+        lines.extend(
+            [
+                "```bash",
+                "uv sync              # Install dependencies",
+                "uv run pytest        # Run tests",
+                "uv run python src/   # Run application",
+                "```",
+            ]
+        )
     else:
         lines.extend(["See README.md for setup instructions."])
 
     # Architecture section
-    lines.extend([
-        "",
-        "## Architecture",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Architecture",
+            "",
+        ]
+    )
 
     if layers:
         lines.append(f"Clean Architecture with {len(layers)} layers.")
@@ -499,14 +532,16 @@ def generate_plugin_md() -> str:
             tier = info.get("tier", 0)
             lines.append(f"src/{name}/  (TIER {tier})")
 
-        lines.extend([
-            "```",
-            "",
-            "**Rule**: Higher tiers may only import from lower tiers.",
-            "",
-            "| Layer | Tier | Responsibility |",
-            "|-------|------|----------------|",
-        ])
+        lines.extend(
+            [
+                "```",
+                "",
+                "**Rule**: Higher tiers may only import from lower tiers.",
+                "",
+                "| Layer | Tier | Responsibility |",
+                "|-------|------|----------------|",
+            ]
+        )
 
         # Layer descriptions based on common names
         layer_descriptions = {
@@ -530,40 +565,46 @@ def generate_plugin_md() -> str:
         lines.append("No layers configured. Add layers in config.jsonc.")
 
     # Configuration section
-    lines.extend([
-        "",
-        "## Configuration",
-        "",
-        "Location: `.claude/.devkit/config.jsonc`",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Configuration",
+            "",
+            "Location: `.claude/.devkit/config.jsonc`",
+            "",
+        ]
+    )
 
     # Key settings
     github_pr = get("github.pr", {})
     changelog = get("changelog", {})
     scopes = get("git.conventions.scopes", {})
 
-    lines.extend([
-        "### Key Settings",
-        "",
-        "| Setting | Value |",
-        "|---------|-------|",
-        f"| `project.type` | {project_type} |",
-        f"| `github.pr.auto_merge` | {github_pr.get('auto_merge', False)} |",
-        f"| `github.pr.merge_method` | {github_pr.get('merge_method', 'squash')} |",
-        f"| `changelog.audience` | {changelog.get('audience', 'developer')} |",
-        "",
-    ])
+    lines.extend(
+        [
+            "### Key Settings",
+            "",
+            "| Setting | Value |",
+            "|---------|-------|",
+            f"| `project.type` | {project_type} |",
+            f"| `github.pr.auto_merge` | {github_pr.get('auto_merge', False)} |",
+            f"| `github.pr.merge_method` | {github_pr.get('merge_method', 'squash')} |",
+            f"| `changelog.audience` | {changelog.get('audience', 'developer')} |",
+            "",
+        ]
+    )
 
     # Allowed scopes
     allowed_scopes = scopes.get("allowed", [])
     if allowed_scopes:
-        lines.extend([
-            "### Allowed Scopes",
-            "",
-            "| Scope | Usage |",
-            "|-------|-------|",
-        ])
+        lines.extend(
+            [
+                "### Allowed Scopes",
+                "",
+                "| Scope | Usage |",
+                "|-------|-------|",
+            ]
+        )
 
         scope_descriptions = {
             "ui": "UI components, styling",
@@ -586,18 +627,22 @@ def generate_plugin_md() -> str:
         lines.append("")
 
     # Commands section
-    lines.extend([
-        "## Commands",
-        "",
-        "All commands via `/dk` - run `/dk` without args to see all.",
-        "",
-        "| Command | Description |",
-        "|---------|-------------|",
-        "| `/dk dev feat <desc>` | New feature |",
-        "| `/dk dev fix <desc>` | Bug fix |",
-        "| `/dk git pr` | Create PR |",
-        "| `/dk git pr merge` | Merge PR |",
-    ])
+    lines.extend(
+        [
+            "## Commands",
+            "",
+            "**CRITICAL:** All commands via `/dk` - run `/dk` without args to see all.",
+            "",
+            "**YOU MUST use `/dk` commands - NEVER use raw git/gh commands directly.**",
+            "",
+            "| Command | Description |",
+            "|---------|-------------|",
+            "| `/dk dev feat <desc>` | New feature |",
+            "| `/dk dev fix <desc>` | Bug fix |",
+            "| `/dk git pr` | Create PR (**USE THIS**) |",
+            "| `/dk git pr merge` | Merge PR |",
+        ]
+    )
 
     # Add deployment commands for node projects
     deployment = get("deployment", {})
@@ -606,17 +651,19 @@ def generate_plugin_md() -> str:
         lines.append(f"| `/dk {platform} connect` | Link to {platform.title()} |")
         lines.append("| `/dk env sync` | Sync env vars |")
 
-    lines.extend([
-        "| `/dk neon branch list` | List DB branches |",
-        "",
-        "## GitHub Workflows",
-        "",
-        "| Workflow | Trigger | Description |",
-        "|----------|---------|-------------|",
-        "| release.yml | push to main | Auto-release with changelog |",
-        "| claude-code-review.yml | PR | AI code review |",
-        "| claude.yml | @claude mention | Claude assistant |",
-    ])
+    lines.extend(
+        [
+            "| `/dk neon branch list` | List DB branches |",
+            "",
+            "## GitHub Workflows",
+            "",
+            "| Workflow | Trigger | Description |",
+            "|----------|---------|-------------|",
+            "| release.yml | push to main | Auto-release with changelog |",
+            "| claude-code-review.yml | PR | AI code review |",
+            "| claude.yml | @claude mention | Claude assistant |",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -674,6 +721,7 @@ def update_readme_md(root: Path | None = None) -> tuple[bool, str]:
     try:
         # Get template
         from lib.sync import get_plugin_root, render_template
+
         plugin_root = get_plugin_root()
         template_file = plugin_root / "templates" / "docs" / "README.md.template"
 

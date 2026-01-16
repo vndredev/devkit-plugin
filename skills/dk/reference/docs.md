@@ -1,6 +1,6 @@
 # /dk docs - Documentation Management
 
-Manage all project documentation: CLAUDE.md, ARCHITECTURE.md, PLUGIN.md.
+**CRITICAL:** Manage all project documentation. YOU MUST keep docs in sync.
 
 ## Commands
 
@@ -192,9 +192,31 @@ Generated from plugin configuration:
 - Hook descriptions
 - Configuration options
 
-## Key Rules
+## Key Rules (MANDATORY)
 
-1. **Run `/dk docs update` after config changes** - keeps all docs in sync
+**YOU MUST follow these rules:**
+
+1. **YOU MUST run `/dk docs update` after config changes** - keeps all docs in sync
 2. **NEVER edit AUTO sections manually** - they get overwritten
-3. **Put custom docs in CUSTOM sections** - they're preserved
-4. **Use `/dk docs init` for new projects** - creates proper structure
+3. **ALWAYS put custom docs in CUSTOM sections** - they're preserved
+4. **ALWAYS use `/dk docs init` for new projects** - creates proper structure
+
+## External Documentation
+
+When you need documentation beyond this project:
+
+### Claude Code Questions
+
+Use the `claude-code-guide` agent for:
+
+- Hook configuration and formats
+- Settings and configuration
+- MCP server setup
+- IDE integrations
+
+### Library/Framework Documentation
+
+Use Context7 MCP tools for up-to-date docs:
+
+1. `mcp__plugin_context7_context7__resolve-library-id` - Find library ID
+2. `mcp__plugin_context7_context7__query-docs` - Query documentation

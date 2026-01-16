@@ -6,7 +6,7 @@ TIER 2: May import from core and lib.
 from pathlib import Path
 
 from lib.config import get, get_missing_sections, get_project_root, load_config
-from lib.sync import get_plugin_root, get_rendered_template, load_presets, render_template
+from lib.sync import check_user_files, get_plugin_root, get_rendered_template, load_presets
 
 
 def check_config() -> tuple[bool, list[str], list[str]]:
@@ -247,6 +247,7 @@ def check_all() -> dict:
     sync_results = check_sync()
     arch_ok, arch_violations = check_arch()
     test_status, test_issues = check_tests()
+    user_files = check_user_files()
 
     # Count sync issues
     sync_ok = all(r[1] for r in sync_results)
@@ -254,6 +255,13 @@ def check_all() -> dict:
 
     # Test status (SKIP doesn't affect health, FAIL does)
     test_ok = test_status != "FAIL"
+
+    # User files status (missing or outdated doesn't block health, but reported)
+    user_files_issues = [
+        (path, status)
+        for path, status in user_files.items()
+        if not status.get("exists") or status.get("outdated")
+    ]
 
     # Missing sections don't block health, but should be reported
     has_missing = len(missing_sections) > 0
@@ -281,6 +289,10 @@ def check_all() -> dict:
             "status": test_status,
             "ok": test_ok,
             "issues": test_issues,
+        },
+        "user_files": {
+            "status": user_files,
+            "issues": user_files_issues,
         },
         "upgradable": has_missing,
     }
@@ -367,6 +379,50 @@ def format_report(results: dict) -> str:
 
     lines.append("")
 
+    # User files section
+    lines.append("── User Files ──────────────────────")
+    user_files = results.get("user_files", {}).get("status", {})
+    user_issues = results.get("user_files", {}).get("issues", [])
+
+    if not user_files:
+        lines.append("○ No user files configured")
+    else:
+        for path, status in user_files.items():
+            if status.get("error"):
+                lines.append(f"✗ {path} ({status['error']})")
+            elif not status.get("exists"):
+                lines.append(f"✗ {path} (missing)")
+            elif status.get("outdated"):
+                lines.append(f"⚠ {path} (outdated)")
+            elif not status.get("configured", True):
+                lines.append(f"⚠ {path} (not configured in settings.json)")
+            else:
+                lines.append(f"✓ {path} (current)")
+
+    if user_issues:
+        lines.append("  → Run: /dk plugin update (installs)")
+
+    # Check for unconfigured statusline (find the statusline entry dynamically)
+    statusline_path = None
+    statusline_status = {}
+    for path, status in user_files.items():
+        if "statusline.sh" in path:
+            statusline_path = path
+            statusline_status = status
+            break
+
+    if (
+        statusline_path
+        and statusline_status.get("exists")
+        and not statusline_status.get("configured", True)
+    ):
+        lines.append("")
+        lines.append("  ⚠ Statusline not activated in Claude Code!")
+        lines.append("  → Add to settings.json:")
+        lines.append(f'    "statusLine": {{ "command": "{statusline_path}" }}')
+
+    lines.append("")
+
     # Summary
     lines.append("━" * 35)
     if results["healthy"]:
@@ -384,6 +440,11 @@ def format_report(results: dict) -> str:
         )
         lines.append(f"Status: {issue_count} issue(s) found")
         lines.append("Action: /dk plugin update")
+
+    # User files warning (separate from health status)
+    if user_issues:
+        lines.append("")
+        lines.append(f"⚠ User files need update ({len(user_issues)} files)")
 
     return "\n".join(lines)
 

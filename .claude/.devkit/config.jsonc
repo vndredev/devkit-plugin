@@ -74,8 +74,8 @@
         "staged": "⚡{count} staged",
         "modified": "✏️{count} modified",
         "untracked": "❓{count} untracked",
-        "hint": "Use `/dk` for commands, `/dk dev` for workflow",
-        "system_warning": "⚠️ Project has issues - check with /dk plugin check"
+        "hint": "CRITICAL: YOU MUST use `/dk` for ALL commands. Run `/dk dev` for workflow. NEVER execute raw git/gh commands directly.",
+        "system_warning": "⚠️ Project has issues - YOU MUST run /dk plugin check"
       }
     },
 
@@ -85,12 +85,12 @@
       "block_force_push": true,
       "block_dangerous_gh": true,
       "prompts": {
-        "branch_invalid": "Branch '{branch}' should match: {pattern}",
-        "commit_invalid": "Commit should match: type(scope): message (types: {types})",
-        "scope_invalid": "Unknown scope '{scope}'. Allowed: {allowed}",
-        "force_push_blocked": "Force push is blocked. Use --force-with-lease if needed.",
-        "gh_blocked": "Blocked: '{cmd}' - too dangerous for automatic execution",
-        "pr_missing_body": "gh pr create requires --body with PR template"
+        "branch_invalid": "BLOCKED: Branch '{branch}' MUST match pattern: {pattern}. YOU MUST rename the branch.",
+        "commit_invalid": "BLOCKED: Commit MUST match: type(scope): message (types: {types}). YOU MUST fix the commit message.",
+        "scope_invalid": "BLOCKED: Unknown scope '{scope}'. ALLOWED scopes: {allowed}. YOU MUST use an allowed scope.",
+        "force_push_blocked": "BLOCKED: Force push is NEVER allowed. Use --force-with-lease if absolutely required.",
+        "gh_blocked": "BLOCKED: '{cmd}' - YOU MUST use /dk git commands instead. NEVER execute raw gh commands.",
+        "pr_missing_body": "BLOCKED: YOU MUST use /dk git pr - it provides the required PR template automatically."
       }
     },
 
@@ -102,8 +102,8 @@
       "auto_sync_arch": true,
       "prompts": {
         "formatted": "✓ Formatted: {file}",
-        "test_reminder": "💡 New file - consider adding: tests/{file}",
-        "arch_violation": "⚠️ Arch violation: {message}",
+        "test_reminder": "💡 New file - YOU MUST consider adding tests: tests/{file}",
+        "arch_violation": "⚠️ CRITICAL: Architecture violation detected: {message}. YOU MUST fix this before proceeding.",
         "arch_synced": "📄 Updated docs/ARCHITECTURE.md"
       }
     },
@@ -115,17 +115,17 @@
       // Guidelines for creating plans
       "planning": {
         "requirements": [
-          "Identify affected layers (check arch.layers)",
-          "List files to modify vs. create",
-          "Consider edge cases and error handling",
-          "Check for breaking changes"
+          "YOU MUST identify affected layers (check arch.layers)",
+          "YOU MUST list files to modify vs. create",
+          "ALWAYS consider edge cases and error handling",
+          "YOU MUST check for breaking changes"
         ],
         "structure": [
-          "## Overview - What and why",
-          "## Affected Files - List with rationale",
-          "## Implementation Steps - Ordered tasks",
-          "## Testing Strategy - How to verify",
-          "## Risks - What could go wrong"
+          "## Overview - What and why (REQUIRED)",
+          "## Affected Files - List with rationale (REQUIRED)",
+          "## Implementation Steps - Ordered tasks (REQUIRED)",
+          "## Testing Strategy - How to verify (REQUIRED)",
+          "## Risks - What could go wrong (REQUIRED)"
         ]
       },
 
@@ -133,21 +133,21 @@
       "implementation": {
         "header": "## Implementation Phase",
         "instructions": [
-          "Complete one task at a time, mark done in todo list",
-          "Run linters after code changes",
-          "Run tests if available",
-          "Use conventional commits: type(scope): message",
-          "Ask if blocked or unclear"
+          "YOU MUST complete one task at a time, mark done in todo list",
+          "YOU MUST run linters after EVERY code change - use `uv run ruff check`",
+          "YOU MUST run tests if available - use `uv run pytest`",
+          "ALWAYS use conventional commits: type(scope): message",
+          "ALWAYS ask if blocked or unclear - NEVER guess"
         ]
       },
 
       // Project-specific hints (shown in both phases)
       "hints": [
-        "Clean Architecture - respect layer boundaries (see arch.layers)",
-        "New modules need tests in tests/",
-        "Public API changes need CHANGELOG consideration",
-        "📚 Docs: Use `claude-code-guide` agent for Claude Code questions",
-        "📚 Docs: Use Context7 MCP for library/framework documentation"
+        "CRITICAL: Clean Architecture - YOU MUST respect layer boundaries (see arch.layers)",
+        "REQUIRED: New modules MUST have tests in tests/",
+        "REQUIRED: Public API changes MUST update CHANGELOG",
+        "📚 Docs: ALWAYS use `claude-code-guide` agent for Claude Code questions",
+        "📚 Docs: ALWAYS use Context7 MCP for library/framework documentation"
       ]
     }
   },

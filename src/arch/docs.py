@@ -7,7 +7,7 @@ from pathlib import Path
 
 from arch.analyze import analyze_transitive_dependencies
 from arch.visualize import generate_ascii_diagram, generate_dependency_matrix
-from lib.config import get, get_project_root
+from lib.config import get_project_root
 from lib.docs import generate_arch_docs
 
 

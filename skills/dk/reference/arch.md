@@ -1,16 +1,18 @@
 # /dk arch - Architecture Analysis
 
-Clean Architecture analysis, validation, and scaffolding.
+**CRITICAL:** Clean Architecture analysis, validation, and scaffolding.
+
+**YOU MUST respect layer boundaries at ALL times.**
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `/dk arch` | Show architecture overview |
-| `/dk arch analyze` | Analyze dependencies and detect violations |
-| `/dk arch check` | Check layer rule compliance |
-| `/dk arch init [python\|ts]` | Scaffold Clean Architecture structure |
-| `/dk arch layers` | Show layer documentation |
+| Command                      | Description                                |
+| ---------------------------- | ------------------------------------------ |
+| `/dk arch`                   | Show architecture overview                 |
+| `/dk arch analyze`           | Analyze dependencies and detect violations |
+| `/dk arch check`             | Check layer rule compliance                |
+| `/dk arch init [python\|ts]` | Scaffold Clean Architecture structure      |
+| `/dk arch layers`            | Show layer documentation                   |
 
 ## Architecture Layers
 
@@ -28,13 +30,13 @@ TIER 0: Core (core/)
 
 ## Import Rules
 
-| Layer | May Import From |
-|-------|-----------------|
-| core (TIER 0) | Python stdlib only |
-| domain (TIER 1) | core |
-| adapters (TIER 2) | core, domain |
+| Layer             | May Import From        |
+| ----------------- | ---------------------- |
+| core (TIER 0)     | Python stdlib only     |
+| domain (TIER 1)   | core                   |
+| adapters (TIER 2) | core, domain           |
 | usecases (TIER 3) | core, domain, adapters |
-| entry (TIER 4) | All layers |
+| entry (TIER 4)    | All layers             |
 
 ## Workflow
 
@@ -73,6 +75,7 @@ print(format_analysis_report(analysis))
 ```
 
 Output includes:
+
 - Project type detection
 - Dependency graph (file → imports)
 - Layer distribution statistics
@@ -91,6 +94,7 @@ print(message)
 ```
 
 Returns:
+
 - ✅ if all imports follow rules
 - ❌ with violation details if not
 
@@ -113,6 +117,7 @@ for f in created:
 ```
 
 Creates:
+
 - `src/core/` - types.py, errors.py
 - `src/domain/` - validation.py
 - `src/adapters/` - repository.py
@@ -128,23 +133,27 @@ from arch.rules import get_layer_info
 print(get_layer_info())
 ```
 
-## Best Practices
+## Best Practices (MANDATORY)
 
-1. **Keep core pure** - No I/O, no external dependencies
-2. **Domain has no side effects** - Pure functions only
-3. **Adapters wrap externals** - One adapter per external system
+**YOU MUST follow these practices:**
+
+1. **ALWAYS keep core pure** - No I/O, no external dependencies
+2. **NEVER add side effects to domain** - Pure functions only
+3. **ALWAYS wrap externals in adapters** - One adapter per external system
 4. **Usecases orchestrate** - Combine domain + adapters
-5. **Entry points are thin** - Just parse input and call usecases
+5. **ALWAYS keep entry points thin** - Just parse input and call usecases
 
 ## Violation Examples
 
 ❌ **Bad**: Domain importing from adapters
+
 ```python
 # domain/validation.py
 from adapters.config import load_config  # VIOLATION!
 ```
 
 ✅ **Good**: Usecase coordinates both
+
 ```python
 # usecases/validate_flow.py
 from domain.validation import validate

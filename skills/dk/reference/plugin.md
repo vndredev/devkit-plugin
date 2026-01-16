@@ -1,6 +1,8 @@
 # /dk plugin
 
-Plugin management, health check, and sync system.
+**CRITICAL:** Plugin management, health check, and sync system.
+
+**YOU MUST run `/dk plugin check` when issues are detected.**
 
 ## Commands
 
@@ -94,17 +96,18 @@ Action: /dk plugin update
 
 ## /dk plugin update
 
-Sync all managed files and upgrade config:
+Sync all managed files, upgrade config, and install user files:
 
 1. **Config upgrade:** Adds missing optional sections with defaults
 2. **Linters:** ruff.toml, .markdownlint.json, etc.
 3. **GitHub:** Workflows and issue templates
 4. **Docs:** CLAUDE.md, docs/PLUGIN.md
 5. **Ignore:** .gitignore, etc.
+6. **User files:** ~/.claude/statusline.sh (Claude Code status line)
 
 ```bash
 PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
-from lib.sync import sync_all
+from lib.sync import sync_all, install_user_files
 
 print('=== Syncing Plugin Files ===')
 print()
@@ -112,6 +115,14 @@ results = sync_all()
 for target, success, msg in results:
     icon = '✓' if success else '✗'
     print(f'{icon} {target}')
+print()
+
+print('=== Installing User Files ===')
+print()
+user_results = install_user_files()
+for target, success, msg in user_results:
+    icon = '✓' if success else '✗'
+    print(f'{icon} {target}: {msg}')
 print()
 print('Done!')
 "
@@ -157,11 +168,13 @@ managed = {
         '.github/workflows/claude-code-review.yml': { 'template': 'github/workflows/claude-code-review.yml.template', 'enabled': True },
         '.github/ISSUE_TEMPLATE/bug_report.yml': { 'template': 'github/ISSUE_TEMPLATE/bug_report.yml.template', 'enabled': True },
         '.github/ISSUE_TEMPLATE/feature_request.yml': { 'template': 'github/ISSUE_TEMPLATE/feature_request.yml.template', 'enabled': True },
-        '.github/ISSUE_TEMPLATE/config.yml': { 'template': 'github/ISSUE_TEMPLATE/config.yml.template', 'enabled': True }
+        '.github/ISSUE_TEMPLATE/config.yml': { 'template': 'github/ISSUE_TEMPLATE/config.yml.template', 'enabled': True },
+        '.github/PULL_REQUEST_TEMPLATE.md': { 'template': 'github/PULL_REQUEST_TEMPLATE.md.template', 'enabled': True }
     },
     'docs': {
+        'README.md': { 'type': 'auto_sections', 'enabled': True },
         'CLAUDE.md': { 'type': 'auto_sections', 'enabled': True },
-        'docs/PLUGIN.md': { 'type': 'auto_generate', 'enabled': True }
+        'docs/PLUGIN.md': { 'type': 'template', 'template': 'docs/PLUGIN.md.template', 'enabled': True }
     },
     'ignore': {}
 }
@@ -259,10 +272,10 @@ Set `enabled: false` to skip a managed file:
 
 ---
 
-## Notes
+## Notes (IMPORTANT)
 
 - All generated files are based on templates in the plugin's `templates/` directory
 - CLAUDE.md preserves `<!-- CUSTOM:name -->` sections during updates
 - Health check runs automatically at session start (compact warning)
-- Use `/dk plugin check` for detailed report
-- Use `/dk plugin update` to fix sync issues
+- **YOU MUST use `/dk plugin check`** for detailed report when issues occur
+- **YOU MUST use `/dk plugin update`** to fix sync issues - NEVER edit generated files manually

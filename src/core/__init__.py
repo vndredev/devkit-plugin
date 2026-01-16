@@ -43,32 +43,28 @@ from core.types import (
 )
 
 __all__ = [
-    # Errors
+    "AnalyzerPort",
     "ArchitectureError",
-    "ConfigError",
-    "DevkitError",
-    "GitError",
-    "LayerViolationError",
-    "ValidationError",
-    # Types
     "CommitType",
+    "ConfigError",
+    "ConfigPort",
+    "DevkitError",
+    "DocsPort",
+    "GitError",
+    "GitPort",
     "HookAction",
     "HookType",
+    "LayerViolationError",
     "ProjectSize",
     "ProjectType",
-    # Ports
-    "AnalyzerPort",
-    "ConfigPort",
-    "DocsPort",
-    "GitPort",
     "SyncPort",
+    "ValidationError",
     "VisualizerPort",
-    "verify_port",
-    # Layer Guard
     "clear_violations",
     "disable_layer_guard",
     "enable_layer_guard",
     "format_violations_report",
     "get_violations",
     "is_enabled",
+    "verify_port",
 ]

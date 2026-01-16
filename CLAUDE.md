@@ -44,20 +44,22 @@ Example: `feat/add-login`, `fix/button-styling`
 
 ## Commands
 
-All commands via `/dk` - run `/dk` without args to see all.
+**CRITICAL:** All commands via `/dk` - run `/dk` without args to see all.
+
+**YOU MUST use `/dk` commands - NEVER use raw git/gh/vercel commands directly.**
 
 ## Development
 
 ```bash
-# Always use uv run for Python
+# YOU MUST use uv run for Python
 uv run pytest tests/
 uv run python src/...
 ```
 
 ## Resources
 
-- **Claude Code docs**: Use Task tool with `subagent_type=claude-code-guide`
-- **Library docs**: Use Context7 MCP (`resolve-library-id` → `query-docs`)
+- **Claude Code docs**: ALWAYS use Task tool with `subagent_type=claude-code-guide`
+- **Library docs**: ALWAYS use Context7 MCP (`resolve-library-id` → `query-docs`)
 <!-- AUTO:END -->
 
 <!-- CUSTOM:START - Your documentation below. Preserved during updates. -->

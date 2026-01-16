@@ -283,6 +283,51 @@ RECOMMENDED_DEFAULTS = {
     },
 }
 
+# Standard managed entries that should exist in all projects
+# These are added by upgrade_config() if missing
+MANAGED_DEFAULTS = {
+    "github": {
+        ".github/workflows/claude.yml": {
+            "template": "github/workflows/claude.yml.template",
+            "enabled": True,
+        },
+        ".github/workflows/claude-code-review.yml": {
+            "template": "github/workflows/claude-code-review.yml.template",
+            "enabled": True,
+        },
+        ".github/ISSUE_TEMPLATE/bug_report.yml": {
+            "template": "github/ISSUE_TEMPLATE/bug_report.yml.template",
+            "enabled": True,
+        },
+        ".github/ISSUE_TEMPLATE/feature_request.yml": {
+            "template": "github/ISSUE_TEMPLATE/feature_request.yml.template",
+            "enabled": True,
+        },
+        ".github/ISSUE_TEMPLATE/config.yml": {
+            "template": "github/ISSUE_TEMPLATE/config.yml.template",
+            "enabled": True,
+        },
+        ".github/PULL_REQUEST_TEMPLATE.md": {
+            "template": "github/PULL_REQUEST_TEMPLATE.md.template",
+            "enabled": True,
+        },
+    },
+    "linters": {
+        ".markdownlint.json": {
+            "template": "linters/common/markdownlint.json.template",
+            "enabled": True,
+        },
+        ".markdownlintignore": {
+            "template": "gitignore/markdownlint.ignore",
+            "enabled": True,
+        },
+    },
+    "docs": {
+        "CLAUDE.md": {"type": "auto_sections", "enabled": True},
+        "README.md": {"type": "auto_sections", "enabled": True},
+    },
+}
+
 
 def get_missing_sections() -> list[str]:
     """Check which recommended config sections are missing.
@@ -327,39 +372,68 @@ def _set_nested(config: dict, key_path: str, value: Any) -> None:
     current[parts[-1]] = value
 
 
+def get_missing_managed_entries() -> dict[str, list[str]]:
+    """Check which standard managed entries are missing.
+
+    Returns:
+        Dict of {category: [missing_entry_paths]}.
+    """
+    config = load_config()
+    managed = config.get("managed", {})
+    missing: dict[str, list[str]] = {}
+
+    for category, default_entries in MANAGED_DEFAULTS.items():
+        current_entries = managed.get(category, {})
+        for entry_path in default_entries:
+            if entry_path not in current_entries:
+                if category not in missing:
+                    missing[category] = []
+                missing[category].append(entry_path)
+
+    return missing
+
+
 def upgrade_config() -> tuple[bool, list[str]]:
-    """Add missing recommended sections to config.
+    """Add missing recommended sections and managed entries to config.
 
     Modifies config.jsonc in place, preserving comments where possible.
 
     Returns:
-        Tuple of (success, list of added sections).
+        Tuple of (success, list of added items).
     """
     config_path = get_config_path()
     if config_path is None:
         return False, ["No config file found"]
 
-    missing = get_missing_sections()
-    if not missing:
-        return True, []
-
     # Load current config
     config = load_config()
+    added = []
 
     # Add missing sections
-    added = []
-    for key_path in missing:
+    missing_sections = get_missing_sections()
+    for key_path in missing_sections:
         if key_path in RECOMMENDED_DEFAULTS:
             _set_nested(config, key_path, RECOMMENDED_DEFAULTS[key_path])
             added.append(key_path)
 
+    # Add missing managed entries
+    missing_managed = get_missing_managed_entries()
+    if missing_managed:
+        if "managed" not in config:
+            config["managed"] = {}
+
+        for category, entries in missing_managed.items():
+            if category not in config["managed"]:
+                config["managed"][category] = {}
+
+            for entry_path in entries:
+                config["managed"][category][entry_path] = MANAGED_DEFAULTS[category][entry_path]
+                added.append(f"managed.{category}.{entry_path}")
+
     if not added:
         return True, []
 
-    # Write back - we need to preserve JSONC structure
-    # For now, we'll read the file, parse it, and intelligently insert
-    # This is complex, so we'll use a simpler approach: regenerate with comments
-
+    # Write back with comments
     try:
         _write_config_with_comments(config_path, config)
         clear_cache()  # Clear cache to reload

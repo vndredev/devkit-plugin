@@ -1,48 +1,55 @@
 # /dk git
 
-Git workflow commands with Conventional Commits.
+**CRITICAL:** Git workflow commands with Conventional Commits.
+
+## MANDATORY Rules
+
+**YOU MUST follow these rules - NO EXCEPTIONS:**
+
+1. **ALWAYS** use `/dk git pr` for pull requests - **NEVER** use raw `gh pr create`
+2. **ALWAYS** use `/dk git branch` for branches - **NEVER** create branches manually
+3. **ALWAYS** use conventional commits: `type(scope): message`
+4. **NEVER** force push to protected branches
+5. **NEVER** execute raw `gh` commands when `/dk git` equivalents exist
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `/dk git init` | Initialize new project (git, config, files, commit) |
-| `/dk git update` | Sync managed files and GitHub settings |
-| `/dk git pr` | Create pull request |
-| `/dk git pr review [n]` | Check PR review status |
-| `/dk git pr merge [n]` | Merge PR (squash) |
-| `/dk git branch <name>` | Create feature branch |
-| `/dk git squash` | Squash commits on branch |
-| `/dk git cleanup` | Clean local tags + branches |
-| `/dk git issue report` | Report bug in devkit-plugin |
-| `/dk git issue create` | Create issue in current project |
-| `/dk git issue list` | List open issues |
-| `/dk git issue view [n]` | View issue details |
+| Command             | Description                                   |
+| ------------------- | --------------------------------------------- |
+| `/dk git init`      | Initialize new project (git, config, files)   |
+| `/dk git update`    | Sync managed files and GitHub settings        |
+| `/dk git pr`        | Create pull request (**USE THIS, NOT gh**)    |
+| `/dk git pr review` | Check PR review status                        |
+| `/dk git pr merge`  | Merge PR (squash)                             |
+| `/dk git branch`    | Create feature branch                         |
+| `/dk git squash`    | Squash commits on branch                      |
+| `/dk git cleanup`   | Clean local tags + branches                   |
+| `/dk git issue`     | Issue management (report, create, list, view) |
 
 ---
 
 ## Commit Format
 
-**Conventional Commits**: `type(scope): message`
+**YOU MUST use Conventional Commits**: `type(scope): message`
 
-| Type | Description |
-|------|-------------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `docs` | Documentation |
-| `chore` | Maintenance |
-| `refactor` | Restructure |
-| `test` | Tests |
-| `ci` | CI/CD |
+| Type       | Description   |
+| ---------- | ------------- |
+| `feat`     | New feature   |
+| `fix`      | Bug fix       |
+| `docs`     | Documentation |
+| `chore`    | Maintenance   |
+| `refactor` | Restructure   |
+| `test`     | Tests         |
+| `ci`       | CI/CD         |
 
 ### Internal Scopes (skip release notes)
 
-| Scope | Use Case |
-|-------|----------|
+| Scope      | Use Case             |
+| ---------- | -------------------- |
 | `internal` | Internal refactoring |
-| `review` | Code review fixes |
-| `ci` | CI/CD changes |
-| `deps` | Dependency updates |
+| `review`   | Code review fixes    |
+| `ci`       | CI/CD changes        |
+| `deps`     | Dependency updates   |
 
 ---
 
@@ -105,9 +112,14 @@ for step, ok, msg in git_update():
 
 ## /dk git pr
 
-Create PR for current branch using the PR template.
+**CRITICAL: YOU MUST use this command for ALL pull requests.**
+
+**NEVER use raw `gh pr create` - ALWAYS use `/dk git pr`.**
+
+This command creates a PR with the proper template and configuration.
 
 **Reads config from `.claude/.devkit/config.jsonc`:**
+
 - `github.pr.auto_merge` - Enable auto-merge (default: false)
 - `github.pr.delete_branch` - Delete branch after merge (default: true)
 - `github.pr.merge_method` - squash/merge/rebase (default: squash)

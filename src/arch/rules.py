@@ -86,13 +86,15 @@ def check_layer_rules(root: Path | None = None) -> tuple[bool, str]:
         for name, cfg in sorted(layer_config.items(), key=lambda x: x[1].get("tier", 0)):
             lines.append(f"  TIER {cfg.get('tier', 0)}: {name}")
     else:
-        lines.extend([
-            "Layer Rules:",
-            "  TIER 0 (core)   - Only stdlib",
-            "  TIER 1 (lib)    - core",
-            "  TIER 2 (arch)   - core, lib",
-            "  TIER 3 (events) - All layers",
-        ])
+        lines.extend(
+            [
+                "Layer Rules:",
+                "  TIER 0 (core)   - Only stdlib",
+                "  TIER 1 (lib)    - core",
+                "  TIER 2 (arch)   - core, lib",
+                "  TIER 3 (events) - All layers",
+            ]
+        )
 
     return False, "\n".join(lines)
 
@@ -231,11 +233,13 @@ def get_init_preview(project_type: ProjectType, size: str = "medium") -> str:
     lines.extend(f"- `{rel_path}`" for rel_path in sorted(template.keys()))
 
     preset = LAYER_PRESETS.get(size, LAYER_PRESETS["medium"])
-    lines.extend([
-        "",
-        f"Layer preset: {size}",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            f"Layer preset: {size}",
+            "",
+        ]
+    )
 
     for name, cfg in sorted(preset.items(), key=lambda x: x[1]["tier"]):
         lines.append(f"- TIER {cfg['tier']}: {name}")

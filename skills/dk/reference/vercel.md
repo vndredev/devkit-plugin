@@ -1,17 +1,19 @@
 # /dk vercel
 
-Vercel deployment setup and management.
+**CRITICAL:** Vercel deployment setup and management.
+
+**YOU MUST use `/dk vercel` commands - NEVER use raw `vercel` CLI directly.**
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `/dk vercel connect` | Full Vercel setup (link, GitHub, env, Neon) |
-| `/dk vercel status` | Show current Vercel project status |
-| `/dk vercel deploy` | Deploy to preview |
-| `/dk vercel deploy --prod` | Deploy to production |
-| `/dk vercel env sync` | Sync .env.local to Vercel |
-| `/dk vercel env pull` | Pull env vars from Vercel |
+| Command                    | Description                                 |
+| -------------------------- | ------------------------------------------- |
+| `/dk vercel connect`       | Full Vercel setup (link, GitHub, env, Neon) |
+| `/dk vercel status`        | Show current Vercel project status          |
+| `/dk vercel deploy`        | Deploy to preview                           |
+| `/dk vercel deploy --prod` | Deploy to production                        |
+| `/dk vercel env sync`      | Sync .env.local to Vercel                   |
+| `/dk vercel env pull`      | Pull env vars from Vercel                   |
 
 ---
 
@@ -95,6 +97,7 @@ for step, ok, msg in sync_env_vars(Path.cwd()):
 ```
 
 **Security:** Sensitive vars are skipped automatically:
+
 - Variables containing `SECRET`, `KEY`, `TOKEN`, `PASSWORD`, `PRIVATE`
 - These must be added manually via `vercel env add`
 
@@ -112,10 +115,10 @@ vercel env pull .env.local
 
 ## Prerequisites
 
-| Tool | Install | Check |
-|------|---------|-------|
-| Vercel CLI | `npm i -g vercel` | `vercel --version` |
-| Authenticated | `vercel login` | `vercel whoami` |
+| Tool          | Install           | Check              |
+| ------------- | ----------------- | ------------------ |
+| Vercel CLI    | `npm i -g vercel` | `vercel --version` |
+| Authenticated | `vercel login`    | `vercel whoami`    |
 
 ---
 
@@ -144,6 +147,7 @@ For automatic database branches per preview deployment:
 3. Enable "Create branch per preview"
 
 **Benefits:**
+
 - Creates DB branch per Vercel preview deployment
 - Sets `DATABASE_URL` automatically per environment
 - Cleans up branches when deployments are deleted
@@ -164,9 +168,9 @@ After `/dk vercel connect`:
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| "Not logged in" | `vercel login` |
-| "Project not found" | `vercel link` |
+| Issue               | Solution              |
+| ------------------- | --------------------- |
+| "Not logged in"     | `vercel login`        |
+| "Project not found" | `vercel link`         |
 | "Permission denied" | Check team membership |
-| "Build failed" | Check `vercel logs` |
+| "Build failed"      | Check `vercel logs`   |

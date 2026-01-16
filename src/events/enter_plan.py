@@ -7,6 +7,7 @@ Shows the planning requirements and structure from config.jsonc
 so Claude knows the expected plan format BEFORE creating a plan.
 """
 
+import contextlib
 import json
 import sys
 
@@ -24,28 +25,22 @@ def get_planning_guidance() -> str:
     # Planning requirements
     requirements = get("hooks.plan.planning.requirements", [])
     if requirements:
-        lines.append("## Planning Requirements")
-        lines.append("")
-        for req in requirements:
-            lines.append(f"- {req}")
+        lines.extend(["## Planning Requirements", ""])
+        lines.extend(f"- {req}" for req in requirements)
         lines.append("")
 
     # Plan structure
     structure = get("hooks.plan.planning.structure", [])
     if structure:
-        lines.append("## Expected Plan Structure")
-        lines.append("")
-        for section in structure:
-            lines.append(f"- {section}")
+        lines.extend(["## Expected Plan Structure", ""])
+        lines.extend(f"- {section}" for section in structure)
         lines.append("")
 
     # Project-specific hints
     hints = get("hooks.plan.hints", [])
     if hints:
-        lines.append("## Hints")
-        lines.append("")
-        for hint in hints:
-            lines.append(f"- {hint}")
+        lines.extend(["## Hints", ""])
+        lines.extend(f"- {hint}" for hint in hints)
         lines.append("")
 
     return "\n".join(lines)
@@ -74,10 +69,8 @@ def get_arch_context() -> str:
 def main() -> None:
     """Main entry point for PreToolUse:EnterPlanMode hook."""
     # Consume stdin (hook data) even if not used
-    try:
+    with contextlib.suppress(json.JSONDecodeError):
         json.load(sys.stdin)
-    except json.JSONDecodeError:
-        pass
 
     guidance = get_planning_guidance()
     arch_context = get_arch_context()

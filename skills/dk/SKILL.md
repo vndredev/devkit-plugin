@@ -6,7 +6,17 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 
 # DK Skill
 
-Unified devkit-plugin interface. Routes to reference docs.
+**CRITICAL:** Unified devkit-plugin interface. YOU MUST use `/dk` commands for ALL workflows.
+
+## MANDATORY Rules
+
+**YOU MUST follow these rules at ALL times:**
+
+1. **ALWAYS use `/dk git pr`** for pull requests - NEVER use raw `gh pr create`
+2. **ALWAYS use `/dk dev`** for development workflows - NEVER skip the workflow
+3. **ALWAYS use `/dk vercel deploy`** for deployments - NEVER use raw `vercel deploy`
+4. **NEVER execute raw git/gh commands** when a `/dk` equivalent exists
+5. **ALWAYS read CLAUDE.md** before making code changes
 
 ## Commands
 
@@ -114,7 +124,7 @@ print('Commands: /dk plugin | dev | git | arch | docs | env | vercel | neon')
 
 ## Reference Loading
 
-**YOU MUST load and follow the reference instructions for the requested subcommand.**
+**CRITICAL: YOU MUST load and follow the reference instructions for the requested subcommand.**
 
 | Subcommand              | Action                                          |
 | ----------------------- | ----------------------------------------------- |
@@ -127,7 +137,7 @@ print('Commands: /dk plugin | dev | git | arch | docs | env | vercel | neon')
 | `/dk arch [sub]`        | Read `reference/arch.md`, follow instructions   |
 | `/dk docs [sub]`        | Read `reference/docs.md`, follow instructions   |
 
-**Pass the remaining arguments to the module.**
+**ALWAYS pass the remaining arguments to the module.**
 
 Example: `/dk git pr` → Load `reference/git.md`, execute `/git pr` section.
 
@@ -150,10 +160,23 @@ PLUGIN_ROOT:    /path/to/devkit-plugin
 
 ## Key Rules (MANDATORY)
 
-**YOU MUST follow these rules:**
+**CRITICAL: YOU MUST follow these rules - NO EXCEPTIONS:**
 
 1. **Derive PLUGIN_ROOT** - YOU MUST extract from Base directory (remove `/skills/dk`)
-2. **Parse subcommand** - Determine which module to load
-3. **Load module file** - YOU MUST read the appropriate .md file
+2. **Parse subcommand** - ALWAYS determine which module to load
+3. **Load module file** - YOU MUST read the appropriate .md file BEFORE executing
 4. **Replace paths** - YOU MUST substitute `${PLUGIN_ROOT}` with actual path
-5. **Execute commands** - YOU MUST follow module instructions exactly
+5. **Execute commands** - YOU MUST follow module instructions EXACTLY as written
+
+## Command Enforcement
+
+**NEVER bypass `/dk` commands:**
+
+| Instead of...         | YOU MUST use...      |
+| --------------------- | -------------------- |
+| `gh pr create`        | `/dk git pr`         |
+| `vercel deploy`       | `/dk vercel deploy`  |
+| `git commit` (manual) | Conventional commits |
+| Direct file editing   | `/dk dev` workflow   |
+
+**ALWAYS use TodoWrite** to track progress during multi-step tasks.

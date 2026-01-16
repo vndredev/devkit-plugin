@@ -20,7 +20,6 @@ Note:
     The guard adds overhead to every import operation.
 """
 
-import os
 import sys
 from importlib.abc import MetaPathFinder
 from importlib.machinery import ModuleSpec
@@ -144,9 +143,7 @@ class LayerGuard(MetaPathFinder):
                 _violations.append(violation)
 
             if self.strict:
-                raise LayerViolationError(
-                    source_layer, target_layer, source_tier, target_tier
-                )
+                raise LayerViolationError(source_layer, target_layer, source_tier, target_tier)
 
         return None
 
@@ -240,11 +237,10 @@ def format_violations_report() -> str:
         "",
     ]
 
-    for v in _violations:
-        lines.append(
-            f"- {v['source']} (T{v['source_tier']}) -> "
-            f"{v['target']} (T{v['target_tier']})"
-        )
+    lines.extend(
+        f"- {v['source']} (T{v['source_tier']}) -> {v['target']} (T{v['target_tier']})"
+        for v in _violations
+    )
 
     return "\n".join(lines)
 

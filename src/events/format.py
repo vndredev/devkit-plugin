@@ -38,7 +38,7 @@ def check_arch_violation(file_path: str, prompt_tpl: str) -> str | None:
                     return prompt_tpl.format(message=v["message"])
 
         return None
-    except Exception:  # noqa: S110
+    except Exception:
         return None
 
 
@@ -79,12 +79,12 @@ def sync_architecture_md(file_path: str, prompt_tpl: str) -> str | None:
     try:
         from arch.docs import update_architecture_md
 
-        success, msg = update_architecture_md()
+        success, _msg = update_architecture_md()
         if success:
             action = "Created" if should_create else "Updated"
             return prompt_tpl.replace("Updated", action) if should_create else prompt_tpl
         return None
-    except Exception:  # noqa: S110
+    except Exception:
         return None
 
 

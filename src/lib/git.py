@@ -23,8 +23,8 @@ def run_git(args: list[str], cwd: Path | None = None) -> str:
         GitError: If command fails.
     """
     try:
-        result = subprocess.run(  # noqa: S603
-            ["git", *args],  # noqa: S607
+        result = subprocess.run(
+            ["git", *args],
             capture_output=True,
             text=True,
             cwd=cwd,

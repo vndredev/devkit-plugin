@@ -3,6 +3,7 @@
 TIER 1: May import from core only.
 """
 
+import contextlib
 import json
 import subprocess
 from pathlib import Path
@@ -40,13 +41,9 @@ def generate_config_jsonc(
     """
     managed_json = json.dumps(managed, indent=2)
     # Indent managed section for embedding
-    managed_lines = managed_json.split('\n')
-    managed_indented = '\n'.join(['    ' + line if i > 0 else '    ' + line
-                                   for i, line in enumerate(managed_lines)])
-    # Fix the first line
-    managed_indented = '  ' + managed_json.replace('\n', '\n  ')
+    managed_indented = "  " + managed_json.replace("\n", "\n  ")
 
-    deployment_json = json.dumps(deployment, indent=2).replace('\n', '\n  ')
+    deployment_json = json.dumps(deployment, indent=2).replace("\n", "\n  ")
 
     return f'''{{
   "$schema": "./config.schema.json",
@@ -409,14 +406,12 @@ def create_config(
     config_file = config_dir / "config.jsonc"
     config_file.write_text(jsonc_content)
 
-    # Copy schema
-    try:
+    # Copy schema (optional, suppress errors)
+    with contextlib.suppress(Exception):
         plugin_root = get_plugin_root()
         schema_src = plugin_root / ".claude" / ".devkit" / "config.schema.json"
         if schema_src.exists():
             (config_dir / "config.schema.json").write_text(schema_src.read_text())
-    except Exception:
-        pass  # Schema is optional
 
     return True, f"Created {config_file}"
 
@@ -445,12 +440,9 @@ def setup_github(repo: str, visibility: str = "public") -> list[tuple[str, bool,
         results.append(("gh repo create", True, f"Created {repo} ({visibility})"))
     except subprocess.CalledProcessError:
         # Repo might already exist, try to set remote
-        try:
+        with contextlib.suppress(Exception):
             run_git(["remote", "add", "origin", f"https://github.com/{repo}.git"])
             results.append(("git remote", True, f"Added origin {repo}"))
-        except Exception:
-            # Remote might already exist
-            pass
 
         try:
             run_git(["push", "-u", "origin", "main"])
@@ -482,6 +474,7 @@ def is_org_repo(repo: str) -> bool:
             check=True,
         )
         import json
+
         data = json.loads(result.stdout)
         return data.get("type") == "Organization"
     except Exception:
@@ -503,10 +496,15 @@ def configure_actions_permissions(repo: str) -> tuple[bool, str]:
         # Enable Actions and set permissions
         subprocess.run(
             [
-                "gh", "api", "-X", "PUT",
+                "gh",
+                "api",
+                "-X",
+                "PUT",
                 f"/repos/{repo}/actions/permissions",
-                "-f", "enabled=true",
-                "-f", "allowed_actions=all",
+                "-f",
+                "enabled=true",
+                "-f",
+                "allowed_actions=all",
             ],
             capture_output=True,
             check=True,
@@ -514,10 +512,15 @@ def configure_actions_permissions(repo: str) -> tuple[bool, str]:
         # Set workflow permissions to read-write
         subprocess.run(
             [
-                "gh", "api", "-X", "PUT",
+                "gh",
+                "api",
+                "-X",
+                "PUT",
                 f"/repos/{repo}/actions/permissions/workflow",
-                "-f", "default_workflow_permissions=write",
-                "-F", "can_approve_pull_request_reviews=true",
+                "-f",
+                "default_workflow_permissions=write",
+                "-F",
+                "can_approve_pull_request_reviews=true",
             ],
             capture_output=True,
             check=True,

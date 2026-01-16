@@ -1,0 +1,199 @@
+#!/bin/bash
+# Claude Code Status Line with devkit integration
+# Auto-installed by devkit-plugin
+#
+# Features:
+# - Model and version display
+# - Git branch and status (staged/modified/ahead/behind)
+# - devkit health check (config/sync/arch)
+#
+# Error handling: All errors are silently handled to prevent
+# statusline failures from breaking Claude Code.
+
+set -o pipefail
+
+# Read JSON input from Claude Code
+input=$(cat 2>/dev/null)
+if [ -z "$input" ]; then
+    echo "Claude"
+    exit 0
+fi
+
+# Safe jq extraction with defaults
+safe_jq() {
+    echo "$input" | jq -r "$1" 2>/dev/null || echo "$2"
+}
+
+MODEL=$(safe_jq '.model.display_name // "Claude"' "Claude")
+VERSION=$(safe_jq '.version // "?"' "?")
+CWD=$(safe_jq '.workspace.current_dir // "."' ".")
+
+# Validate CWD exists
+if [ ! -d "$CWD" ]; then
+    CWD="."
+fi
+
+# devkit plugin status - robust detection
+DEVKIT_STATUS=""
+DEVKIT_MSG=""
+get_devkit_status() {
+    # Check if this is a devkit project
+    if [ ! -d "$CWD/.claude/.devkit" ]; then
+        return
+    fi
+
+    # Find plugin root - search cache directories dynamically
+    local plugin_root=""
+    local cache_base="$HOME/.claude/plugins/cache/vndredev-marketplace"
+
+    # Try to find devkit-plugin in cache (any version)
+    if [ -d "$cache_base" ]; then
+        # Check devkit-plugin-dev first, then devkit-plugin
+        for plugin_name in "devkit-plugin-dev" "devkit-plugin"; do
+            local plugin_dir="$cache_base/$plugin_name"
+            if [ -d "$plugin_dir" ]; then
+                # Find the latest version directory
+                for version_dir in "$plugin_dir"/*; do
+                    if [ -d "$version_dir" ] && [ -f "$version_dir/src/arch/check.py" ]; then
+                        plugin_root="$version_dir"
+                        break 2
+                    fi
+                done
+            fi
+        done
+    fi
+
+    # Fallback to direct plugin path
+    if [ -z "$plugin_root" ] && [ -d "$HOME/.claude/plugins/devkit-plugin" ]; then
+        plugin_root="$HOME/.claude/plugins/devkit-plugin"
+    fi
+
+    # Plugin not found
+    if [ -z "$plugin_root" ]; then
+        DEVKIT_STATUS="error"
+        DEVKIT_MSG="plugin missing"
+        return
+    fi
+
+    # Check for Python environment
+    local python_cmd=""
+    if [ -f "$plugin_root/.venv/bin/python" ]; then
+        python_cmd="$plugin_root/.venv/bin/python"
+    elif command -v python3 &>/dev/null; then
+        python_cmd="python3"
+    else
+        DEVKIT_STATUS="error"
+        DEVKIT_MSG="python not found"
+        return
+    fi
+
+    # Run health check
+    local result
+    result=$(cd "$plugin_root" 2>/dev/null && \
+        PYTHONPATH=src "$python_cmd" -c "
+import os
+os.chdir('$CWD')
+try:
+    from arch.check import check_all
+    r = check_all()
+    if r.get('healthy'):
+        print('ok')
+    else:
+        # Prioritize: show most actionable issue with fix command
+        if not r.get('sync', {}).get('ok'):
+            print('error:files outdated - run /dk plugin update')
+        elif not r.get('config', {}).get('ok'):
+            print('error:config invalid - run /dk plugin check')
+        elif not r.get('arch', {}).get('ok'):
+            print('error:arch violation - run /dk plugin check')
+        else:
+            print('error:issues found - run /dk plugin check')
+except Exception:
+    print('error:check failed')
+" 2>/dev/null)
+
+    if [ "$result" = "ok" ]; then
+        DEVKIT_STATUS="ok"
+        DEVKIT_MSG="ok"
+    elif [[ "$result" == error:* ]]; then
+        DEVKIT_STATUS="error"
+        DEVKIT_MSG="${result#error:}"
+    else
+        DEVKIT_STATUS="error"
+        DEVKIT_MSG="check failed"
+    fi
+}
+
+# Git branch detection
+GIT_BRANCH=""
+get_git_branch() {
+    if ! git -C "$CWD" rev-parse --git-dir &>/dev/null; then
+        return
+    fi
+
+    GIT_BRANCH=$(git -C "$CWD" branch --show-current 2>/dev/null)
+}
+
+# Git status (staged/modified/ahead/behind)
+GIT_STATUS=""
+get_git_status() {
+    if [ -z "$GIT_BRANCH" ]; then
+        return
+    fi
+
+    local staged modified ahead behind
+    staged=$(git -C "$CWD" diff --cached --numstat 2>/dev/null | wc -l | tr -d ' ')
+    modified=$(git -C "$CWD" diff --numstat 2>/dev/null | wc -l | tr -d ' ')
+    ahead=$(git -C "$CWD" rev-list --count '@{upstream}..HEAD' 2>/dev/null || echo "0")
+    behind=$(git -C "$CWD" rev-list --count 'HEAD..@{upstream}' 2>/dev/null || echo "0")
+
+    local parts=""
+    [ "${staged:-0}" -gt 0 ] && parts+="+${staged} "
+    [ "${modified:-0}" -gt 0 ] && parts+="~${modified} "
+    [ "${ahead:-0}" -gt 0 ] && parts+="↑${ahead} "
+    [ "${behind:-0}" -gt 0 ] && parts+="↓${behind} "
+
+    # Trim trailing space
+    parts="${parts% }"
+    [ -n "$parts" ] && GIT_STATUS="$parts"
+}
+
+# Collect all status info
+get_git_branch
+get_git_status
+get_devkit_status
+
+# Build output with ANSI colors
+OUTPUT=""
+
+# Version (gray)
+OUTPUT+="\033[90mv$VERSION\033[0m"
+OUTPUT+=" \033[90m|\033[0m "
+
+# Model (cyan)
+OUTPUT+="\033[36m$MODEL\033[0m"
+
+# Branch (magenta)
+if [ -n "$GIT_BRANCH" ]; then
+    OUTPUT+=" \033[90m|\033[0m "
+    OUTPUT+="\033[35m$GIT_BRANCH\033[0m"
+
+    # Git status (yellow, separate section)
+    if [ -n "$GIT_STATUS" ]; then
+        OUTPUT+=" \033[33m[$GIT_STATUS]\033[0m"
+    fi
+fi
+
+# devkit status
+if [ -n "$DEVKIT_STATUS" ]; then
+    OUTPUT+=" \033[90m|\033[0m "
+    if [ "$DEVKIT_STATUS" = "ok" ]; then
+        # Green for healthy
+        OUTPUT+="\033[32mdevkit ok\033[0m"
+    else
+        # Bold red for errors with clear message
+        OUTPUT+="\033[1;31mdevkit: $DEVKIT_MSG\033[0m"
+    fi
+fi
+
+echo -e "$OUTPUT"

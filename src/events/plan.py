@@ -11,11 +11,11 @@ from lib.config import get
 
 # Default instructions if not configured
 DEFAULT_INSTRUCTIONS = [
-    "Complete one task at a time, mark done in todo list",
-    "Run linters after code changes",
-    "Run tests if available",
-    "Use conventional commits: type(scope): message",
-    "Ask if blocked or unclear",
+    "YOU MUST complete one task at a time, mark done in todo list",
+    "YOU MUST run linters after EVERY code change - use `uv run ruff check`",
+    "YOU MUST run tests if available - use `uv run pytest`",
+    "ALWAYS use conventional commits: type(scope): message",
+    "ALWAYS ask if blocked or unclear - NEVER guess",
 ]
 
 

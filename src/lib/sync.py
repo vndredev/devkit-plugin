@@ -5,6 +5,7 @@ TIER 1: May import from core only.
 
 import json
 import re
+import stat
 from pathlib import Path
 from typing import Any
 
@@ -569,5 +570,119 @@ def check_sync_status(root: Path | None = None) -> dict[str, bool]:
     elif project_type in ("nextjs", "typescript", "javascript"):
         status[".eslintrc.json"] = (root / ".eslintrc.json").exists()
         status[".prettierrc"] = (root / ".prettierrc").exists()
+
+    return status
+
+
+def get_claude_config_dir() -> Path:
+    """Get Claude Code config directory.
+
+    Respects CLAUDE_CONFIG_DIR environment variable.
+    Falls back to ~/.claude/ if not set.
+    """
+    import os
+
+    config_dir = os.environ.get("CLAUDE_CONFIG_DIR")
+    if config_dir:
+        return Path(config_dir)
+    return Path.home() / ".claude"
+
+
+def install_user_files() -> list[tuple[str, bool, str]]:
+    """Install plugin user files to Claude config directory.
+
+    Installs:
+    - statusline.sh: Claude Code status line script
+
+    Respects CLAUDE_CONFIG_DIR environment variable.
+
+    Returns:
+        List of (file, success, message) tuples.
+    """
+    results = []
+    plugin_root = get_plugin_root()
+    claude_dir = get_claude_config_dir()
+
+    # Ensure ~/.claude exists
+    claude_dir.mkdir(parents=True, exist_ok=True)
+
+    # Install statusline.sh
+    template_file = plugin_root / "templates" / "claude" / "statusline.sh.template"
+    target_file = claude_dir / "statusline.sh"
+
+    # Display path (use ~ for home directory)
+    display_path = str(target_file).replace(str(Path.home()), "~")
+
+    if template_file.exists():
+        try:
+            content = template_file.read_text()
+            target_file.write_text(content)
+
+            # Make executable (chmod +x)
+            current_mode = target_file.stat().st_mode
+            target_file.chmod(current_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+            results.append((display_path, True, "Installed"))
+        except Exception as e:
+            results.append((display_path, False, str(e)))
+    else:
+        results.append((display_path, False, "Template not found"))
+
+    return results
+
+
+def check_user_files() -> dict[str, dict[str, Any]]:
+    """Check status of user files in Claude config directory.
+
+    Respects CLAUDE_CONFIG_DIR environment variable.
+
+    Returns:
+        Dict with file status: {file: {exists, current, outdated, configured}}.
+    """
+    plugin_root = get_plugin_root()
+    claude_dir = get_claude_config_dir()
+
+    status = {}
+
+    # Check statusline.sh
+    template_file = plugin_root / "templates" / "claude" / "statusline.sh.template"
+    target_file = claude_dir / "statusline.sh"
+
+    # Display path (use ~ for home directory)
+    display_path = str(target_file).replace(str(Path.home()), "~")
+
+    if template_file.exists():
+        template_content = template_file.read_text()
+        target_exists = target_file.exists()
+        target_content = target_file.read_text() if target_exists else ""
+
+        # Check if statusline is configured in Claude Code settings
+        settings_file = claude_dir / "settings.json"
+        configured = False
+        if settings_file.exists():
+            try:
+                settings = json.loads(settings_file.read_text())
+                # Claude Code uses camelCase: statusLine
+                statusline_config = settings.get("statusLine", {})
+                command = statusline_config.get("command", "")
+                # Accept both the display path and the absolute path
+                configured = command in (display_path, str(target_file))
+            except (json.JSONDecodeError, KeyError):
+                configured = False
+
+        status[display_path] = {
+            "exists": target_exists,
+            "current": target_content == template_content if target_exists else False,
+            "outdated": target_exists and target_content != template_content,
+            "configured": configured,
+        }
+    else:
+        status[display_path] = {
+            "exists": False,
+            "current": False,
+            "outdated": False,
+            "configured": False,
+            "error": "Template not found",
+        }
 
     return status

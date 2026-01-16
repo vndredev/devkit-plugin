@@ -37,7 +37,6 @@ def vercel_connect(
         return results
 
     # Check if Vercel is a valid platform
-    platform = deployment_config.get("platform", "vercel")
     platforms = deployment_config.get("platforms", ["vercel"])
     if "vercel" not in platforms:
         results.append(
