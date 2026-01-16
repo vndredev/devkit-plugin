@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.17.1] - 2026-01-16
+## [v0.17.2] - 2026-01-16
 
 ### Fixed
 
+- **Events**: Ensure all hooks output valid json
 - **Events**: Always output json in validate.py hook
 
 ### Added
