@@ -361,60 +361,34 @@ def sync_docs(root: Path | None = None) -> list[tuple[str, bool, str]]:
     return results
 
 
-def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
-    """Sync all generated files based on managed config.
+def _upgrade_config_sections() -> list[tuple[str, bool, str]]:
+    """Upgrade config with missing optional sections.
 
-    Also upgrades config.jsonc with missing optional sections.
-    Reads from config.managed to determine what to sync.
-    Falls back to project-type based sync if managed section is missing.
+    Returns:
+        List of (section_name, success, message) tuples.
     """
-    # Lazy imports to avoid circular imports
-    from lib.docs import (
-        generate_arch_docs,
-        update_claude_md,
-        update_plugin_md,
-        update_readme_md,
-    )
-
-    if root is None:
-        root = get_project_root()
-
-    results = []
-
-    # First: upgrade config with missing sections
     _ok, upgraded_sections = upgrade_config()
-    if upgraded_sections:
-        results.extend(
-            (f"config: {section}", True, "added default") for section in upgraded_sections
-        )
+    return [(f"config: {section}", True, "added default") for section in upgraded_sections]
 
-    managed = get("managed", {})
 
-    # If no managed section, use legacy behavior
-    if not managed:
-        results.extend(sync_docs(root))
-        results.extend(sync_linters(root))
-        results.extend(sync_github(root))
-        return results
+def _build_template_values() -> dict[str, Any]:
+    """Build template values from config and presets.
 
-    plugin_root = get_plugin_root()
+    Returns:
+        Dict of template values for rendering.
+    """
+    from lib.docs import generate_arch_docs
 
-    # Get values for template rendering
-    project_name = get("project.name", "Project")
     project_type = get("project.type", "unknown")
-    github_url = get("github.url", "https://github.com/owner/repo")
     linters_config = get("linters", {})
     preset = linters_config.get("preset", "strict")
     overrides = linters_config.get("overrides", {})
-
     presets = load_presets()
 
-    # Build template values
-    values = {
-        "project_name": project_name,
-        "github_url": github_url,
+    values: dict[str, Any] = {
+        "project_name": get("project.name", "Project"),
+        "github_url": get("github.url", "https://github.com/owner/repo"),
         "preset": preset,
-        # Architecture documentation for templates
         "arch_docs_full": generate_arch_docs(format="full"),
         "arch_docs_compact": generate_arch_docs(format="compact"),
         "arch_docs_minimal": generate_arch_docs(format="minimal"),
@@ -422,26 +396,55 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
 
     # Add preset values based on project type
     if project_type == "python":
-        python_presets = presets.get("python", {}).get(preset, {})
-        values.update(python_presets)
+        values.update(presets.get("python", {}).get(preset, {}))
     elif project_type in ("nextjs", "typescript", "javascript"):
-        nextjs_presets = presets.get("nextjs", {}).get(preset, {})
-        values.update(nextjs_presets)
+        values.update(presets.get("nextjs", {}).get(preset, {}))
 
-    # Add common presets
-    common_presets = presets.get("common", {}).get(preset, {})
-    values.update(common_presets)
+    # Add common presets and overrides
+    values.update(presets.get("common", {}).get(preset, {}))
     values.update(overrides)
+    return values
 
-    # Sync linters
+
+def _sync_managed_linters(
+    root: Path, plugin_root: Path, managed: dict[str, Any], values: dict[str, Any]
+) -> list[tuple[str, bool, str]]:
+    """Sync managed linter files.
+
+    Args:
+        root: Project root directory.
+        plugin_root: Plugin installation root.
+        managed: Managed config section.
+        values: Template values.
+
+    Returns:
+        List of sync results.
+    """
+    results: list[tuple[str, bool, str]] = []
     for output_path, config in managed.get("linters", {}).items():
         if not config.get("enabled", True):
             continue
         template_path = config.get("template", "")
         result = _sync_template_file(root, plugin_root, output_path, template_path, values)
         results.append(result)
+    return results
 
-    # Sync github files
+
+def _sync_managed_github(
+    root: Path, plugin_root: Path, managed: dict[str, Any], values: dict[str, Any]
+) -> list[tuple[str, bool, str]]:
+    """Sync managed GitHub files.
+
+    Args:
+        root: Project root directory.
+        plugin_root: Plugin installation root.
+        managed: Managed config section.
+        values: Template values.
+
+    Returns:
+        List of sync results.
+    """
+    results: list[tuple[str, bool, str]] = []
     for output_path, config in managed.get("github", {}).items():
         if not config.get("enabled", True):
             continue
@@ -453,8 +456,24 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
 
         result = _sync_template_file(root, plugin_root, output_path, template_path, values)
         results.append(result)
+    return results
 
-    # Sync ignore files
+
+def _sync_managed_ignore(
+    root: Path, plugin_root: Path, managed: dict[str, Any], project_type: str
+) -> list[tuple[str, bool, str]]:
+    """Sync managed ignore files.
+
+    Args:
+        root: Project root directory.
+        plugin_root: Plugin installation root.
+        managed: Managed config section.
+        project_type: Project type for section headers.
+
+    Returns:
+        List of sync results.
+    """
+    results: list[tuple[str, bool, str]] = []
     for output_path, config in managed.get("ignore", {}).items():
         if not config.get("enabled", True):
             continue
@@ -463,8 +482,26 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
             template_paths = [template_paths]
         result = _sync_ignore_file(root, plugin_root, output_path, template_paths, project_type)
         results.append(result)
+    return results
 
-    # Sync docs
+
+def _sync_managed_docs(
+    root: Path, plugin_root: Path, managed: dict[str, Any], values: dict[str, Any]
+) -> list[tuple[str, bool, str]]:
+    """Sync managed documentation files.
+
+    Args:
+        root: Project root directory.
+        plugin_root: Plugin installation root.
+        managed: Managed config section.
+        values: Template values.
+
+    Returns:
+        List of sync results.
+    """
+    from lib.docs import update_claude_md, update_plugin_md, update_readme_md
+
+    results: list[tuple[str, bool, str]] = []
     for output_path, config in managed.get("docs", {}).items():
         if not config.get("enabled", True):
             continue
@@ -476,22 +513,17 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
         output_file.parent.mkdir(parents=True, exist_ok=True)
 
         if output_path == "CLAUDE.md":
-            # CLAUDE.md: auto_sections (project-specific, preserves CUSTOM)
             success, msg = update_claude_md(root)
         elif output_path == "README.md":
-            # README.md: auto_sections (template + CUSTOM)
             success, msg = update_readme_md(root)
         elif output_path == "docs/ARCHITECTURE.md":
-            # ARCHITECTURE.md: generated by arch layer (arch.docs.update_architecture_md)
-            # Cannot be called from lib layer due to tier constraints
-            # Check if file exists, generation must be triggered separately
+            # Cannot call arch layer from lib layer - check existence only
             arch_file = root / output_path
             if arch_file.exists():
                 success, msg = True, "exists (run arch.docs.update_architecture_md to regenerate)"
             else:
                 success, msg = False, "missing (run arch.docs.update_architecture_md to generate)"
         elif doc_type == "template":
-            # Template-based docs (like PLUGIN.md) - copy from plugin
             template_path = config.get("template", "")
             if template_path:
                 result = _sync_template_file(root, plugin_root, output_path, template_path, values)
@@ -499,12 +531,53 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
             else:
                 success, msg = False, f"No template specified for {output_path}"
         elif output_path == "docs/PLUGIN.md":
-            # Legacy: auto_generate PLUGIN.md (fallback)
             success, msg = update_plugin_md(root)
         else:
             success, msg = False, f"Unknown doc type: {output_path}"
 
         results.append((output_path, success, msg))
+    return results
+
+
+def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
+    """Sync all generated files based on managed config.
+
+    Also upgrades config.jsonc with missing optional sections.
+    Reads from config.managed to determine what to sync.
+    Falls back to project-type based sync if managed section is missing.
+
+    Args:
+        root: Project root directory (defaults to auto-detect).
+
+    Returns:
+        List of (file_path, success, message) tuples.
+    """
+    if root is None:
+        root = get_project_root()
+
+    results: list[tuple[str, bool, str]] = []
+
+    # First: upgrade config with missing sections
+    results.extend(_upgrade_config_sections())
+
+    managed = get("managed", {})
+
+    # If no managed section, use legacy behavior
+    if not managed:
+        results.extend(sync_docs(root))
+        results.extend(sync_linters(root))
+        results.extend(sync_github(root))
+        return results
+
+    plugin_root = get_plugin_root()
+    project_type = get("project.type", "unknown")
+    values = _build_template_values()
+
+    # Sync all managed file categories
+    results.extend(_sync_managed_linters(root, plugin_root, managed, values))
+    results.extend(_sync_managed_github(root, plugin_root, managed, values))
+    results.extend(_sync_managed_ignore(root, plugin_root, managed, project_type))
+    results.extend(_sync_managed_docs(root, plugin_root, managed, values))
 
     return results
 
@@ -631,6 +704,65 @@ def install_user_files() -> list[tuple[str, bool, str]]:
     return results
 
 
+def _check_statusline_configured(claude_dir: Path, display_path: str, target_file: Path) -> bool:
+    """Check if statusline is configured in Claude Code settings.
+
+    Args:
+        claude_dir: Claude config directory.
+        display_path: Display path (with ~).
+        target_file: Absolute path to target file.
+
+    Returns:
+        True if configured, False otherwise.
+    """
+    settings_file = claude_dir / "settings.json"
+    if not settings_file.exists():
+        return False
+
+    try:
+        settings = json.loads(settings_file.read_text())
+        statusline_config = settings.get("statusLine", {})
+        command = statusline_config.get("command", "")
+        return command in (display_path, str(target_file))
+    except (json.JSONDecodeError, KeyError):
+        return False
+
+
+def _compare_file_status(
+    template_file: Path, target_file: Path, display_path: str, configured: bool
+) -> dict[str, Any]:
+    """Compare template and target file status.
+
+    Args:
+        template_file: Path to template file.
+        target_file: Path to target file.
+        display_path: Display path for status dict key.
+        configured: Whether file is configured in settings.
+
+    Returns:
+        Status dict with exists, current, outdated, configured keys.
+    """
+    if not template_file.exists():
+        return {
+            "exists": False,
+            "current": False,
+            "outdated": False,
+            "configured": False,
+            "error": "Template not found",
+        }
+
+    template_content = template_file.read_text()
+    target_exists = target_file.exists()
+    target_content = target_file.read_text() if target_exists else ""
+
+    return {
+        "exists": target_exists,
+        "current": target_content == template_content if target_exists else False,
+        "outdated": target_exists and target_content != template_content,
+        "configured": configured,
+    }
+
+
 def check_user_files() -> dict[str, dict[str, Any]]:
     """Check status of user files in Claude config directory.
 
@@ -642,47 +774,16 @@ def check_user_files() -> dict[str, dict[str, Any]]:
     plugin_root = get_plugin_root()
     claude_dir = get_claude_config_dir()
 
-    status = {}
+    status: dict[str, dict[str, Any]] = {}
 
     # Check statusline.sh
     template_file = plugin_root / "templates" / "claude" / "statusline.sh.template"
     target_file = claude_dir / "statusline.sh"
-
-    # Display path (use ~ for home directory)
     display_path = str(target_file).replace(str(Path.home()), "~")
 
-    if template_file.exists():
-        template_content = template_file.read_text()
-        target_exists = target_file.exists()
-        target_content = target_file.read_text() if target_exists else ""
-
-        # Check if statusline is configured in Claude Code settings
-        settings_file = claude_dir / "settings.json"
-        configured = False
-        if settings_file.exists():
-            try:
-                settings = json.loads(settings_file.read_text())
-                # Claude Code uses camelCase: statusLine
-                statusline_config = settings.get("statusLine", {})
-                command = statusline_config.get("command", "")
-                # Accept both the display path and the absolute path
-                configured = command in (display_path, str(target_file))
-            except (json.JSONDecodeError, KeyError):
-                configured = False
-
-        status[display_path] = {
-            "exists": target_exists,
-            "current": target_content == template_content if target_exists else False,
-            "outdated": target_exists and target_content != template_content,
-            "configured": configured,
-        }
-    else:
-        status[display_path] = {
-            "exists": False,
-            "current": False,
-            "outdated": False,
-            "configured": False,
-            "error": "Template not found",
-        }
+    configured = _check_statusline_configured(claude_dir, display_path, target_file)
+    status[display_path] = _compare_file_status(
+        template_file, target_file, display_path, configured
+    )
 
     return status
