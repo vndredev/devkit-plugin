@@ -584,7 +584,7 @@ def format_compact(results: dict) -> str | None:
     for path, _ok, msg in results["sync"]["issues"]:
         issues.append(f"{path} {msg}")
 
-    issues.extend(results["arch"]["violations"])
+    issues.extend(v["message"] for v in results["arch"]["violations"])
 
     # Add test issues if testing failed
     if results.get("tests", {}).get("status") == "FAIL":
