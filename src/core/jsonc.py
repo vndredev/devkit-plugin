@@ -1,6 +1,6 @@
 """JSONC parser - JSON with Comments support.
 
-TIER 1: May import from core only.
+TIER 0: No internal imports, only Python stdlib.
 """
 
 

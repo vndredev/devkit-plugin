@@ -113,3 +113,19 @@ def is_protected_branch(protected: list[str] | None = None) -> bool:
 
     current = git_branch()
     return current in protected
+
+
+def extract_git_args(cmd: str) -> tuple[str, list[str]]:
+    """Extract git subcommand and args from command string.
+
+    Args:
+        cmd: Full command string.
+
+    Returns:
+        Tuple of (subcommand, args).
+    """
+    parts = cmd.split()
+    if len(parts) < 2 or parts[0] != "git":
+        return "", []
+
+    return parts[1], parts[2:]

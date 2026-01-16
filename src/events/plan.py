@@ -119,4 +119,12 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import json
+    import sys
+
+    try:
+        main()
+    except Exception as e:
+        # On error, allow but report
+        print(json.dumps({"continue": True, "message": f"⚠️ Plan hook error: {e}"}))
+        sys.exit(0)

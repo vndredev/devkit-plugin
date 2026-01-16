@@ -59,9 +59,9 @@ def generate_arch_docs(format: str = "full") -> str:
         tier = info.get("tier", 0)
         desc = info.get("description", "-")
         # Calculate which layers this layer may import from
-        may_import = (
-            ", ".join(n for n, i in sorted_layers if i.get("tier", 0) < tier) or "stdlib only"
-        )
+        # Same-tier imports are allowed (e.g., lib modules can import from other lib modules)
+        importable = [n for n, i in sorted_layers if i.get("tier", 0) <= tier and n != name]
+        may_import = ", ".join(importable) or "stdlib only"
         lines.append(f"| `{name}` | {tier} | {desc} | {may_import} |")
 
     # Mermaid Diagram

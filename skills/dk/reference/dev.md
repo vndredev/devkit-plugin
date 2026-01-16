@@ -37,15 +37,17 @@
 
 ## Commit Format
 
-**YOU MUST use this exact format for ALL commits:**
+**YOU MUST use Conventional Commits**: `type(scope): message`
 
 ```bash
-git commit -m "<type>: <description>
+git commit -m "type(scope): description
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
-**ALLOWED types:** `feat`, `fix`, `chore`, `refactor`, `test`, `docs`
+**ALLOWED types:** `feat`, `fix`, `chore`, `refactor`, `test`, `docs`, `ci`
+
+**Scope is optional** but if used, must be from allowed list in config.
 
 **NEVER** use other commit types. **NEVER** skip the Co-Authored-By line.
 

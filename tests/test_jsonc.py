@@ -1,10 +1,10 @@
-"""Tests for lib/jsonc.py - JSONC parsing."""
+"""Tests for core/jsonc.py - JSONC parsing."""
 
 import json
 
 import pytest
 
-from lib.jsonc import strip_comments
+from core.jsonc import strip_comments
 
 
 class TestStripComments:

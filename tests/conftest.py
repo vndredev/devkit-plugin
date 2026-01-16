@@ -1,6 +1,7 @@
 """Pytest configuration and shared fixtures."""
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -8,6 +9,37 @@ import pytest
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from core.layer_guard import (
+    clear_violations,
+    disable_layer_guard,
+    enable_layer_guard,
+    get_violations,
+)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def layer_guard():
+    """Enable layer guard for all tests (non-strict mode)."""
+    # Only enable if environment variable is set
+    if os.getenv("DEVKIT_LAYER_GUARD"):
+        enable_layer_guard(strict=False)
+        yield
+        violations = get_violations()
+        if violations:
+            print(f"\n⚠️ Layer Violations: {len(violations)}")
+            for v in violations:
+                print(f"  - {v['source']} → {v['target']}")
+        disable_layer_guard()
+    else:
+        yield
+
+
+@pytest.fixture(autouse=True)
+def clear_layer_violations():
+    """Clear violations before each test."""
+    clear_violations()
+    yield
 
 
 @pytest.fixture

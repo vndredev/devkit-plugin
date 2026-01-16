@@ -245,9 +245,13 @@ git checkout -b "feat/${1}"
 
 Squash all commits on current branch:
 
+> **WARNING:** This command rewrites history. Only use on branches that have NOT been pushed, or force-push will be required. Data may be lost if uncommitted changes exist.
+
 ```bash
 COUNT=$(git rev-list --count main..HEAD)
 MSG=$(git log -1 --format=%s)
+# Ensure no uncommitted changes
+git diff --quiet || { echo "Error: uncommitted changes"; exit 1; }
 git reset --soft main
 git commit -m "$MSG"
 ```

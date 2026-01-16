@@ -3,6 +3,7 @@
 TIER 1: May import from core only.
 """
 
+from core.jsonc import strip_comments
 from lib.config import clear_cache, get, get_project_root, load_config
 from lib.docs import (
     generate_arch_docs,
@@ -14,7 +15,14 @@ from lib.docs import (
     update_claude_md,
     update_plugin_md,
 )
-from lib.git import git_branch, git_commit, git_status, is_protected_branch, run_git
+from lib.git import (
+    extract_git_args,
+    git_branch,
+    git_commit,
+    git_status,
+    is_protected_branch,
+    run_git,
+)
 from lib.hooks import (
     allow_response,
     consume_stdin,
@@ -24,7 +32,6 @@ from lib.hooks import (
     output_response,
     read_hook_input,
 )
-from lib.jsonc import strip_comments
 from lib.sync import check_sync_status, render_template, sync_all, sync_docs, sync_linters
 from lib.tools import detect_project_type, detect_project_version, format_file, notify, run_linter
 
@@ -36,6 +43,7 @@ __all__ = [
     "deny_response",
     "detect_project_type",
     "detect_project_version",
+    "extract_git_args",
     "format_file",
     "generate_arch_docs",
     "generate_claude_md",

@@ -7,10 +7,9 @@ TIER 3: Entry point, may import from all layers.
 from pathlib import Path
 
 from lib.config import get
+from lib.git import extract_git_args
 from lib.hooks import noop_response, output_response, read_hook_input
 from lib.version import update_plugin_version
-
-from events.validate import extract_git_args
 
 
 def main() -> None:
@@ -56,4 +55,12 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import json
+    import sys
+
+    try:
+        main()
+    except Exception as e:
+        # On error, allow but report
+        print(json.dumps({"continue": True, "message": f"⚠️ PostCommit hook error: {e}"}))
+        sys.exit(0)

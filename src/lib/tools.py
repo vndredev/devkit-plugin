@@ -138,31 +138,10 @@ def detect_project_version(root: Path) -> str:
 
     Returns:
         Version string or "0.0.0" if not found.
+
+    Note:
+        This is an alias for lib.version.get_version() for backwards compatibility.
     """
-    import json
+    from lib.version import get_version
 
-    # Try pyproject.toml first
-    pyproject = root / "pyproject.toml"
-    if pyproject.exists():
-        try:
-            import tomllib
-
-            data = tomllib.loads(pyproject.read_text())
-            version = data.get("project", {}).get("version")
-            if version:
-                return version
-        except (tomllib.TOMLDecodeError, OSError, KeyError):
-            pass  # Invalid TOML or missing fields
-
-    # Try package.json
-    package_json = root / "package.json"
-    if package_json.exists():
-        try:
-            data = json.loads(package_json.read_text())
-            version = data.get("version")
-            if version:
-                return version
-        except (json.JSONDecodeError, OSError):
-            pass  # Invalid JSON or unreadable file
-
-    return "0.0.0"
+    return get_version(root)

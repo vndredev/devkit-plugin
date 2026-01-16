@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from core.errors import ConfigError
-from lib.jsonc import strip_comments
+from core.jsonc import strip_comments
 
 # Cache for loaded config
 _config_cache: dict | None = None

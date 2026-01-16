@@ -7,6 +7,7 @@ Validates branch names, commit messages, and blocks dangerous commands.
 import re
 
 from lib.config import get
+from lib.git import extract_git_args
 from lib.hooks import allow_response, deny_response, read_hook_input
 
 # Default types if not configured
@@ -76,22 +77,6 @@ def validate_commit_message(
             return False, scope_invalid_tpl.format(scope=scope, allowed=", ".join(all_valid))
 
     return True, "Valid commit message"
-
-
-def extract_git_args(cmd: str) -> tuple[str, list[str]]:
-    """Extract git subcommand and args from command string.
-
-    Args:
-        cmd: Full command string.
-
-    Returns:
-        Tuple of (subcommand, args).
-    """
-    parts = cmd.split()
-    if len(parts) < 2 or parts[0] != "git":
-        return "", []
-
-    return parts[1], parts[2:]
 
 
 def extract_commit_message(cmd: str) -> str | None:

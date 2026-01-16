@@ -84,7 +84,7 @@ def main() -> None:
             additional_context.append(guidance)
         if arch_context:
             additional_context.append(arch_context)
-        result["additionalContext"] = "\n\n".join(additional_context)
+        result["hookSpecificOutput"]["additionalContext"] = "\n\n".join(additional_context)
 
     output_response(result)
 

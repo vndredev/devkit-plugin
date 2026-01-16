@@ -16,6 +16,7 @@ from core.errors import (
     GitError,
     ValidationError,
 )
+from core.jsonc import strip_comments
 from core.layer_guard import (
     LayerViolationError,
     clear_violations,
@@ -66,5 +67,6 @@ __all__ = [
     "format_violations_report",
     "get_violations",
     "is_enabled",
+    "strip_comments",
     "verify_port",
 ]

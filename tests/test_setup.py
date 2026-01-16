@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from lib.jsonc import strip_comments
+from core.jsonc import strip_comments
 from lib.setup import (
     create_config,
     git_init,
