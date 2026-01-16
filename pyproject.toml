@@ -1,6 +1,6 @@
 [project]
 name = "devkit-plugin"
-version = "0.17.0"
+version = "0.17.1"
 description = "Claude Code Plugin for automatic code standards"
 requires-python = ">=3.10"
 

@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.17.0] - 2026-01-16
+## [v0.17.1] - 2026-01-16
+
+### Fixed
+
+- **Events**: Always output json in validate.py hook
 
 ### Added
 
