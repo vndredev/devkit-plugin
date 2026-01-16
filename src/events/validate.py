@@ -138,7 +138,9 @@ BLOCKED_GH_COMMANDS = [
 ]
 
 
-def validate_gh_command(cmd: str, gh_blocked_tpl: str, pr_missing_body_tpl: str) -> tuple[bool, str]:
+def validate_gh_command(
+    cmd: str, gh_blocked_tpl: str, pr_missing_body_tpl: str
+) -> tuple[bool, str]:
     """Validate gh CLI commands.
 
     Blocks dangerous commands like repo delete, secret delete.
@@ -163,33 +165,47 @@ def validate_gh_command(cmd: str, gh_blocked_tpl: str, pr_missing_body_tpl: str)
     return True, "Valid gh command"
 
 
+def allow() -> None:
+    """Output allow response and exit."""
+    print(json.dumps({"continue": True}))
+    sys.exit(0)
+
+
 def main() -> None:
     """Handle PreToolUse hook."""
     # Read hook data
     try:
         hook_data = json.load(sys.stdin)
     except json.JSONDecodeError:
-        return
+        allow()
 
     # Check if hook is enabled
     if not get("hooks.validate.enabled", True):
-        return
+        allow()
 
     tool_name = hook_data.get("tool_name", "")
     tool_input = hook_data.get("tool_input", {})
 
     # Only validate Bash commands
     if tool_name != "Bash":
-        return
+        allow()
 
     # Load prompts from config
     prompts = get("hooks.validate.prompts", {})
     branch_invalid_tpl = prompts.get("branch_invalid", "Branch '{branch}' should match: {pattern}")
-    commit_invalid_tpl = prompts.get("commit_invalid", "Commit should match: type(scope): message (types: {types})")
+    commit_invalid_tpl = prompts.get(
+        "commit_invalid", "Commit should match: type(scope): message (types: {types})"
+    )
     scope_invalid_tpl = prompts.get("scope_invalid", "Unknown scope '{scope}'. Allowed: {allowed}")
-    force_push_tpl = prompts.get("force_push_blocked", "Force push is blocked. Use --force-with-lease if needed.")
-    gh_blocked_tpl = prompts.get("gh_blocked", "Blocked: '{cmd}' - too dangerous for automatic execution")
-    pr_missing_body_tpl = prompts.get("pr_missing_body", "gh pr create requires --body with PR template")
+    force_push_tpl = prompts.get(
+        "force_push_blocked", "Force push is blocked. Use --force-with-lease if needed."
+    )
+    gh_blocked_tpl = prompts.get(
+        "gh_blocked", "Blocked: '{cmd}' - too dangerous for automatic execution"
+    )
+    pr_missing_body_tpl = prompts.get(
+        "pr_missing_body", "gh pr create requires --body with PR template"
+    )
 
     command = tool_input.get("command", "")
 
@@ -206,11 +222,11 @@ def main() -> None:
                 }
                 print(json.dumps(result))
                 sys.exit(0)
-        return
+        allow()
 
     # Validate git commands
     if not command.startswith("git "):
-        return
+        allow()
 
     subcmd, args = extract_git_args(command)
 
@@ -257,6 +273,9 @@ def main() -> None:
                 }
                 print(json.dumps(result))
                 sys.exit(0)
+
+    # All validations passed
+    allow()
 
 
 if __name__ == "__main__":
