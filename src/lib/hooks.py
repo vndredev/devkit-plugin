@@ -5,8 +5,22 @@ TIER 1: May import from core only.
 
 import contextlib
 import json
+import os
 import sys
+from pathlib import Path
 from typing import Any
+
+
+def get_project_dir() -> Path | None:
+    """Get the project directory from CLAUDE_PROJECT_DIR.
+
+    Returns:
+        Path to project directory, or None if not set.
+    """
+    project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
+    if project_dir:
+        return Path(project_dir)
+    return None
 
 
 def read_hook_input() -> dict[str, Any]:

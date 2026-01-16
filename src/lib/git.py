@@ -35,13 +35,16 @@ def run_git(args: list[str], cwd: Path | None = None) -> str:
         raise GitError(f"git {' '.join(args)} failed: {e.stderr}") from e
 
 
-def git_status() -> dict[str, list[str]]:
+def git_status(cwd: Path | None = None) -> dict[str, list[str]]:
     """Get git status.
+
+    Args:
+        cwd: Working directory (defaults to current).
 
     Returns:
         Dict with 'staged', 'modified', 'untracked' file lists.
     """
-    output = run_git(["status", "--porcelain"])
+    output = run_git(["status", "--porcelain"], cwd=cwd)
     result: dict[str, list[str]] = {
         "staged": [],
         "modified": [],
@@ -64,13 +67,16 @@ def git_status() -> dict[str, list[str]]:
     return result
 
 
-def git_branch() -> str:
+def git_branch(cwd: Path | None = None) -> str:
     """Get current branch name.
+
+    Args:
+        cwd: Working directory (defaults to current).
 
     Returns:
         Branch name.
     """
-    return run_git(["branch", "--show-current"])
+    return run_git(["branch", "--show-current"], cwd=cwd)
 
 
 def git_commit(message: str, co_author: str | None = None) -> tuple[bool, str]:

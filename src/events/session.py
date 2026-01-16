@@ -7,9 +7,10 @@ Displays git status, config info, health check, and dev workflow reminder.
 from subprocess import SubprocessError
 
 from arch.check import check_all, format_compact
+from core.errors import GitError
 from lib.config import get
 from lib.git import git_branch, git_status
-from lib.hooks import consume_stdin, output_response
+from lib.hooks import consume_stdin, get_project_dir, output_response
 
 
 def main() -> None:
@@ -37,8 +38,9 @@ def main() -> None:
     # Git status - compact format
     if get("hooks.session.show_git_status", True):
         try:
-            branch = git_branch()
-            status = git_status()
+            project_dir = get_project_dir()
+            branch = git_branch(cwd=project_dir)
+            status = git_status(cwd=project_dir)
 
             git_parts = [branch_tpl.format(branch=branch)]
             if status["staged"]:
@@ -49,7 +51,7 @@ def main() -> None:
                 git_parts.append(untracked_tpl.format(count=len(status["untracked"])))
 
             output_lines.append(" | ".join(git_parts))
-        except (SubprocessError, OSError):
+        except (SubprocessError, OSError, GitError):
             pass
 
     # Health check - only show if issues
