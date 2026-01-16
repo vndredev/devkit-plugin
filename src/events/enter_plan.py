@@ -82,22 +82,17 @@ def main() -> None:
     guidance = get_planning_guidance()
     arch_context = get_arch_context()
 
-    if not guidance and not arch_context:
-        # No guidance configured, allow without context
-        result = {"continue": True}
-    else:
-        # Use additionalContext to inject context without showing to user
-        # message is shown to user, additionalContext is only for Claude
+    # Build result with proper hook format
+    result = {"continue": True, "hookSpecificOutput": {"hookEventName": "PreToolUse"}}
+
+    # Add additionalContext if we have guidance
+    if guidance or arch_context:
         additional_context = []
         if guidance:
             additional_context.append(guidance)
         if arch_context:
             additional_context.append(arch_context)
-
-        result = {
-            "continue": True,
-            "additionalContext": "\n\n".join(additional_context),
-        }
+        result["additionalContext"] = "\n\n".join(additional_context)
 
     print(json.dumps(result))
 

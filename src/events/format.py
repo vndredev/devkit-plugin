@@ -8,7 +8,6 @@ import json
 import sys
 from pathlib import Path
 
-from core.types import HookType
 from lib.config import get
 from lib.tools import format_file
 
@@ -91,7 +90,7 @@ def sync_architecture_md(file_path: str, prompt_tpl: str) -> str | None:
 
 def noop() -> None:
     """Output empty response for PostToolUse."""
-    print(json.dumps({"hook": HookType.POST_TOOL_USE.value}))
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse"}}))
 
 
 def main() -> None:
@@ -170,10 +169,10 @@ def main() -> None:
         if sync_msg:
             messages.append(sync_msg)
 
-    # Output
-    result = {"hook": HookType.POST_TOOL_USE.value}
+    # Output with proper hook format
+    result = {"hookSpecificOutput": {"hookEventName": "PostToolUse"}}
     if messages:
-        result["output"] = "\n".join(messages)
+        result["hookSpecificOutput"]["additionalContext"] = "\n".join(messages)
     print(json.dumps(result))
 
 

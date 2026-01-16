@@ -9,7 +9,6 @@ import json
 import sys
 
 from arch.check import check_all, format_compact
-from core.types import HookType
 from lib.config import get
 from lib.git import git_branch, git_status
 
@@ -22,7 +21,7 @@ def main() -> None:
 
     # Check if hook is enabled
     if not get("hooks.session.enabled", True):
-        print(json.dumps({"hook": HookType.SESSION_START.value, "output": ""}))
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart"}}))
         return
 
     # Load prompts from config
@@ -73,10 +72,12 @@ def main() -> None:
         output_lines.append("")
         output_lines.append(hint_tpl)
 
-    # Output
+    # Output with proper hook format
     result = {
-        "hook": HookType.SESSION_START.value,
-        "output": "\n".join(output_lines),
+        "hookSpecificOutput": {
+            "hookEventName": "SessionStart",
+            "additionalContext": "\n".join(output_lines),
+        }
     }
 
     # Show systemMessage only for warnings (not shown to user, but in Claude context)

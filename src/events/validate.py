@@ -8,7 +8,6 @@ import json
 import re
 import sys
 
-from core.types import HookAction, HookType
 from lib.config import get
 
 # Default types if not configured
@@ -167,7 +166,23 @@ def validate_gh_command(
 
 def allow() -> None:
     """Output allow response and exit."""
-    print(json.dumps({"continue": True}))
+    print(json.dumps({"continue": True, "hookSpecificOutput": {"hookEventName": "PreToolUse"}}))
+    sys.exit(0)
+
+
+def deny(reason: str) -> None:
+    """Output deny response and exit."""
+    print(
+        json.dumps(
+            {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "deny",
+                    "permissionDecisionReason": reason,
+                }
+            }
+        )
+    )
     sys.exit(0)
 
 
@@ -215,13 +230,7 @@ def main() -> None:
         if block_gh:
             valid, msg = validate_gh_command(command, gh_blocked_tpl, pr_missing_body_tpl)
             if not valid:
-                result = {
-                    "hook": HookType.PRE_TOOL_USE.value,
-                    "action": HookAction.DENY.value,
-                    "message": msg,
-                }
-                print(json.dumps(result))
-                sys.exit(0)
+                deny(msg)
         allow()
 
     # Validate git commands
@@ -234,13 +243,7 @@ def main() -> None:
     block_force = get("hooks.validate.block_force_push", True)
     is_force_push = subcmd == "push" and ("--force" in args or "-f" in args)
     if block_force and is_force_push:
-        result = {
-            "hook": HookType.PRE_TOOL_USE.value,
-            "action": HookAction.DENY.value,
-            "message": force_push_tpl,
-        }
-        print(json.dumps(result))
-        sys.exit(0)
+        deny(force_push_tpl)
 
     # Validate branch creation
     if subcmd == "checkout" and "-b" in args:
@@ -250,13 +253,7 @@ def main() -> None:
                 branch = args[idx + 1]
                 valid, msg = validate_branch_name(branch, branch_invalid_tpl)
                 if not valid:
-                    result = {
-                        "hook": HookType.PRE_TOOL_USE.value,
-                        "action": HookAction.DENY.value,
-                        "message": msg,
-                    }
-                    print(json.dumps(result))
-                    sys.exit(0)
+                    deny(msg)
         except (ValueError, IndexError):
             pass
 
@@ -266,13 +263,7 @@ def main() -> None:
         if msg:
             valid, err = validate_commit_message(msg, commit_invalid_tpl, scope_invalid_tpl)
             if not valid:
-                result = {
-                    "hook": HookType.PRE_TOOL_USE.value,
-                    "action": HookAction.DENY.value,
-                    "message": err,
-                }
-                print(json.dumps(result))
-                sys.exit(0)
+                deny(err)
 
     # All validations passed
     allow()

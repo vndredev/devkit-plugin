@@ -7,7 +7,6 @@ Injects implementation instructions when exiting plan mode.
 import json
 import sys
 
-from core.types import HookType
 from lib.config import get
 
 # Default instructions if not configured
@@ -92,7 +91,7 @@ def build_instructions() -> str:
 
 def noop() -> None:
     """Output empty response for PostToolUse."""
-    print(json.dumps({"hook": HookType.POST_TOOL_USE.value}))
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse"}}))
 
 
 def main() -> None:
@@ -118,8 +117,10 @@ def main() -> None:
 
     # Output loop instructions (from config or defaults)
     result = {
-        "hook": HookType.POST_TOOL_USE.value,
-        "output": build_instructions(),
+        "hookSpecificOutput": {
+            "hookEventName": "PostToolUse",
+            "additionalContext": build_instructions(),
+        }
     }
     print(json.dumps(result))
 
