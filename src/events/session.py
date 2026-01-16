@@ -22,6 +22,7 @@ def main() -> None:
 
     # Check if hook is enabled
     if not get("hooks.session.enabled", True):
+        print(json.dumps({"hook": HookType.SESSION_START.value, "output": ""}))
         return
 
     # Load prompts from config

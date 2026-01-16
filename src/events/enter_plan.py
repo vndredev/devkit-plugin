@@ -73,6 +73,12 @@ def get_arch_context() -> str:
 
 def main() -> None:
     """Main entry point for PreToolUse:EnterPlanMode hook."""
+    # Consume stdin (hook data) even if not used
+    try:
+        json.load(sys.stdin)
+    except json.JSONDecodeError:
+        pass
+
     guidance = get_planning_guidance()
     arch_context = get_arch_context()
 

@@ -90,22 +90,30 @@ def build_instructions() -> str:
     return "\n".join(lines)
 
 
+def noop() -> None:
+    """Output empty response for PostToolUse."""
+    print(json.dumps({"hook": HookType.POST_TOOL_USE.value}))
+
+
 def main() -> None:
     """Handle PostToolUse for ExitPlanMode."""
     # Read hook data
     try:
         hook_data = json.load(sys.stdin)
     except json.JSONDecodeError:
+        noop()
         return
 
     # Check if hook is enabled
     if not get("hooks.plan.enabled", True):
+        noop()
         return
 
     tool_name = hook_data.get("tool_name", "")
 
     # Only process ExitPlanMode
     if tool_name != "ExitPlanMode":
+        noop()
         return
 
     # Output loop instructions (from config or defaults)

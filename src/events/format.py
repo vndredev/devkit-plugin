@@ -89,28 +89,37 @@ def sync_architecture_md(file_path: str, prompt_tpl: str) -> str | None:
         return None
 
 
+def noop() -> None:
+    """Output empty response for PostToolUse."""
+    print(json.dumps({"hook": HookType.POST_TOOL_USE.value}))
+
+
 def main() -> None:
     """Handle PostToolUse hook for Write/Edit."""
     # Read hook data
     try:
         hook_data = json.load(sys.stdin)
     except json.JSONDecodeError:
+        noop()
         return
 
     # Check if hook is enabled
     if not get("hooks.format.enabled", True):
+        noop()
         return
 
     tool_name = hook_data.get("tool_name", "")
 
     # Only process Write/Edit
     if tool_name not in ("Write", "Edit"):
+        noop()
         return
 
     tool_input = hook_data.get("tool_input", {})
     file_path = tool_input.get("file_path", "")
 
     if not file_path:
+        noop()
         return
 
     # Load prompts from config
@@ -162,12 +171,10 @@ def main() -> None:
             messages.append(sync_msg)
 
     # Output
+    result = {"hook": HookType.POST_TOOL_USE.value}
     if messages:
-        result = {
-            "hook": HookType.POST_TOOL_USE.value,
-            "output": "\n".join(messages),
-        }
-        print(json.dumps(result))
+        result["output"] = "\n".join(messages)
+    print(json.dumps(result))
 
 
 if __name__ == "__main__":
