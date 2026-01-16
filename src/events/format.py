@@ -4,11 +4,10 @@
 Formats files, checks architecture, and provides hints.
 """
 
-import json
-import sys
 from pathlib import Path
 
 from lib.config import get
+from lib.hooks import noop_response, output_response, read_hook_input
 from lib.tools import format_file
 
 
@@ -88,37 +87,31 @@ def sync_architecture_md(file_path: str, prompt_tpl: str) -> str | None:
         return None
 
 
-def noop() -> None:
-    """Output empty response for PostToolUse."""
-    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse"}}))
-
-
 def main() -> None:
     """Handle PostToolUse hook for Write/Edit."""
     # Read hook data
-    try:
-        hook_data = json.load(sys.stdin)
-    except json.JSONDecodeError:
-        noop()
+    hook_data = read_hook_input()
+    if not hook_data:
+        noop_response()
         return
 
     # Check if hook is enabled
     if not get("hooks.format.enabled", True):
-        noop()
+        noop_response()
         return
 
     tool_name = hook_data.get("tool_name", "")
 
     # Only process Write/Edit
     if tool_name not in ("Write", "Edit"):
-        noop()
+        noop_response()
         return
 
     tool_input = hook_data.get("tool_input", {})
     file_path = tool_input.get("file_path", "")
 
     if not file_path:
-        noop()
+        noop_response()
         return
 
     # Load prompts from config
@@ -170,10 +163,10 @@ def main() -> None:
             messages.append(sync_msg)
 
     # Output with proper hook format
-    result = {"hookSpecificOutput": {"hookEventName": "PostToolUse"}}
+    result: dict = {"hookSpecificOutput": {"hookEventName": "PostToolUse"}}
     if messages:
         result["hookSpecificOutput"]["additionalContext"] = "\n".join(messages)
-    print(json.dumps(result))
+    output_response(result)
 
 
 if __name__ == "__main__":

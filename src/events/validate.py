@@ -4,11 +4,10 @@
 Validates branch names, commit messages, and blocks dangerous commands.
 """
 
-import json
 import re
-import sys
 
 from lib.config import get
+from lib.hooks import allow_response, deny_response, read_hook_input
 
 # Default types if not configured
 DEFAULT_TYPES = ["feat", "fix", "chore", "refactor", "test", "docs", "perf", "ci"]
@@ -164,46 +163,23 @@ def validate_gh_command(
     return True, "Valid gh command"
 
 
-def allow() -> None:
-    """Output allow response and exit."""
-    print(json.dumps({"continue": True, "hookSpecificOutput": {"hookEventName": "PreToolUse"}}))
-    sys.exit(0)
-
-
-def deny(reason: str) -> None:
-    """Output deny response and exit."""
-    print(
-        json.dumps(
-            {
-                "hookSpecificOutput": {
-                    "hookEventName": "PreToolUse",
-                    "permissionDecision": "deny",
-                    "permissionDecisionReason": reason,
-                }
-            }
-        )
-    )
-    sys.exit(0)
-
-
 def main() -> None:
     """Handle PreToolUse hook."""
     # Read hook data
-    try:
-        hook_data = json.load(sys.stdin)
-    except json.JSONDecodeError:
-        allow()
+    hook_data = read_hook_input()
+    if not hook_data:
+        allow_response()
 
     # Check if hook is enabled
     if not get("hooks.validate.enabled", True):
-        allow()
+        allow_response()
 
     tool_name = hook_data.get("tool_name", "")
     tool_input = hook_data.get("tool_input", {})
 
     # Only validate Bash commands
     if tool_name != "Bash":
-        allow()
+        allow_response()
 
     # Load prompts from config
     prompts = get("hooks.validate.prompts", {})
@@ -230,12 +206,12 @@ def main() -> None:
         if block_gh:
             valid, msg = validate_gh_command(command, gh_blocked_tpl, pr_missing_body_tpl)
             if not valid:
-                deny(msg)
-        allow()
+                deny_response(msg)
+        allow_response()
 
     # Validate git commands
     if not command.startswith("git "):
-        allow()
+        allow_response()
 
     subcmd, args = extract_git_args(command)
 
@@ -243,7 +219,7 @@ def main() -> None:
     block_force = get("hooks.validate.block_force_push", True)
     is_force_push = subcmd == "push" and ("--force" in args or "-f" in args)
     if block_force and is_force_push:
-        deny(force_push_tpl)
+        deny_response(force_push_tpl)
 
     # Validate branch creation
     if subcmd == "checkout" and "-b" in args:
@@ -253,7 +229,7 @@ def main() -> None:
                 branch = args[idx + 1]
                 valid, msg = validate_branch_name(branch, branch_invalid_tpl)
                 if not valid:
-                    deny(msg)
+                    deny_response(msg)
         except (ValueError, IndexError):
             pass
 
@@ -263,10 +239,10 @@ def main() -> None:
         if msg:
             valid, err = validate_commit_message(msg, commit_invalid_tpl, scope_invalid_tpl)
             if not valid:
-                deny(err)
+                deny_response(err)
 
     # All validations passed
-    allow()
+    allow_response()
 
 
 if __name__ == "__main__":

@@ -4,10 +4,8 @@
 Injects implementation instructions when exiting plan mode.
 """
 
-import json
-import sys
-
 from lib.config import get
+from lib.hooks import noop_response, output_response, read_hook_input
 
 # Default instructions if not configured
 DEFAULT_INSTRUCTIONS = [
@@ -89,40 +87,35 @@ def build_instructions() -> str:
     return "\n".join(lines)
 
 
-def noop() -> None:
-    """Output empty response for PostToolUse."""
-    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse"}}))
-
-
 def main() -> None:
     """Handle PostToolUse for ExitPlanMode."""
     # Read hook data
-    try:
-        hook_data = json.load(sys.stdin)
-    except json.JSONDecodeError:
-        noop()
+    hook_data = read_hook_input()
+    if not hook_data:
+        noop_response()
         return
 
     # Check if hook is enabled
     if not get("hooks.plan.enabled", True):
-        noop()
+        noop_response()
         return
 
     tool_name = hook_data.get("tool_name", "")
 
     # Only process ExitPlanMode
     if tool_name != "ExitPlanMode":
-        noop()
+        noop_response()
         return
 
     # Output loop instructions (from config or defaults)
-    result = {
-        "hookSpecificOutput": {
-            "hookEventName": "PostToolUse",
-            "additionalContext": build_instructions(),
+    output_response(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "additionalContext": build_instructions(),
+            }
         }
-    }
-    print(json.dumps(result))
+    )
 
 
 if __name__ == "__main__":

@@ -7,11 +7,11 @@ Shows the planning requirements and structure from config.jsonc
 so Claude knows the expected plan format BEFORE creating a plan.
 """
 
-import contextlib
 import json
 import sys
 
 from lib.config import get
+from lib.hooks import consume_stdin, output_response
 
 
 def get_planning_guidance() -> str:
@@ -68,15 +68,14 @@ def get_arch_context() -> str:
 
 def main() -> None:
     """Main entry point for PreToolUse:EnterPlanMode hook."""
-    # Consume stdin (hook data) even if not used
-    with contextlib.suppress(json.JSONDecodeError):
-        json.load(sys.stdin)
+    # Consume stdin (hook data not needed)
+    consume_stdin()
 
     guidance = get_planning_guidance()
     arch_context = get_arch_context()
 
     # Build result with proper hook format
-    result = {"continue": True, "hookSpecificOutput": {"hookEventName": "PreToolUse"}}
+    result: dict = {"continue": True, "hookSpecificOutput": {"hookEventName": "PreToolUse"}}
 
     # Add additionalContext if we have guidance
     if guidance or arch_context:
@@ -87,7 +86,7 @@ def main() -> None:
             additional_context.append(arch_context)
         result["additionalContext"] = "\n\n".join(additional_context)
 
-    print(json.dumps(result))
+    output_response(result)
 
 
 if __name__ == "__main__":

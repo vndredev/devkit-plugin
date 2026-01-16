@@ -4,24 +4,22 @@
 Displays git status, config info, health check, and dev workflow reminder.
 """
 
-import contextlib
-import json
-import sys
+from subprocess import SubprocessError
 
 from arch.check import check_all, format_compact
 from lib.config import get
 from lib.git import git_branch, git_status
+from lib.hooks import consume_stdin, output_response
 
 
 def main() -> None:
     """Handle SessionStart hook."""
-    # Read hook data (consume stdin even if not used)
-    with contextlib.suppress(json.JSONDecodeError):
-        json.load(sys.stdin)
+    # Consume stdin (hook data not needed)
+    consume_stdin()
 
     # Check if hook is enabled
     if not get("hooks.session.enabled", True):
-        print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart"}}))
+        output_response({"hookSpecificOutput": {"hookEventName": "SessionStart"}})
         return
 
     # Load prompts from config
@@ -33,11 +31,10 @@ def main() -> None:
     hint_tpl = prompts.get("hint", "Use `/dk` for commands, `/dk dev` for workflow")
 
     # Gather context - only show what's relevant
-    output_lines = []
+    output_lines: list[str] = []
     has_issues = False
 
     # Git status - compact format
-    git_status_line = ""
     if get("hooks.session.show_git_status", True):
         try:
             branch = git_branch()
@@ -51,9 +48,8 @@ def main() -> None:
             if status["untracked"]:
                 git_parts.append(untracked_tpl.format(count=len(status["untracked"])))
 
-            git_status_line = " | ".join(git_parts)
-            output_lines.append(git_status_line)
-        except Exception:  # noqa: S110
+            output_lines.append(" | ".join(git_parts))
+        except (SubprocessError, OSError):
             pass
 
     # Health check - only show if issues
@@ -64,7 +60,7 @@ def main() -> None:
             output_lines.append("")
             output_lines.append(health_warning)
             has_issues = True
-    except Exception:  # noqa: S110
+    except (ImportError, OSError):
         pass
 
     # Commands hint - only if no issues (otherwise they know what to fix)
@@ -73,7 +69,7 @@ def main() -> None:
         output_lines.append(hint_tpl)
 
     # Output with proper hook format
-    result = {
+    result: dict = {
         "hookSpecificOutput": {
             "hookEventName": "SessionStart",
             "additionalContext": "\n".join(output_lines),
@@ -87,7 +83,7 @@ def main() -> None:
         )
         result["systemMessage"] = warning_tpl
 
-    print(json.dumps(result))
+    output_response(result)
 
 
 if __name__ == "__main__":
