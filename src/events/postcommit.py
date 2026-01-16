@@ -4,11 +4,9 @@
 TIER 3: Entry point, may import from all layers.
 """
 
-from pathlib import Path
-
 from lib.config import get
 from lib.git import extract_git_args
-from lib.hooks import noop_response, output_response, read_hook_input
+from lib.hooks import get_project_dir, noop_response, output_response, read_hook_input
 from lib.version import update_plugin_version
 
 
@@ -38,8 +36,12 @@ def main() -> None:
         return
 
     # Update plugin version with new commit ID
-    plugin_root = Path.cwd()
-    ok, msg = update_plugin_version(plugin_root)
+    project_dir = get_project_dir()
+    if not project_dir:
+        noop_response("PostToolUse")
+        return
+
+    ok, msg = update_plugin_version(project_dir)
 
     if ok:
         output_response(
