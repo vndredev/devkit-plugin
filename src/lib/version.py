@@ -235,6 +235,8 @@ def get_commit_version(root: Path | None = None) -> str:
 def update_plugin_version(root: Path | None = None) -> tuple[bool, str]:
     """Update plugin.json version with commit ID for cache invalidation.
 
+    Also updates the local marketplace.json if configured.
+
     Args:
         root: Plugin root directory. Defaults to current directory.
 
@@ -253,6 +255,7 @@ def update_plugin_version(root: Path | None = None) -> tuple[bool, str]:
     try:
         content = plugin_json.read_text()
         data = json.loads(content)
+        plugin_name = data.get("name", "")
         old_version = data.get("version", "unknown")
 
         if old_version == commit_version:
@@ -260,6 +263,51 @@ def update_plugin_version(root: Path | None = None) -> tuple[bool, str]:
 
         data["version"] = commit_version
         plugin_json.write_text(json.dumps(data, indent=2) + "\n")
+
+        # Also update local marketplace if found
+        _update_local_marketplace(plugin_name, commit_version)
+
         return True, f"{old_version} -> {commit_version}"
     except (json.JSONDecodeError, OSError) as e:
         return False, f"failed: {e}"
+
+
+def _update_local_marketplace(plugin_name: str, version: str) -> None:
+    """Update version in local marketplace.json if found.
+
+    Finds local directory-based marketplaces and updates the plugin version.
+
+    Args:
+        plugin_name: Name of the plugin to update.
+        version: New version string.
+    """
+    known_marketplaces = Path.home() / ".claude" / "plugins" / "known_marketplaces.json"
+    if not known_marketplaces.exists():
+        return
+
+    try:
+        marketplaces = json.loads(known_marketplaces.read_text())
+
+        for marketplace in marketplaces.values():
+            source = marketplace.get("source", {})
+            # Only process local directory marketplaces
+            if source.get("source") != "directory":
+                continue
+
+            marketplace_path = Path(source.get("path", ""))
+            marketplace_json = marketplace_path / ".claude-plugin" / "marketplace.json"
+
+            if not marketplace_json.exists():
+                continue
+
+            # Update plugin version in marketplace
+            mp_data = json.loads(marketplace_json.read_text())
+            plugins = mp_data.get("plugins", [])
+
+            for plugin in plugins:
+                if plugin.get("name") == plugin_name:
+                    plugin["version"] = version
+                    marketplace_json.write_text(json.dumps(mp_data, indent=2) + "\n")
+                    break
+    except (json.JSONDecodeError, OSError):
+        pass  # Silently ignore marketplace update errors
