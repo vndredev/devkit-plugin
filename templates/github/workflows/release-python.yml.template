@@ -155,6 +155,53 @@ jobs:
                   data["project"]["version"] = new_version
                   Path("pyproject.toml").write_text(toml.dumps(data))
 
+          def sync_other_versions(new_version):
+              """Sync version to config.jsonc, package.json, plugin.json."""
+              updated = []
+
+              # Files to update: (path, is_jsonc, json_path_pattern)
+              files = [
+                  (".claude/.devkit/config.jsonc", True, r'("version"\s*:\s*")[^"]+(")', "project.version"),
+                  ("package.json", False, ["version"]),
+                  (".claude-plugin/plugin.json", False, ["version"]),
+              ]
+
+              for file_info in files:
+                  path = Path(file_info[0])
+                  if not path.exists():
+                      continue
+
+                  content = path.read_text()
+                  is_jsonc = file_info[1]
+
+                  if is_jsonc:
+                      # JSONC: use regex to preserve comments
+                      pattern = file_info[2]
+                      match = re.search(pattern, content)
+                      if match:
+                          new_content = content[:match.start(1)] + match.group(1) + new_version + match.group(2) + content[match.end(2):]
+                          path.write_text(new_content)
+                          updated.append(str(path))
+                  else:
+                      # Regular JSON: parse and update
+                      try:
+                          data = json.loads(content)
+                          json_path = file_info[2]
+                          obj = data
+                          for key in json_path[:-1]:
+                              obj = obj.get(key, {})
+                          if json_path[-1] in obj or len(json_path) == 1:
+                              if len(json_path) == 1:
+                                  data[json_path[0]] = new_version
+                              else:
+                                  obj[json_path[-1]] = new_version
+                              path.write_text(json.dumps(data, indent=2) + "\n")
+                              updated.append(str(path))
+                      except json.JSONDecodeError:
+                          pass
+
+              return updated
+
           # Get last commit
           result = subprocess.run(["git", "log", "-1", "--pretty=%s"], capture_output=True, text=True)
           msg = result.stdout.strip()
@@ -180,6 +227,11 @@ jobs:
 
           # Update pyproject.toml
           set_version_pyproject(pyproject_data, new_version)
+
+          # Sync version to other files (config.jsonc, package.json, plugin.json)
+          synced_files = sync_other_versions(new_version)
+          if synced_files:
+              print(f"Synced version to: {', '.join(synced_files)}")
 
           # Update changelog
           section = SECTION_MAP.get(commit_type)
@@ -236,6 +288,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md pyproject.toml
+          # Add version files if they exist
+          [ -f ".claude/.devkit/config.jsonc" ] && git add .claude/.devkit/config.jsonc
+          [ -f "package.json" ] && git add package.json
+          [ -f ".claude-plugin/plugin.json" ] && git add .claude-plugin/plugin.json
           git commit -m "chore(release): ${{ steps.release.outputs.version }}"
           git push
 
