@@ -187,9 +187,20 @@ fi
 # devkit status
 if [ -n "$DEVKIT_STATUS" ]; then
     OUTPUT+=" \033[90m|\033[0m "
+
+    # Get devkit version from config
+    local devkit_version=""
+    if [ -f "$CWD/.claude/.devkit/config.jsonc" ]; then
+        devkit_version=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$CWD/.claude/.devkit/config.jsonc" 2>/dev/null | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+    fi
+
     if [ "$DEVKIT_STATUS" = "ok" ]; then
-        # Green for healthy
-        OUTPUT+="\033[32mdevkit ok\033[0m"
+        # Green for healthy - show version if available
+        if [ -n "$devkit_version" ]; then
+            OUTPUT+="\033[32m$devkit_version devkit ok\033[0m"
+        else
+            OUTPUT+="\033[32mdevkit ok\033[0m"
+        fi
     else
         # Bold red for errors with clear message
         OUTPUT+="\033[1;31mdevkit: $DEVKIT_MSG\033[0m"
