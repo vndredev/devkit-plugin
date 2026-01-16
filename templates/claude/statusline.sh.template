@@ -188,10 +188,21 @@ fi
 if [ -n "$DEVKIT_STATUS" ]; then
     OUTPUT+=" \033[90m|\033[0m "
 
-    # Get devkit version from config
+    # Get devkit version and devMode from config
     local devkit_version=""
+    local dev_mode="false"
     if [ -f "$CWD/.claude/.devkit/config.jsonc" ]; then
         devkit_version=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$CWD/.claude/.devkit/config.jsonc" 2>/dev/null | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+        dev_mode=$(grep -o '"devMode"[[:space:]]*:[[:space:]]*true' "$CWD/.claude/.devkit/config.jsonc" 2>/dev/null && echo "true" || echo "false")
+    fi
+
+    # Add version suffix based on git state (only in devMode)
+    if [ -n "$devkit_version" ] && [ -n "$GIT_BRANCH" ] && [ "$dev_mode" = "true" ]; then
+        local commit_id
+        commit_id=$(git -C "$CWD" rev-parse --short HEAD 2>/dev/null)
+        if [ -n "$commit_id" ]; then
+            devkit_version="${devkit_version}-${commit_id}"
+        fi
     fi
 
     if [ "$DEVKIT_STATUS" = "ok" ]; then

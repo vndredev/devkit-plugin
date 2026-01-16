@@ -5,6 +5,7 @@ TIER 1: May import from core only.
 
 import json
 import re
+import subprocess
 from pathlib import Path
 
 import tomllib
@@ -168,3 +169,67 @@ def _set_nested(data: dict, path: list[str], value: str) -> None:
             data[key] = {}
         data = data[key]
     data[path[-1]] = value
+
+
+def get_commit_version(root: Path | None = None) -> str:
+    """Get version with commit ID suffix for cache invalidation.
+
+    Format: {base_version}-{short_commit_id}
+    Example: 0.18.1-fb8ca3d
+
+    Args:
+        root: Project root directory. Defaults to current directory.
+
+    Returns:
+        Version string with commit suffix, or base version if git fails.
+    """
+    if root is None:
+        root = Path.cwd()
+
+    base_version = get_version(root)
+
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        commit_id = result.stdout.strip()
+        return f"{base_version}-{commit_id}"
+    except (subprocess.SubprocessError, OSError):
+        return base_version
+
+
+def update_plugin_version(root: Path | None = None) -> tuple[bool, str]:
+    """Update plugin.json version with commit ID for cache invalidation.
+
+    Args:
+        root: Plugin root directory. Defaults to current directory.
+
+    Returns:
+        Tuple of (success, message).
+    """
+    if root is None:
+        root = Path.cwd()
+
+    plugin_json = root / ".claude-plugin" / "plugin.json"
+    if not plugin_json.exists():
+        return False, "plugin.json not found"
+
+    commit_version = get_commit_version(root)
+
+    try:
+        content = plugin_json.read_text()
+        data = json.loads(content)
+        old_version = data.get("version", "unknown")
+
+        if old_version == commit_version:
+            return True, f"already {commit_version}"
+
+        data["version"] = commit_version
+        plugin_json.write_text(json.dumps(data, indent=2) + "\n")
+        return True, f"{old_version} -> {commit_version}"
+    except (json.JSONDecodeError, OSError) as e:
+        return False, f"failed: {e}"

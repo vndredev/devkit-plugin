@@ -28,6 +28,11 @@
           "default": "0.0.0",
           "description": "Semantic version (starting point for releases)"
         },
+        "devMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable dev mode: show commit-ID in statusline, auto-update plugin version for cache invalidation"
+        },
         "slogan": {
           "type": "string",
           "description": "Short tagline for the project"
