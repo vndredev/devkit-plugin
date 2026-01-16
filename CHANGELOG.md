@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.17.2] - 2026-01-16
+## [v0.17.3] - 2026-01-16
+
+### Changed
+
+- **Events**: Use correct hook response format
 
 ### Fixed
 
