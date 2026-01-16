@@ -15,12 +15,25 @@ from lib.docs import (
     update_plugin_md,
 )
 from lib.git import git_branch, git_commit, git_status, is_protected_branch, run_git
+from lib.hooks import (
+    allow_response,
+    consume_stdin,
+    deny_response,
+    load_prompts,
+    noop_response,
+    output_response,
+    read_hook_input,
+)
+from lib.jsonc import strip_comments
 from lib.sync import check_sync_status, render_template, sync_all, sync_docs, sync_linters
 from lib.tools import detect_project_type, detect_project_version, format_file, notify, run_linter
 
 __all__ = [
+    "allow_response",
     "check_sync_status",
     "clear_cache",
+    "consume_stdin",
+    "deny_response",
     "detect_project_type",
     "detect_project_version",
     "format_file",
@@ -35,12 +48,17 @@ __all__ = [
     "git_status",
     "is_protected_branch",
     "load_config",
+    "load_prompts",
     "merge_sections",
+    "noop_response",
     "notify",
+    "output_response",
     "parse_sections",
+    "read_hook_input",
     "render_template",
     "run_git",
     "run_linter",
+    "strip_comments",
     "sync_all",
     "sync_docs",
     "sync_linters",
