@@ -204,7 +204,9 @@ if [ -n "$DEVKIT_STATUS" ]; then
         else
             # Otherwise: Find installed plugin version + append current project commit
             base_version=""
-            cache_base="$HOME/.claude/plugins/cache/vndredev-marketplace"
+            # Derive Claude config dir from this script's location
+            script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+            cache_base="$script_dir/plugins/cache/vndredev-marketplace"
             for plugin_name in "devkit-plugin-dev" "devkit-plugin"; do
                 plugin_dir="$cache_base/$plugin_name"
                 if [ -d "$plugin_dir" ]; then

@@ -258,14 +258,14 @@ def update_plugin_version(root: Path | None = None) -> tuple[bool, str]:
         plugin_name = data.get("name", "")
         old_version = data.get("version", "unknown")
 
+        # Always sync marketplace, even if plugin.json unchanged
+        _update_local_marketplace(plugin_name, commit_version)
+
         if old_version == commit_version:
             return True, f"already {commit_version}"
 
         data["version"] = commit_version
         plugin_json.write_text(json.dumps(data, indent=2) + "\n")
-
-        # Also update local marketplace if found
-        _update_local_marketplace(plugin_name, commit_version)
 
         return True, f"{old_version} -> {commit_version}"
     except (json.JSONDecodeError, OSError) as e:
