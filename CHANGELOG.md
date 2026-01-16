@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.17.3] - 2026-01-16
+## [v0.18.0] - 2026-01-16
 
 ### Changed
 
@@ -13,6 +13,7 @@
 
 ### Added
 
+- Add automatic managed entry upgrades and claude_config_dir support
 - **Events**: Use additionalcontext in enterplanmode hook
 
 ## [v0.16.0] - 2026-01-15
