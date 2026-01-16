@@ -51,18 +51,46 @@ def get_planning_guidance() -> str:
     return "\n".join(lines)
 
 
+def get_arch_context() -> str:
+    """Get architecture context for planning."""
+    layers = get("arch.layers", {})
+    if not layers:
+        return ""
+
+    lines = ["## Architecture Layers (for reference)"]
+    sorted_layers = sorted(layers.items(), key=lambda x: x[1].get("tier", 0))
+
+    for name, info in sorted_layers:
+        tier = info.get("tier", 0)
+        desc = info.get("description", "")
+        patterns = info.get("patterns", [])
+        lines.append(f"- **{name}** (Tier {tier}): {desc}")
+        if patterns:
+            lines.append(f"  Patterns: {', '.join(patterns)}")
+
+    return "\n".join(lines)
+
+
 def main() -> None:
     """Main entry point for PreToolUse:EnterPlanMode hook."""
     guidance = get_planning_guidance()
+    arch_context = get_arch_context()
 
-    if not guidance:
-        # No guidance configured, allow without message
+    if not guidance and not arch_context:
+        # No guidance configured, allow without context
         result = {"continue": True}
     else:
-        # Show guidance to Claude
+        # Use additionalContext to inject context without showing to user
+        # message is shown to user, additionalContext is only for Claude
+        additional_context = []
+        if guidance:
+            additional_context.append(guidance)
+        if arch_context:
+            additional_context.append(arch_context)
+
         result = {
             "continue": True,
-            "message": f"📋 **Plan Mode Guidelines**\n\n{guidance}",
+            "additionalContext": "\n\n".join(additional_context),
         }
 
     print(json.dumps(result))
