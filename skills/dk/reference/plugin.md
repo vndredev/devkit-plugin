@@ -98,16 +98,26 @@ Action: /dk plugin update
 
 Sync all managed files, upgrade config, and install user files:
 
-1. **Config upgrade:** Adds missing optional sections with defaults
-2. **Linters:** ruff.toml, .markdownlint.json, etc.
-3. **GitHub:** Workflows and issue templates
-4. **Docs:** CLAUDE.md, docs/PLUGIN.md
-5. **Ignore:** .gitignore, etc.
-6. **User files:** ~/.claude/statusline.sh (Claude Code status line)
+1. **Versions:** Syncs version across package.json, config.jsonc, pyproject.toml
+2. **Config upgrade:** Adds missing optional sections with defaults
+3. **Linters:** ruff.toml, .markdownlint.json, etc.
+4. **GitHub:** Workflows and issue templates
+5. **Docs:** CLAUDE.md, docs/PLUGIN.md
+6. **Ignore:** .gitignore, etc.
+7. **User files:** ~/.claude/statusline.sh (Claude Code status line)
 
 ```bash
 PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
 from lib.sync import sync_all, install_user_files
+from lib.version import sync_versions
+
+print('=== Syncing Versions ===')
+print()
+version_results = sync_versions()
+for target, success, msg in version_results:
+    icon = '✓' if success else '✗'
+    print(f'{icon} {target}: {msg}')
+print()
 
 print('=== Syncing Plugin Files ===')
 print()

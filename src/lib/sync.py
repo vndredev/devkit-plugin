@@ -579,6 +579,11 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
     results.extend(_sync_managed_ignore(root, plugin_root, managed, project_type))
     results.extend(_sync_managed_docs(root, plugin_root, managed, values))
 
+    # Sync versions across all project files
+    from lib.version import sync_versions
+
+    results.extend(sync_versions(root))
+
     return results
 
 

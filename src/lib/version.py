@@ -12,26 +12,56 @@ import tomllib
 
 
 def get_version(root: Path | None = None) -> str:
-    """Get current version from pyproject.toml.
+    """Get current version from project files.
+
+    Checks in order of priority:
+    1. pyproject.toml (Python projects)
+    2. package.json (Node.js projects)
+    3. .claude-plugin/plugin.json (Claude plugins)
 
     Args:
         root: Project root directory. Defaults to current directory.
 
     Returns:
-        Version string or "0.0.0" if not found.
+        Version string or "0.0.0" if not found in any source.
     """
     if root is None:
         root = Path.cwd()
 
+    # 1. Try pyproject.toml (Python projects)
     pyproject = root / "pyproject.toml"
-    if not pyproject.exists():
-        return "0.0.0"
+    if pyproject.exists():
+        try:
+            data = tomllib.loads(pyproject.read_text())
+            version = data.get("project", {}).get("version")
+            if version:
+                return version
+        except (tomllib.TOMLDecodeError, OSError):
+            pass
 
-    try:
-        data = tomllib.loads(pyproject.read_text())
-        return data.get("project", {}).get("version", "0.0.0")
-    except (tomllib.TOMLDecodeError, OSError):
-        return "0.0.0"
+    # 2. Try package.json (Node.js projects)
+    package_json = root / "package.json"
+    if package_json.exists():
+        try:
+            data = json.loads(package_json.read_text())
+            version = data.get("version")
+            if version:
+                return version
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    # 3. Try plugin.json (Claude plugins)
+    plugin_json = root / ".claude-plugin" / "plugin.json"
+    if plugin_json.exists():
+        try:
+            data = json.loads(plugin_json.read_text())
+            version = data.get("version", "").split("-")[0]  # Strip commit suffix
+            if version:
+                return version
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    return "0.0.0"
 
 
 def sync_versions(

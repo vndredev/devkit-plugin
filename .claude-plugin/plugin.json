@@ -1,6 +1,6 @@
 {
   "name": "devkit-plugin",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "description": "Clean Architecture + Dev Workflow Plugin",
   "author": {
     "name": "vndredev"
@@ -60,6 +60,16 @@
           {
             "type": "command",
             "command": "cd \"${CLAUDE_PLUGIN_ROOT}\" && PYTHONPATH=src .venv/bin/python src/events/plan.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PLUGIN_ROOT}\" && PYTHONPATH=src .venv/bin/python src/events/postcommit.py",
             "timeout": 5
           }
         ]

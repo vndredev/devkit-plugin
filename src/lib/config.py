@@ -144,6 +144,8 @@ def clear_cache() -> None:
 # Recommended defaults for optional config sections
 # These are added when running /dk plugin update on older configs
 RECOMMENDED_DEFAULTS = {
+    # === Project Settings ===
+    "project.devMode": False,  # Show commit-ID in statusline when True
     # === Session Hook ===
     "hooks.session.prompts": {
         "branch": "📍 {branch}",

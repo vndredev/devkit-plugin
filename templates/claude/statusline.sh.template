@@ -188,20 +188,43 @@ fi
 if [ -n "$DEVKIT_STATUS" ]; then
     OUTPUT+=" \033[90m|\033[0m "
 
-    # Get devkit version and devMode from config
-    local devkit_version=""
-    local dev_mode="false"
-    if [ -f "$CWD/.claude/.devkit/config.jsonc" ]; then
-        devkit_version=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$CWD/.claude/.devkit/config.jsonc" 2>/dev/null | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
-        dev_mode=$(grep -o '"devMode"[[:space:]]*:[[:space:]]*true' "$CWD/.claude/.devkit/config.jsonc" 2>/dev/null && echo "true" || echo "false")
+    # Check if devMode is enabled in config.jsonc
+    dev_mode=""
+    config_file="$CWD/.claude/.devkit/config.jsonc"
+    if [ -f "$config_file" ]; then
+        dev_mode=$(grep -o '"devMode"[[:space:]]*:[[:space:]]*true' "$config_file" 2>/dev/null)
     fi
 
-    # Add version suffix based on git state (only in devMode)
-    if [ -n "$devkit_version" ] && [ -n "$GIT_BRANCH" ] && [ "$dev_mode" = "true" ]; then
-        local commit_id
-        commit_id=$(git -C "$CWD" rev-parse --short HEAD 2>/dev/null)
-        if [ -n "$commit_id" ]; then
-            devkit_version="${devkit_version}-${commit_id}"
+    # Get plugin version when devMode is true
+    devkit_version=""
+    if [ -n "$dev_mode" ]; then
+        # First: Check if current project IS a plugin (local dev) - use local version (already has commit-id)
+        if [ -f "$CWD/.claude-plugin/plugin.json" ]; then
+            devkit_version=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$CWD/.claude-plugin/plugin.json" 2>/dev/null | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+        else
+            # Otherwise: Find installed plugin version + append current project commit
+            base_version=""
+            cache_base="$HOME/.claude/plugins/cache/vndredev-marketplace"
+            for plugin_name in "devkit-plugin-dev" "devkit-plugin"; do
+                plugin_dir="$cache_base/$plugin_name"
+                if [ -d "$plugin_dir" ]; then
+                    for version_dir in $(ls -d "$plugin_dir"/*/ 2>/dev/null | sort -V -r); do
+                        if [ -f "$version_dir/.claude-plugin/plugin.json" ]; then
+                            base_version=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$version_dir/.claude-plugin/plugin.json" 2>/dev/null | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+                            break 2
+                        fi
+                    done
+                fi
+            done
+            # Append current project commit-id
+            if [ -n "$base_version" ]; then
+                commit_id=$(git -C "$CWD" rev-parse --short HEAD 2>/dev/null)
+                if [ -n "$commit_id" ]; then
+                    devkit_version="${base_version}-${commit_id}"
+                else
+                    devkit_version="$base_version"
+                fi
+            fi
         fi
     fi
 

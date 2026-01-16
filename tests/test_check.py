@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from arch.check import check_all, check_config, check_sync
+from arch.check import check_all, check_config, check_sync, check_templates
 
 
 class TestCheckConfig:
@@ -199,6 +199,58 @@ class TestCheckSync:
         assert ruff_result[0][2] == "missing"
 
 
+class TestCheckTemplates:
+    """Tests for check_templates()."""
+
+    def test_check_templates_all_exist(self, tmp_path):
+        """Should pass when all templates exist."""
+        # Create plugin structure with all required templates
+        plugin_root = tmp_path / "plugin"
+        templates_dir = plugin_root / "templates"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "CLAUDE.md.template").write_text("# Template")
+        (templates_dir / "docs").mkdir(parents=True)
+        (templates_dir / "docs" / "PLUGIN.md.template").write_text("# Plugin")
+        (templates_dir / "docs" / "README.md.template").write_text("# README")
+        (templates_dir / "claude").mkdir(parents=True)
+        (templates_dir / "claude" / "statusline.sh.template").write_text("#!/bin/bash")
+
+        with patch("arch.check.get_plugin_root", return_value=plugin_root):
+            ok, missing = check_templates()
+
+        assert ok is True
+        assert missing == []
+
+    def test_check_templates_missing_one(self, tmp_path):
+        """Should fail and report missing template."""
+        # Create plugin structure with one missing template
+        plugin_root = tmp_path / "plugin"
+        templates_dir = plugin_root / "templates"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "CLAUDE.md.template").write_text("# Template")
+        (templates_dir / "docs").mkdir(parents=True)
+        (templates_dir / "docs" / "PLUGIN.md.template").write_text("# Plugin")
+        # Missing: README.md.template and statusline.sh.template
+
+        with patch("arch.check.get_plugin_root", return_value=plugin_root):
+            ok, missing = check_templates()
+
+        assert ok is False
+        assert "docs/README.md.template" in missing
+        assert "claude/statusline.sh.template" in missing
+
+    def test_check_templates_all_missing(self, tmp_path):
+        """Should report all missing when templates dir is empty."""
+        plugin_root = tmp_path / "plugin"
+        (plugin_root / "templates").mkdir(parents=True)
+
+        with patch("arch.check.get_plugin_root", return_value=plugin_root):
+            ok, missing = check_templates()
+
+        assert ok is False
+        assert len(missing) == 4
+
+
 class TestCheckAll:
     """Tests for check_all()."""
 
@@ -274,12 +326,23 @@ class TestCheckAll:
             )
         )
 
+        # Create required templates for check_templates()
+        templates_dir = plugin_root / "templates"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "CLAUDE.md.template").write_text("# Template")
+        (templates_dir / "docs").mkdir(parents=True)
+        (templates_dir / "docs" / "PLUGIN.md.template").write_text("# Plugin")
+        (templates_dir / "docs" / "README.md.template").write_text("# README")
+        (templates_dir / "claude").mkdir(parents=True)
+        (templates_dir / "claude" / "statusline.sh.template").write_text("#!/bin/bash")
+
         monkeypatch.chdir(tmp_path)
 
         with patch("arch.check.get_plugin_root", return_value=plugin_root):
             result = check_all()
 
         assert result["healthy"] is True
+        assert result["templates"]["ok"] is True
 
     def test_check_all_unhealthy_when_invalid(self, tmp_path, monkeypatch):
         """Should be unhealthy when checks fail."""

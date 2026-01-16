@@ -8,4 +8,5 @@ Handlers:
 - enter_plan.py: PreToolUse:EnterPlanMode hook (shows planning structure)
 - format.py: PostToolUse:Write|Edit hook
 - plan.py: PostToolUse:ExitPlanMode hook (implementation instructions)
+- postcommit.py: PostToolUse:Bash hook (version update after commit)
 """

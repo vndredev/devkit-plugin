@@ -3,6 +3,8 @@
 TIER 2: May import from core and lib.
 """
 
+import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -229,6 +231,150 @@ def _check_ignore_sync(
     return output_path, False, "outdated"
 
 
+def _get_changelog_version(root: Path) -> str | None:
+    """Extract latest version from CHANGELOG.md.
+
+    Looks for patterns like:
+    - ## [0.19.0]
+    - ## 0.19.0
+    - # v0.19.0
+
+    Returns:
+        Version string or None if not found.
+    """
+    changelog = root / "CHANGELOG.md"
+    if not changelog.exists():
+        return None
+
+    try:
+        content = changelog.read_text()
+        # Match ## [0.19.0], ## 0.19.0, or # v0.19.0
+        match = re.search(r"^#+\s*\[?v?(\d+\.\d+\.\d+)\]?", content, re.MULTILINE)
+        if match:
+            return match.group(1)
+    except OSError:
+        pass
+    return None
+
+
+def _get_git_tag_version(root: Path) -> str | None:
+    """Get latest git tag version.
+
+    Returns:
+        Version string (without v prefix) or None if not found.
+    """
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        tag = result.stdout.strip()
+        # Remove 'v' prefix if present
+        return tag.lstrip("v") if tag else None
+    except (subprocess.SubprocessError, OSError):
+        return None
+
+
+def check_versions() -> tuple[bool, dict[str, str], list[str]]:
+    """Check that all version files are in sync.
+
+    Checks version in:
+    - .claude-plugin/plugin.json (version) - authoritative for plugin projects
+    - package.json (version) - authoritative for node projects
+    - pyproject.toml (project.version) - authoritative for python projects
+    - .claude/.devkit/config.jsonc (project.version)
+    - CHANGELOG.md (latest version header)
+    - Git tags (latest tag)
+
+    Returns:
+        Tuple of (all_in_sync, versions_found, list of errors)
+    """
+    root = get_project_root()
+    versions: dict[str, str] = {}
+    errors: list[str] = []
+
+    # Check package.json
+    package_json = root / "package.json"
+    if package_json.exists():
+        try:
+            data = json.loads(package_json.read_text())
+            if "version" in data:
+                versions["package.json"] = data["version"]
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    # Check pyproject.toml
+    pyproject = root / "pyproject.toml"
+    if pyproject.exists():
+        try:
+            content = pyproject.read_text()
+            # Simple regex to extract version from [project] section
+            match = re.search(r'^\s*version\s*=\s*["\']([^"\']+)["\']', content, re.MULTILINE)
+            if match:
+                versions["pyproject.toml"] = match.group(1)
+        except OSError:
+            pass
+
+    # Check plugin.json (Claude plugins)
+    plugin_json = root / ".claude-plugin" / "plugin.json"
+    if plugin_json.exists():
+        try:
+            data = json.loads(plugin_json.read_text())
+            if "version" in data:
+                # Strip commit suffix for comparison (e.g., "0.19.0-abc1234" -> "0.19.0")
+                version = data["version"].split("-")[0]
+                versions["plugin.json"] = version
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    # Check config.jsonc
+    config_jsonc = root / ".claude" / ".devkit" / "config.jsonc"
+    if config_jsonc.exists():
+        try:
+            content = config_jsonc.read_text()
+            # Extract version from "project" section using regex (JSONC may have comments)
+            match = re.search(
+                r'"project"\s*:\s*\{[^}]*"version"\s*:\s*"([^"]+)"', content, re.DOTALL
+            )
+            if match:
+                versions["config.jsonc"] = match.group(1)
+        except OSError:
+            pass
+
+    # Check CHANGELOG.md
+    changelog_version = _get_changelog_version(root)
+    if changelog_version:
+        versions["CHANGELOG.md"] = changelog_version
+
+    # Check Git tags
+    git_tag_version = _get_git_tag_version(root)
+    if git_tag_version:
+        versions["git tag"] = git_tag_version
+
+    # If we have multiple version sources, check they match
+    if len(versions) > 1:
+        unique_versions = set(versions.values())
+        if len(unique_versions) > 1:
+            # Find the "authoritative" version (priority: plugin.json > package.json > pyproject.toml)
+            authoritative = (
+                versions.get("plugin.json")
+                or versions.get("package.json")
+                or versions.get("pyproject.toml")
+            )
+            if authoritative:
+                for file, version in versions.items():
+                    if version != authoritative:
+                        errors.append(f"{file} has {version}, expected {authoritative}")
+
+    all_in_sync = len(errors) == 0
+    return all_in_sync, versions, errors
+
+
 def check_arch() -> tuple[bool, list[str]]:
     """Check layer rule compliance.
 
@@ -244,6 +390,32 @@ def check_arch() -> tuple[bool, list[str]]:
         return True, []
     except Exception as e:
         return False, [f"Arch check failed: {e}"]
+
+
+def check_templates() -> tuple[bool, list[str]]:
+    """Validate that all required templates exist.
+
+    Templates are the single source of truth for generated files.
+
+    Returns:
+        Tuple of (all_exist, list of missing template paths)
+    """
+    plugin_root = get_plugin_root()
+
+    required_templates = [
+        "CLAUDE.md.template",
+        "docs/PLUGIN.md.template",
+        "docs/README.md.template",
+        "claude/statusline.sh.template",
+    ]
+
+    missing = []
+    for template in required_templates:
+        template_path = plugin_root / "templates" / template
+        if not template_path.exists():
+            missing.append(template)
+
+    return len(missing) == 0, missing
 
 
 def check_tests() -> tuple[str, list[str]]:
@@ -295,8 +467,10 @@ def check_all() -> dict:
     config_ok, config_errors, missing_sections = check_config()
     sync_results = check_sync()
     arch_ok, arch_violations = check_arch()
+    templates_ok, templates_missing = check_templates()
     test_status, test_issues = check_tests()
     user_files = check_user_files()
+    versions_ok, versions_found, versions_errors = check_versions()
 
     # Count sync issues
     sync_ok = all(r[1] for r in sync_results)
@@ -316,7 +490,8 @@ def check_all() -> dict:
     has_missing = len(missing_sections) > 0
 
     # Overall status (missing sections are warnings, not errors)
-    all_ok = config_ok and sync_ok and arch_ok and test_ok
+    # Version mismatch and missing templates are errors that affect health
+    all_ok = config_ok and sync_ok and arch_ok and test_ok and versions_ok and templates_ok
 
     return {
         "healthy": all_ok,
@@ -334,10 +509,19 @@ def check_all() -> dict:
             "ok": arch_ok,
             "violations": arch_violations,
         },
+        "templates": {
+            "ok": templates_ok,
+            "missing": templates_missing,
+        },
         "tests": {
             "status": test_status,
             "ok": test_ok,
             "issues": test_issues,
+        },
+        "versions": {
+            "ok": versions_ok,
+            "found": versions_found,
+            "errors": versions_errors,
         },
         "user_files": {
             "status": user_files,
@@ -428,6 +612,32 @@ def _format_arch_section(results: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _format_templates_section(results: dict[str, Any]) -> list[str]:
+    """Format templates section of health report.
+
+    Args:
+        results: Health check results.
+
+    Returns:
+        List of formatted lines.
+    """
+    lines = ["── Templates ───────────────────────"]
+
+    templates_data = results.get("templates", {})
+    templates_ok = templates_data.get("ok", True)
+    templates_missing = templates_data.get("missing", [])
+
+    if templates_ok:
+        lines.append("✓ All required templates present")
+    else:
+        lines.append("✗ Missing templates:")
+        for template in templates_missing:
+            lines.append(f"  - templates/{template}")
+        lines.append("  → Plugin installation may be corrupted")
+
+    return lines
+
+
 def _format_tests_section(results: dict[str, Any]) -> list[str]:
     """Format tests section of health report.
 
@@ -453,6 +663,39 @@ def _format_tests_section(results: dict[str, Any]) -> list[str]:
         lines.extend(f"  - {issue}" for issue in test_issues[:MAX_DISPLAY_ITEMS])
         if len(test_issues) > MAX_DISPLAY_ITEMS:
             lines.append(f"  - ... and {len(test_issues) - MAX_DISPLAY_ITEMS} more")
+
+    return lines
+
+
+def _format_versions_section(results: dict[str, Any]) -> list[str]:
+    """Format versions section of health report.
+
+    Args:
+        results: Health check results.
+
+    Returns:
+        List of formatted lines.
+    """
+    lines = ["── Versions ────────────────────────"]
+
+    versions_data = results.get("versions", {})
+    versions_found = versions_data.get("found", {})
+    versions_errors = versions_data.get("errors", [])
+    versions_ok = versions_data.get("ok", True)
+
+    if not versions_found:
+        lines.append("○ No version files found")
+    elif versions_ok:
+        # All versions match - show the version
+        version = next(iter(versions_found.values()))
+        files = ", ".join(versions_found.keys())
+        lines.append(f"✓ All in sync: {version}")
+        lines.append(f"  ({files})")
+    else:
+        lines.append("✗ Version mismatch:")
+        for file, version in versions_found.items():
+            lines.append(f"  - {file}: {version}")
+        lines.append("  → Run: /dk plugin update (syncs versions)")
 
     return lines
 
@@ -519,6 +762,8 @@ def _format_summary(results: dict[str, Any]) -> list[str]:
             len(results["config"]["errors"])
             + len(results["sync"]["issues"])
             + len(results["arch"]["violations"])
+            + len(results.get("templates", {}).get("missing", []))
+            + len(results.get("versions", {}).get("errors", []))
             + (
                 len(results.get("tests", {}).get("issues", []))
                 if results.get("tests", {}).get("status") == "FAIL"
@@ -548,8 +793,10 @@ def format_report(results: dict[str, Any]) -> str:
     """
     sections = [
         _format_config_section(results),
+        _format_versions_section(results),
         _format_sync_section(results),
         _format_arch_section(results),
+        _format_templates_section(results),
         _format_tests_section(results),
         _format_user_files_section(results),
         _format_summary(results),
@@ -585,6 +832,13 @@ def format_compact(results: dict) -> str | None:
         issues.append(f"{path} {msg}")
 
     issues.extend(v["message"] for v in results["arch"]["violations"])
+
+    # Add missing templates
+    for template in results.get("templates", {}).get("missing", []):
+        issues.append(f"templates/{template} missing")
+
+    # Add version mismatch errors
+    issues.extend(results.get("versions", {}).get("errors", []))
 
     # Add test issues if testing failed
     if results.get("tests", {}).get("status") == "FAIL":

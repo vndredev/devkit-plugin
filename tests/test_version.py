@@ -43,6 +43,49 @@ class TestGetVersion:
 
         assert version == "0.0.0"
 
+    def test_reads_from_package_json_if_no_pyproject(self, tmp_path):
+        """Should read version from package.json for Node.js projects."""
+        package_json = tmp_path / "package.json"
+        package_json.write_text(json.dumps({"name": "test", "version": "4.5.6"}))
+
+        version = get_version(tmp_path)
+
+        assert version == "4.5.6"
+
+    def test_prefers_pyproject_over_package_json(self, tmp_path):
+        """Should prefer pyproject.toml over package.json."""
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text('[project]\nversion = "1.0.0"\n')
+
+        package_json = tmp_path / "package.json"
+        package_json.write_text(json.dumps({"name": "test", "version": "2.0.0"}))
+
+        version = get_version(tmp_path)
+
+        assert version == "1.0.0"
+
+    def test_reads_from_plugin_json_if_no_other_source(self, tmp_path):
+        """Should read version from plugin.json as last resort."""
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+        plugin_json = plugin_dir / "plugin.json"
+        plugin_json.write_text(json.dumps({"name": "test", "version": "7.8.9"}))
+
+        version = get_version(tmp_path)
+
+        assert version == "7.8.9"
+
+    def test_strips_commit_suffix_from_plugin_json(self, tmp_path):
+        """Should strip commit suffix from plugin.json version."""
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+        plugin_json = plugin_dir / "plugin.json"
+        plugin_json.write_text(json.dumps({"name": "test", "version": "1.2.3-abc123"}))
+
+        version = get_version(tmp_path)
+
+        assert version == "1.2.3"
+
 
 class TestSyncVersions:
     """Tests for sync_versions()."""
