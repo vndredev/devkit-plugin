@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from lib.config import strip_jsonc_comments
+from lib.jsonc import strip_comments
 from lib.setup import (
     create_config,
     git_init,
@@ -19,7 +19,7 @@ from lib.setup import (
 def load_jsonc(path: Path) -> dict:
     """Load JSONC file, stripping comments."""
     content = path.read_text()
-    return json.loads(strip_jsonc_comments(content))
+    return json.loads(strip_comments(content))
 
 
 class TestCreateConfig:
@@ -52,9 +52,7 @@ class TestCreateConfig:
 
     def test_create_config_with_github(self, tmp_path):
         """Should include GitHub URL when provided."""
-        success, msg = create_config(
-            tmp_path, "test-project", "python", github_repo="user/repo"
-        )
+        success, msg = create_config(tmp_path, "test-project", "python", github_repo="user/repo")
 
         config_file = tmp_path / ".claude" / ".devkit" / "config.jsonc"
         config = load_jsonc(config_file)
@@ -69,7 +67,10 @@ class TestCreateConfig:
         config = load_jsonc(config_file)
 
         assert "ruff.toml" in config["managed"]["linters"]
-        assert "release-python" in config["managed"]["github"][".github/workflows/release.yml"]["template"]
+        assert (
+            "release-python"
+            in config["managed"]["github"][".github/workflows/release.yml"]["template"]
+        )
 
     def test_create_config_managed_files_node(self, tmp_path):
         """Should include Node-specific managed files."""
@@ -79,7 +80,10 @@ class TestCreateConfig:
         config = load_jsonc(config_file)
 
         assert "ruff.toml" not in config["managed"]["linters"]
-        assert "release-node" in config["managed"]["github"][".github/workflows/release.yml"]["template"]
+        assert (
+            "release-node"
+            in config["managed"]["github"][".github/workflows/release.yml"]["template"]
+        )
 
     def test_create_config_creates_directory(self, tmp_path):
         """Should create .claude/.devkit directory if not exists."""
