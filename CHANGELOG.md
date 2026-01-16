@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.17.0] - 2026-01-16
+
+### Added
+
+- **Events**: Use additionalcontext in enterplanmode hook
+
 ## [v0.16.0] - 2026-01-15
 
 ### Fixed
