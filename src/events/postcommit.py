@@ -2,6 +2,8 @@
 """PostToolUse:Bash hook - updates plugin version after git commit.
 
 TIER 3: Entry point, may import from all layers.
+
+Uses CLAUDE_PROJECT_DIR to find the project, not CLAUDE_PLUGIN_ROOT.
 """
 
 from lib.config import get
