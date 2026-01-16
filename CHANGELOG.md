@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.19.0] - 2026-01-16
+## [v0.21.0] - 2026-01-16
 
 ### Changed
 
@@ -14,6 +14,7 @@
 
 ### Added
 
+- Template-based generation and version sync
 - **Statusline**: Add devmode with commit-id versioning
 - Add automatic managed entry upgrades and claude_config_dir support
 - **Events**: Use additionalcontext in enterplanmode hook
