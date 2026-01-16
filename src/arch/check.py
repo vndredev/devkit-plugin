@@ -4,9 +4,13 @@ TIER 2: May import from core and lib.
 """
 
 from pathlib import Path
+from typing import Any
 
 from lib.config import get, get_missing_sections, get_project_root, load_config
 from lib.sync import check_user_files, get_plugin_root, get_rendered_template, load_presets
+
+# Constants
+MAX_DISPLAY_ITEMS = 5
 
 
 def check_config() -> tuple[bool, list[str], list[str]]:
@@ -43,69 +47,82 @@ def check_config() -> tuple[bool, list[str], list[str]]:
     return len(errors) == 0, errors, missing_sections
 
 
-def check_sync() -> list[tuple[str, bool, str]]:
-    """Check all managed files are in sync with templates.
+def _build_check_values() -> dict[str, Any]:
+    """Build template values for sync checking.
 
     Returns:
-        List of (file_path, is_in_sync, message)
+        Dict of template values.
     """
-    results = []
-    root = get_project_root()
-    plugin_root = get_plugin_root()
-    managed = get("managed", {})
-
-    # Get template values
-    project_name = get("project.name", "Project")
     project_type = get("project.type", "unknown")
-    github_url = get("github.url", "https://github.com/owner/repo")
     linters_config = get("linters", {})
     preset = linters_config.get("preset", "strict")
     overrides = linters_config.get("overrides", {})
-
     presets = load_presets()
 
-    template_values = {
-        "project_name": project_name,
-        "github_url": github_url,
+    values: dict[str, Any] = {
+        "project_name": get("project.name", "Project"),
+        "github_url": get("github.url", "https://github.com/owner/repo"),
         "preset": preset,
     }
 
     # Add preset values based on project type
     if project_type == "python":
-        python_presets = presets.get("python", {}).get(preset, {})
-        template_values.update(python_presets)
+        values.update(presets.get("python", {}).get(preset, {}))
     elif project_type in ("nextjs", "typescript", "javascript"):
-        nextjs_presets = presets.get("nextjs", {}).get(preset, {})
-        template_values.update(nextjs_presets)
+        values.update(presets.get("nextjs", {}).get(preset, {}))
 
-    # Add common presets
-    common_presets = presets.get("common", {}).get(preset, {})
-    template_values.update(common_presets)
+    # Add common presets and overrides
+    values.update(presets.get("common", {}).get(preset, {}))
+    values.update(overrides)
+    return values
 
-    # Apply overrides
-    template_values.update(overrides)
 
-    # Check linter files
-    for output_path, config in managed.get("linters", {}).items():
+def _check_managed_category(
+    root: Path,
+    plugin_root: Path,
+    managed: dict[str, Any],
+    category: str,
+    values: dict[str, Any],
+) -> list[tuple[str, bool, str]]:
+    """Check sync status for a managed file category.
+
+    Args:
+        root: Project root directory.
+        plugin_root: Plugin installation root.
+        managed: Managed config section.
+        category: Category name (linters, github).
+        values: Template values.
+
+    Returns:
+        List of sync check results.
+    """
+    results: list[tuple[str, bool, str]] = []
+    for output_path, config in managed.get(category, {}).items():
         if not config.get("enabled", True):
             results.append((output_path, True, "disabled"))
             continue
 
         template_path = config.get("template", "")
-        result = _check_file_sync(root, plugin_root, output_path, template_path, template_values)
+        result = _check_file_sync(root, plugin_root, output_path, template_path, values)
         results.append(result)
+    return results
 
-    # Check github files
-    for output_path, config in managed.get("github", {}).items():
-        if not config.get("enabled", True):
-            results.append((output_path, True, "disabled"))
-            continue
 
-        template_path = config.get("template", "")
-        result = _check_file_sync(root, plugin_root, output_path, template_path, template_values)
-        results.append(result)
+def _check_managed_ignore(
+    root: Path, plugin_root: Path, managed: dict[str, Any], project_type: str
+) -> list[tuple[str, bool, str]]:
+    """Check sync status for ignore files.
 
-    # Check ignore files
+    Args:
+        root: Project root directory.
+        plugin_root: Plugin installation root.
+        managed: Managed config section.
+        project_type: Project type for section headers.
+
+    Returns:
+        List of sync check results.
+    """
+    results: list[tuple[str, bool, str]] = []
     for output_path, config in managed.get("ignore", {}).items():
         if not config.get("enabled", True):
             results.append((output_path, True, "disabled"))
@@ -117,8 +134,20 @@ def check_sync() -> list[tuple[str, bool, str]]:
 
         result = _check_ignore_sync(root, plugin_root, output_path, template_paths, project_type)
         results.append(result)
+    return results
 
-    # Check docs (existence only - content check is complex)
+
+def _check_managed_docs(root: Path, managed: dict[str, Any]) -> list[tuple[str, bool, str]]:
+    """Check existence of managed docs.
+
+    Args:
+        root: Project root directory.
+        managed: Managed config section.
+
+    Returns:
+        List of existence check results.
+    """
+    results: list[tuple[str, bool, str]] = []
     for output_path, config in managed.get("docs", {}).items():
         if not config.get("enabled", True):
             results.append((output_path, True, "disabled"))
@@ -129,6 +158,26 @@ def check_sync() -> list[tuple[str, bool, str]]:
             results.append((output_path, True, "exists"))
         else:
             results.append((output_path, False, "missing"))
+    return results
+
+
+def check_sync() -> list[tuple[str, bool, str]]:
+    """Check all managed files are in sync with templates.
+
+    Returns:
+        List of (file_path, is_in_sync, message)
+    """
+    root = get_project_root()
+    plugin_root = get_plugin_root()
+    managed = get("managed", {})
+    project_type = get("project.type", "unknown")
+    values = _build_check_values()
+
+    results: list[tuple[str, bool, str]] = []
+    results.extend(_check_managed_category(root, plugin_root, managed, "linters", values))
+    results.extend(_check_managed_category(root, plugin_root, managed, "github", values))
+    results.extend(_check_managed_ignore(root, plugin_root, managed, project_type))
+    results.extend(_check_managed_docs(root, managed))
 
     return results
 
@@ -298,19 +347,17 @@ def check_all() -> dict:
     }
 
 
-def format_report(results: dict) -> str:
-    """Format health check results for display.
+def _format_config_section(results: dict[str, Any]) -> list[str]:
+    """Format config section of health report.
 
     Args:
-        results: Output from check_all()
+        results: Health check results.
 
     Returns:
-        Formatted string for terminal output
+        List of formatted lines.
     """
-    lines = []
+    lines = ["── Config ──────────────────────────"]
 
-    # Config section
-    lines.append("── Config ──────────────────────────")
     if results["config"]["ok"]:
         lines.append("✓ Schema valid")
         lines.append("✓ Required fields present")
@@ -323,15 +370,25 @@ def format_report(results: dict) -> str:
     if missing:
         lines.append("")
         lines.append(f"⚠ Missing optional sections ({len(missing)}):")
-        lines.extend(f"  - {section}" for section in missing[:5])
-        if len(missing) > 5:
-            lines.append(f"  - ... and {len(missing) - 5} more")
+        lines.extend(f"  - {section}" for section in missing[:MAX_DISPLAY_ITEMS])
+        if len(missing) > MAX_DISPLAY_ITEMS:
+            lines.append(f"  - ... and {len(missing) - MAX_DISPLAY_ITEMS} more")
         lines.append("  → Run: /dk plugin update (adds defaults)")
 
-    lines.append("")
+    return lines
 
-    # Sync section
-    lines.append("── Sync ────────────────────────────")
+
+def _format_sync_section(results: dict[str, Any]) -> list[str]:
+    """Format sync section of health report.
+
+    Args:
+        results: Health check results.
+
+    Returns:
+        List of formatted lines.
+    """
+    lines = ["── Sync ────────────────────────────"]
+
     for path, ok, msg in results["sync"]["results"]:
         if msg == "disabled":
             continue
@@ -341,10 +398,20 @@ def format_report(results: dict) -> str:
     if not results["sync"]["ok"]:
         lines.append("  → Run: /dk plugin update")
 
-    lines.append("")
+    return lines
 
-    # Architecture section
-    lines.append("── Architecture ────────────────────")
+
+def _format_arch_section(results: dict[str, Any]) -> list[str]:
+    """Format architecture section of health report.
+
+    Args:
+        results: Health check results.
+
+    Returns:
+        List of formatted lines.
+    """
+    lines = ["── Architecture ────────────────────"]
+
     if results["arch"]["ok"]:
         layers = get("arch.layers", {})
         if layers:
@@ -358,10 +425,20 @@ def format_report(results: dict) -> str:
         lines.append("✗ Layer violations:")
         lines.extend(f"  - {violation}" for violation in results["arch"]["violations"])
 
-    lines.append("")
+    return lines
 
-    # Tests section
-    lines.append("── Tests ───────────────────────────")
+
+def _format_tests_section(results: dict[str, Any]) -> list[str]:
+    """Format tests section of health report.
+
+    Args:
+        results: Health check results.
+
+    Returns:
+        List of formatted lines.
+    """
+    lines = ["── Tests ───────────────────────────"]
+
     test_status = results.get("tests", {}).get("status", "SKIP")
     test_issues = results.get("tests", {}).get("issues", [])
 
@@ -373,14 +450,24 @@ def format_report(results: dict) -> str:
         lines.append(f"✓ All required tests present ({total_funcs} functions)")
     else:
         lines.append(f"✗ Missing tests ({len(test_issues)} issues):")
-        lines.extend(f"  - {issue}" for issue in test_issues[:5])
-        if len(test_issues) > 5:
-            lines.append(f"  - ... and {len(test_issues) - 5} more")
+        lines.extend(f"  - {issue}" for issue in test_issues[:MAX_DISPLAY_ITEMS])
+        if len(test_issues) > MAX_DISPLAY_ITEMS:
+            lines.append(f"  - ... and {len(test_issues) - MAX_DISPLAY_ITEMS} more")
 
-    lines.append("")
+    return lines
 
-    # User files section
-    lines.append("── User Files ──────────────────────")
+
+def _format_user_files_section(results: dict[str, Any]) -> list[str]:
+    """Format user files section of health report.
+
+    Args:
+        results: Health check results.
+
+    Returns:
+        List of formatted lines.
+    """
+    lines = ["── User Files ──────────────────────"]
+
     user_files = results.get("user_files", {}).get("status", {})
     user_issues = results.get("user_files", {}).get("issues", [])
 
@@ -402,29 +489,29 @@ def format_report(results: dict) -> str:
     if user_issues:
         lines.append("  → Run: /dk plugin update (installs)")
 
-    # Check for unconfigured statusline (find the statusline entry dynamically)
-    statusline_path = None
-    statusline_status = {}
+    # Check for unconfigured statusline
     for path, status in user_files.items():
-        if "statusline.sh" in path:
-            statusline_path = path
-            statusline_status = status
+        if "statusline.sh" in path and status.get("exists") and not status.get("configured", True):
+            lines.append("")
+            lines.append("  ⚠ Statusline not activated in Claude Code!")
+            lines.append("  → Add to settings.json:")
+            lines.append(f'    "statusLine": {{ "command": "{path}" }}')
             break
 
-    if (
-        statusline_path
-        and statusline_status.get("exists")
-        and not statusline_status.get("configured", True)
-    ):
-        lines.append("")
-        lines.append("  ⚠ Statusline not activated in Claude Code!")
-        lines.append("  → Add to settings.json:")
-        lines.append(f'    "statusLine": {{ "command": "{statusline_path}" }}')
+    return lines
 
-    lines.append("")
 
-    # Summary
-    lines.append("━" * 35)
+def _format_summary(results: dict[str, Any]) -> list[str]:
+    """Format summary section of health report.
+
+    Args:
+        results: Health check results.
+
+    Returns:
+        List of formatted lines.
+    """
+    lines = ["━" * 35]
+
     if results["healthy"]:
         lines.append("Status: HEALTHY")
     else:
@@ -442,9 +529,40 @@ def format_report(results: dict) -> str:
         lines.append("Action: /dk plugin update")
 
     # User files warning (separate from health status)
+    user_issues = results.get("user_files", {}).get("issues", [])
     if user_issues:
         lines.append("")
         lines.append(f"⚠ User files need update ({len(user_issues)} files)")
+
+    return lines
+
+
+def format_report(results: dict[str, Any]) -> str:
+    """Format health check results for display.
+
+    Args:
+        results: Output from check_all()
+
+    Returns:
+        Formatted string for terminal output
+    """
+    sections = [
+        _format_config_section(results),
+        _format_sync_section(results),
+        _format_arch_section(results),
+        _format_tests_section(results),
+        _format_user_files_section(results),
+        _format_summary(results),
+    ]
+
+    lines: list[str] = []
+    for section in sections:
+        lines.extend(section)
+        lines.append("")
+
+    # Remove trailing empty line
+    if lines and lines[-1] == "":
+        lines.pop()
 
     return "\n".join(lines)
 
