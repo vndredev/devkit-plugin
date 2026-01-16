@@ -40,7 +40,9 @@ def vercel_connect(
     platform = deployment_config.get("platform", "vercel")
     platforms = deployment_config.get("platforms", ["vercel"])
     if "vercel" not in platforms:
-        results.append(("platform check", False, f"Vercel not supported. Use: {', '.join(platforms)}"))
+        results.append(
+            ("platform check", False, f"Vercel not supported. Use: {', '.join(platforms)}")
+        )
         return results
 
     # 1. Check Vercel CLI
@@ -58,7 +60,9 @@ def vercel_connect(
     # 3. Get project info
     info = get_project_info(root)
     if info:
-        results.append(("project info", True, f"{info.get('name', 'unknown')} @ {info.get('org', 'unknown')}"))
+        results.append(
+            ("project info", True, f"{info.get('name', 'unknown')} @ {info.get('org', 'unknown')}")
+        )
 
     # 4. Check GitHub integration
     gh_ok, gh_msg = check_github_integration(info)
@@ -133,8 +137,8 @@ def link_project(root: Path, project_name: str | None = None) -> tuple[bool, str
             data = json.loads(project_json.read_text())
             name = data.get("projectName", "unknown")
             return True, f"Already linked to {name}"
-        except Exception:
-            pass
+        except (json.JSONDecodeError, OSError):
+            pass  # Corrupted or unreadable file, will try to relink
 
     # Link project
     try:
@@ -198,8 +202,8 @@ def get_project_info(root: Path) -> dict | None:
                     info["production_url"] = proj.get("latestDeployment", {}).get("url")
                     info["framework"] = proj.get("framework")
                     break
-        except Exception:
-            pass
+        except (subprocess.CalledProcessError, json.JSONDecodeError):
+            pass  # API call failed, continue with basic info
 
         # Get org name
         try:
@@ -210,12 +214,12 @@ def get_project_info(root: Path) -> dict | None:
                 check=True,
             )
             info["org"] = result.stdout.strip()
-        except Exception:
-            pass
+        except subprocess.CalledProcessError:
+            pass  # Not logged in or CLI issue
 
         return info
 
-    except Exception:
+    except (json.JSONDecodeError, OSError):
         return None
 
 
@@ -332,8 +336,8 @@ def check_production_domain(info: dict | None) -> tuple[bool, str]:
 
     except subprocess.CalledProcessError:
         return True, "Using default .vercel.app domain"
-    except Exception:
-        return True, "Domain check skipped"
+    except json.JSONDecodeError:
+        return True, "Domain check skipped (invalid JSON response)"
 
 
 def sync_env_vars(root: Path) -> list[tuple[str, bool, str]]:
@@ -369,8 +373,8 @@ def sync_env_vars(root: Path) -> list[tuple[str, bool, str]]:
                     existing_vars.add(var_data.get("key", ""))
                 except json.JSONDecodeError:
                     pass
-    except Exception:
-        existing_vars = set()
+    except (subprocess.CalledProcessError, OSError):
+        existing_vars = set()  # CLI not available, assume no vars
 
     # Parse .env.local
     env_vars = {}
@@ -409,7 +413,9 @@ def sync_env_vars(root: Path) -> list[tuple[str, bool, str]]:
     return results
 
 
-def add_env_var(key: str, value: str, environments: list[str] | None = None) -> list[tuple[str, bool, str]]:
+def add_env_var(
+    key: str, value: str, environments: list[str] | None = None
+) -> list[tuple[str, bool, str]]:
     """Add environment variable to Vercel without newline issues.
 
     Args:
@@ -475,8 +481,8 @@ def sync_env_to_vercel(root: Path) -> list[tuple[str, bool, str]]:
                     existing_vars.add(var_data.get("key", ""))
                 except json.JSONDecodeError:
                     pass
-    except Exception:
-        existing_vars = set()
+    except (subprocess.CalledProcessError, OSError):
+        existing_vars = set()  # CLI not available, assume no vars
 
     # Parse .env.local and sync
     synced = 0
@@ -537,8 +543,8 @@ def check_neon_integration(info: dict | None) -> tuple[bool, str]:
             return True, "DATABASE_URL configured"
         return True, "No DATABASE_URL - Neon integration not needed"
 
-    except Exception:
-        return True, "Could not check env vars"
+    except subprocess.CalledProcessError:
+        return True, "Could not check env vars (CLI error)"
 
 
 def vercel_deploy(
@@ -606,8 +612,8 @@ def vercel_status() -> dict:
             status["linked"] = True
             status["project"] = data.get("projectName")
             status["project_id"] = data.get("projectId")
-        except Exception:
-            pass
+        except (json.JSONDecodeError, OSError):
+            pass  # Corrupted or unreadable project.json
 
     # Get org
     info = get_project_info(root)

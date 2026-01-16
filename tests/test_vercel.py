@@ -74,11 +74,15 @@ class TestLinkProject:
         vercel_dir = tmp_path / ".vercel"
         vercel_dir.mkdir()
         project_json = vercel_dir / "project.json"
-        project_json.write_text(json.dumps({
-            "projectId": "prj_123",
-            "orgId": "org_456",
-            "projectName": "my-project",
-        }))
+        project_json.write_text(
+            json.dumps(
+                {
+                    "projectId": "prj_123",
+                    "orgId": "org_456",
+                    "projectName": "my-project",
+                }
+            )
+        )
 
         ok, msg = link_project(tmp_path)
 
@@ -89,13 +93,12 @@ class TestLinkProject:
     def test_link_new_project(self, tmp_path):
         """Should link new project."""
         with patch("subprocess.run") as mock_run:
+
             def create_project_json(*args, **kwargs):
                 # Simulate vercel link creating the directory
                 vercel_dir = tmp_path / ".vercel"
                 vercel_dir.mkdir(exist_ok=True)
-                (vercel_dir / "project.json").write_text(json.dumps({
-                    "projectName": "new-project"
-                }))
+                (vercel_dir / "project.json").write_text(json.dumps({"projectName": "new-project"}))
                 return MagicMock(returncode=0)
 
             mock_run.side_effect = create_project_json
@@ -109,9 +112,7 @@ class TestLinkProject:
     def test_link_fails(self, tmp_path):
         """Should handle link failure."""
         with patch("subprocess.run") as mock_run:
-            mock_run.side_effect = subprocess.CalledProcessError(
-                1, "vercel", stderr="Error"
-            )
+            mock_run.side_effect = subprocess.CalledProcessError(1, "vercel", stderr="Error")
 
             ok, msg = link_project(tmp_path)
 
@@ -131,11 +132,15 @@ class TestGetProjectInfo:
         """Should read project info from project.json."""
         vercel_dir = tmp_path / ".vercel"
         vercel_dir.mkdir()
-        (vercel_dir / "project.json").write_text(json.dumps({
-            "projectId": "prj_123",
-            "orgId": "org_456",
-            "projectName": "test-project",
-        }))
+        (vercel_dir / "project.json").write_text(
+            json.dumps(
+                {
+                    "projectId": "prj_123",
+                    "orgId": "org_456",
+                    "projectName": "test-project",
+                }
+            )
+        )
 
         with patch("subprocess.run") as mock_run:
             # Mock the additional API calls
@@ -248,9 +253,7 @@ NEXT_PUBLIC_APP_NAME=MyApp
         env_file.write_text("EXISTING_VAR=value")
 
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(
-                stdout='{"key": "EXISTING_VAR"}'
-            )
+            mock_run.return_value = MagicMock(stdout='{"key": "EXISTING_VAR"}')
 
             results = sync_env_vars(tmp_path)
 
@@ -278,21 +281,27 @@ class TestVercelConnect:
         # Create .vercel directory
         vercel_dir = tmp_path / ".vercel"
         vercel_dir.mkdir()
-        (vercel_dir / "project.json").write_text(json.dumps({
-            "projectId": "prj_123",
-            "projectName": "test",
-        }))
+        (vercel_dir / "project.json").write_text(
+            json.dumps(
+                {
+                    "projectId": "prj_123",
+                    "projectName": "test",
+                }
+            )
+        )
 
         with patch("lib.vercel.check_vercel_cli") as mock_cli:
             with patch("lib.vercel.check_github_integration") as mock_gh:
                 with patch("lib.vercel.check_production_domain") as mock_domain:
                     with patch("lib.vercel.check_neon_integration") as mock_neon:
-                        mock_cli.return_value = (True, "CLI OK")
-                        mock_gh.return_value = (True, "GitHub OK")
-                        mock_domain.return_value = (True, "example.com")
-                        mock_neon.return_value = (True, "Neon OK")
+                        with patch("lib.vercel.get_project_info") as mock_info:
+                            mock_cli.return_value = (True, "CLI OK")
+                            mock_gh.return_value = (True, "GitHub OK")
+                            mock_domain.return_value = (True, "example.com")
+                            mock_neon.return_value = (True, "Neon OK")
+                            mock_info.return_value = {"name": "test", "org": "user"}
 
-                        results = vercel_connect(sync_env=False)
+                            results = vercel_connect(sync_env=False)
 
         assert len(results) >= 4
         assert all(r[1] for r in results)

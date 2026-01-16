@@ -6,6 +6,7 @@ TIER 1: May import from core only.
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 from lib.config import get, get_project_root, upgrade_config
 
@@ -18,7 +19,7 @@ def get_plugin_root() -> Path:
     return Path(__file__).parent.parent.parent
 
 
-def load_presets() -> dict:
+def load_presets() -> dict[str, Any]:
     """Load linter presets from templates."""
     presets_file = get_plugin_root() / "templates" / "linters" / "presets.json"
     if presets_file.exists():
@@ -26,7 +27,7 @@ def load_presets() -> dict:
     return {}
 
 
-def render_template(template: str, values: dict) -> str:
+def render_template(template: str, values: dict[str, Any]) -> str:
     """Replace {{var}} placeholders with values.
 
     Supports both simple keys ({{var}}) and nested keys ({{project.name}}).
@@ -59,10 +60,37 @@ def render_template(template: str, values: dict) -> str:
     return re.sub(r"\{\{(\w+(?:\.\w+)*)\}\}", replace_var, template)
 
 
+def get_rendered_template(
+    plugin_root: Path,
+    template_path: str,
+    values: dict[str, Any],
+) -> tuple[str | None, str | None]:
+    """Load and render a template file.
+
+    Args:
+        plugin_root: Plugin installation root directory.
+        template_path: Relative path to template from templates/.
+        values: Dict of values to substitute.
+
+    Returns:
+        Tuple of (rendered_content, error_message).
+        If successful: (content, None)
+        If failed: (None, error_message)
+    """
+    template_file = plugin_root / "templates" / template_path
+
+    if not template_file.exists():
+        return None, f"Template not found: {template_path}"
+
+    template = template_file.read_text()
+    content = render_template(template, values)
+    return content, None
+
+
 def _sync_linter_config(
     root: Path,
     preset: str,
-    overrides: dict,
+    overrides: dict[str, Any],
     preset_category: str,
     template_path: str,
     output_name: str,
@@ -481,19 +509,19 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
 
 
 def _sync_template_file(
-    root: Path, plugin_root: Path, output_path: str, template_path: str, values: dict
+    root: Path,
+    plugin_root: Path,
+    output_path: str,
+    template_path: str,
+    values: dict[str, Any],
 ) -> tuple[str, bool, str]:
     """Sync a single template file."""
-    template_file = plugin_root / "templates" / template_path
+    content, error = get_rendered_template(plugin_root, template_path, values)
+    if error:
+        return output_path, False, error
+
     output_file = root / output_path
-
-    if not template_file.exists():
-        return output_path, False, f"Template not found: {template_path}"
-
-    template = template_file.read_text()
-    content = render_template(template, values)
-    output_file.write_text(content)
-
+    output_file.write_text(content)  # type: ignore[arg-type]
     return output_path, True, f"Generated {output_file}"
 
 

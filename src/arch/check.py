@@ -6,7 +6,7 @@ TIER 2: May import from core and lib.
 from pathlib import Path
 
 from lib.config import get, get_missing_sections, get_project_root, load_config
-from lib.sync import get_plugin_root, load_presets, render_template
+from lib.sync import get_plugin_root, get_rendered_template, load_presets, render_template
 
 
 def check_config() -> tuple[bool, list[str], list[str]]:
@@ -138,20 +138,18 @@ def _check_file_sync(
 ) -> tuple[str, bool, str]:
     """Check if a single file is in sync with its template."""
     output_file = root / output_path
-    template_file = plugin_root / "templates" / template_path
-
-    if not template_file.exists():
-        return output_path, False, f"template not found: {template_path}"
 
     if not output_file.exists():
         return output_path, False, "missing"
 
-    # Generate expected content
-    template = template_file.read_text()
-    expected = render_template(template, values)
+    # Generate expected content using shared function
+    expected, error = get_rendered_template(plugin_root, template_path, values)
+    if error:
+        return output_path, False, error.lower()
+
     actual = output_file.read_text()
 
-    if expected.strip() == actual.strip():
+    if expected and expected.strip() == actual.strip():
         return output_path, True, "in sync"
     return output_path, False, "outdated"
 

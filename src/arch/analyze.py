@@ -238,8 +238,14 @@ def get_dependency_graph(
             layers = list(get("arch.layers", {}).keys())
             if not layers:
                 layers = [
-                    "core", "lib", "arch", "events",
-                    "domain", "adapters", "usecases", "entry",
+                    "core",
+                    "lib",
+                    "arch",
+                    "events",
+                    "domain",
+                    "adapters",
+                    "usecases",
+                    "entry",
                 ]
 
             project_imports = [imp for imp in imports if imp in layers]
@@ -338,13 +344,15 @@ def analyze_dependencies(root: Path) -> dict:
                     f"{source_module} (TIER {source_layer}) "
                     f"cannot import from {imp} (TIER {target_layer})"
                 )
-                violations.append({
-                    "file": file_path,
-                    "source_layer": source_module,
-                    "imports": imp,
-                    "target_layer": imp,
-                    "message": msg,
-                })
+                violations.append(
+                    {
+                        "file": file_path,
+                        "source_layer": source_module,
+                        "imports": imp,
+                        "target_layer": target_layer,
+                        "message": msg,
+                    }
+                )
 
     return {
         "project_type": project_type.value,
@@ -380,8 +388,14 @@ def analyze_transitive_dependencies(root: Path) -> dict:
         layer_order = {name: cfg.get("tier", 0) for name, cfg in layer_config.items()}
     else:
         layer_order = {
-            "core": 0, "lib": 1, "arch": 2, "events": 3,
-            "domain": 1, "adapters": 2, "usecases": 3, "entry": 4,
+            "core": 0,
+            "lib": 1,
+            "arch": 2,
+            "events": 3,
+            "domain": 1,
+            "adapters": 2,
+            "usecases": 3,
+            "entry": 4,
         }
 
     # Build layer-to-layer dependency map
@@ -418,23 +432,27 @@ def analyze_transitive_dependencies(root: Path) -> dict:
 
                 # Record chain
                 chain = f"{layer_a} → {layer_b} → {layer_c}"
-                chains.append({
-                    "chain": chain,
-                    "tiers": f"T{tier_a} → T{tier_b} → T{tier_c}",
-                })
+                chains.append(
+                    {
+                        "chain": chain,
+                        "tiers": f"T{tier_a} → T{tier_b} → T{tier_c}",
+                    }
+                )
 
                 # Check for transitive violation
                 # (A imports B imports C, but A should not access C directly)
                 if tier_c < tier_a:
-                    transitive_violations.append({
-                        "source": layer_a,
-                        "via": layer_b,
-                        "target": layer_c,
-                        "message": (
-                            f"{layer_a} (T{tier_a}) has transitive access to "
-                            f"{layer_c} (T{tier_c}) via {layer_b}"
-                        ),
-                    })
+                    transitive_violations.append(
+                        {
+                            "source": layer_a,
+                            "via": layer_b,
+                            "target": layer_c,
+                            "message": (
+                                f"{layer_a} (T{tier_a}) has transitive access to "
+                                f"{layer_c} (T{tier_c}) via {layer_b}"
+                            ),
+                        }
+                    )
 
     return {
         "layer_dependencies": {k: list(v) for k, v in layer_deps.items()},
@@ -473,18 +491,22 @@ def format_analysis_report(analysis: dict) -> str:
         lines.append(f"- **{layer}**: {count} files")
 
     if analysis["violations"]:
-        lines.extend([
-            "",
-            f"## Violations ({len(analysis['violations'])})",
-            "",
-        ])
+        lines.extend(
+            [
+                "",
+                f"## Violations ({len(analysis['violations'])})",
+                "",
+            ]
+        )
         lines.extend(f"- **{v['file']}**: {v['message']}" for v in analysis["violations"])
     else:
-        lines.extend([
-            "",
-            "## No Violations",
-            "",
-            "All imports follow layer rules.",
-        ])
+        lines.extend(
+            [
+                "",
+                "## No Violations",
+                "",
+                "All imports follow layer rules.",
+            ]
+        )
 
     return "\n".join(lines)
