@@ -188,57 +188,9 @@ fi
 if [ -n "$DEVKIT_STATUS" ]; then
     OUTPUT+=" \033[90m|\033[0m "
 
-    # Check if devMode is enabled in config.jsonc
-    dev_mode=""
-    config_file="$CWD/.claude/.devkit/config.jsonc"
-    if [ -f "$config_file" ]; then
-        dev_mode=$(grep -o '"devMode"[[:space:]]*:[[:space:]]*true' "$config_file" 2>/dev/null)
-    fi
-
-    # Get plugin version when devMode is true
-    devkit_version=""
-    if [ -n "$dev_mode" ]; then
-        # First: Check if current project IS a plugin (local dev) - use local version (already has commit-id)
-        if [ -f "$CWD/.claude-plugin/plugin.json" ]; then
-            devkit_version=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$CWD/.claude-plugin/plugin.json" 2>/dev/null | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
-        else
-            # Otherwise: Find installed plugin version + append current project commit
-            base_version=""
-            # Derive Claude config dir from this script's location
-            script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-            cache_base="$script_dir/plugins/cache/vndredev-marketplace"
-            for plugin_name in "devkit-plugin-dev" "devkit-plugin"; do
-                plugin_dir="$cache_base/$plugin_name"
-                if [ -d "$plugin_dir" ]; then
-                    for version_dir in $(ls -d "$plugin_dir"/*/ 2>/dev/null | sort -V -r); do
-                        if [ -f "$version_dir/.claude-plugin/plugin.json" ]; then
-                            base_version=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$version_dir/.claude-plugin/plugin.json" 2>/dev/null | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
-                            break 2
-                        fi
-                    done
-                fi
-            done
-            # Append current project commit-id
-            if [ -n "$base_version" ]; then
-                commit_id=$(git -C "$CWD" rev-parse --short HEAD 2>/dev/null)
-                if [ -n "$commit_id" ]; then
-                    devkit_version="${base_version}-${commit_id}"
-                else
-                    devkit_version="$base_version"
-                fi
-            fi
-        fi
-    fi
-
     if [ "$DEVKIT_STATUS" = "ok" ]; then
-        # Green for healthy - show version if available
-        if [ -n "$devkit_version" ]; then
-            OUTPUT+="\033[32m$devkit_version devkit ok\033[0m"
-        else
-            OUTPUT+="\033[32mdevkit ok\033[0m"
-        fi
+        OUTPUT+="\033[32mdevkit ok\033[0m"
     else
-        # Bold red for errors with clear message
         OUTPUT+="\033[1;31mdevkit: $DEVKIT_MSG\033[0m"
     fi
 fi
