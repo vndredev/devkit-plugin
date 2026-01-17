@@ -599,7 +599,11 @@ def update_github_settings(repo: str) -> list[tuple[str, bool, str]]:
             {
                 "required_status_checks": None,
                 "enforce_admins": False,
-                "required_pull_request_reviews": None,
+                "required_pull_request_reviews": {
+                    "required_approving_review_count": 1,
+                    "dismiss_stale_reviews": False,
+                    "require_code_owner_reviews": False,
+                },
                 "restrictions": None,
                 "required_linear_history": True,
                 "allow_force_pushes": False,
