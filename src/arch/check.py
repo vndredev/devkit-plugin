@@ -176,6 +176,7 @@ def check_sync() -> list[tuple[str, bool, str]]:
     values = _build_check_values()
 
     results: list[tuple[str, bool, str]] = []
+    results.extend(_check_managed_category(root, plugin_root, managed, "config", values))
     results.extend(_check_managed_category(root, plugin_root, managed, "linters", values))
     results.extend(_check_managed_category(root, plugin_root, managed, "github", values))
     results.extend(_check_managed_ignore(root, plugin_root, managed, project_type))
