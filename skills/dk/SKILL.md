@@ -20,56 +20,60 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 
 ## Commands
 
-| Command                   | Reference | Description                         |
-| ------------------------- | --------- | ----------------------------------- |
-| `/dk`                     | -         | Show status and available commands  |
-| `/dk plugin`              | plugin.md | Quick plugin status                 |
-| `/dk plugin check`        | plugin.md | Full health check                   |
-| `/dk plugin update`       | plugin.md | Sync all managed files              |
-| `/dk plugin init`         | plugin.md | Initialize new project              |
-| `/dk dev feat <desc>`     | dev.md    | Develop new feature                 |
-| `/dk dev fix <desc>`      | dev.md    | Fix a bug                           |
-| `/dk dev chore <desc>`    | dev.md    | Maintenance task                    |
-| `/dk dev refactor <desc>` | dev.md    | Code refactoring                    |
-| `/dk dev test <desc>`     | dev.md    | Add tests                           |
-| `/dk git`                 | git.md    | Git workflow help                   |
-| `/dk git init`            | git.md    | Initialize new project (full setup) |
-| `/dk git update`          | git.md    | Sync files and GitHub settings      |
-| `/dk git pr`              | git.md    | Create pull request                 |
-| `/dk git pr review [n]`   | git.md    | Check PR review comments            |
-| `/dk git pr merge [n]`    | git.md    | Merge PR (squash)                   |
-| `/dk git branch <name>`   | git.md    | Create feature branch               |
-| `/dk git squash`          | git.md    | Squash commits                      |
-| `/dk git cleanup`         | git.md    | Clean local tags + branches         |
-| `/dk git issue report`    | git.md    | Report bug in devkit-plugin         |
-| `/dk git issue create`    | git.md    | Create issue in current project     |
-| `/dk git issue list`      | git.md    | List open issues                    |
-| `/dk git issue view [n]`  | git.md    | View issue details                  |
-| `/dk env`                 | env.md    | Environment sync help               |
-| `/dk env sync`            | env.md    | Sync .env to Vercel + GitHub        |
-| `/dk env pull`            | env.md    | Pull env vars from Vercel           |
-| `/dk env list`            | env.md    | List env vars                       |
-| `/dk env clean`           | env.md    | Remove unused env vars              |
-| `/dk vercel`              | vercel.md | Vercel deployment help              |
-| `/dk vercel connect`      | vercel.md | Link project to Vercel              |
-| `/dk vercel env`          | vercel.md | Manage Vercel env vars              |
-| `/dk neon`                | neon.md   | NeonDB branch management            |
-| `/dk neon branch list`    | neon.md   | List NeonDB branches                |
-| `/dk neon branch create`  | neon.md   | Create NeonDB branch                |
-| `/dk neon branch delete`  | neon.md   | Delete NeonDB branch                |
-| `/dk neon branch switch`  | neon.md   | Switch NeonDB branch                |
-| `/dk neon cleanup`        | neon.md   | Clean stale branches                |
-| `/dk arch`                | arch.md   | Architecture overview               |
-| `/dk arch analyze`        | arch.md   | Analyze dependencies                |
-| `/dk arch check`          | arch.md   | Check layer rule compliance         |
-| `/dk arch init [type]`    | arch.md   | Scaffold Clean Architecture         |
-| `/dk arch layers`         | arch.md   | Show layer documentation            |
-| `/dk docs`                | docs.md   | Show docs status (all files)        |
-| `/dk docs update`         | docs.md   | Update all docs from config         |
-| `/dk docs init`           | docs.md   | Create missing docs                 |
-| `/dk docs arch`           | docs.md   | Generate/update ARCHITECTURE.md     |
-| `/dk docs plugin`         | docs.md   | Generate/update PLUGIN.md           |
-| `/dk docs claude`         | docs.md   | Generate/update CLAUDE.md           |
+| Command                   | Reference   | Description                         |
+| ------------------------- | ----------- | ----------------------------------- |
+| `/dk`                     | -           | Show status and available commands  |
+| `/dk plugin`              | plugin.md   | Quick plugin status                 |
+| `/dk plugin check`        | plugin.md   | Full health check                   |
+| `/dk plugin update`       | plugin.md   | Sync all managed files              |
+| `/dk plugin init`         | plugin.md   | Initialize new project              |
+| `/dk dev feat <desc>`     | dev.md      | Develop new feature                 |
+| `/dk dev fix <desc>`      | dev.md      | Fix a bug                           |
+| `/dk dev chore <desc>`    | dev.md      | Maintenance task                    |
+| `/dk dev refactor <desc>` | dev.md      | Code refactoring                    |
+| `/dk dev test <desc>`     | dev.md      | Add tests                           |
+| `/dk git`                 | git.md      | Git workflow help                   |
+| `/dk git init`            | git.md      | Initialize new project (full setup) |
+| `/dk git update`          | git.md      | Sync files and GitHub settings      |
+| `/dk git pr`              | git.md      | Create pull request                 |
+| `/dk git pr review [n]`   | git.md      | Check PR review comments            |
+| `/dk git pr merge [n]`    | git.md      | Merge PR (squash)                   |
+| `/dk git branch <name>`   | git.md      | Create feature branch               |
+| `/dk git squash`          | git.md      | Squash commits                      |
+| `/dk git cleanup`         | git.md      | Clean local tags + branches         |
+| `/dk git issue report`    | git.md      | Report bug in devkit-plugin         |
+| `/dk git issue create`    | git.md      | Create issue in current project     |
+| `/dk git issue list`      | git.md      | List open issues                    |
+| `/dk git issue view [n]`  | git.md      | View issue details                  |
+| `/dk env`                 | env.md      | Environment sync help               |
+| `/dk env sync`            | env.md      | Sync .env to Vercel + GitHub        |
+| `/dk env pull`            | env.md      | Pull env vars from Vercel           |
+| `/dk env list`            | env.md      | List env vars                       |
+| `/dk env clean`           | env.md      | Remove unused env vars              |
+| `/dk vercel`              | vercel.md   | Vercel deployment help              |
+| `/dk vercel connect`      | vercel.md   | Link project to Vercel              |
+| `/dk vercel env`          | vercel.md   | Manage Vercel env vars              |
+| `/dk neon`                | neon.md     | NeonDB branch management            |
+| `/dk neon branch list`    | neon.md     | List NeonDB branches                |
+| `/dk neon branch create`  | neon.md     | Create NeonDB branch                |
+| `/dk neon branch delete`  | neon.md     | Delete NeonDB branch                |
+| `/dk neon branch switch`  | neon.md     | Switch NeonDB branch                |
+| `/dk neon cleanup`        | neon.md     | Clean stale branches                |
+| `/dk arch`                | arch.md     | Architecture overview               |
+| `/dk arch analyze`        | arch.md     | Analyze dependencies                |
+| `/dk arch check`          | arch.md     | Check layer rule compliance         |
+| `/dk arch init [type]`    | arch.md     | Scaffold Clean Architecture         |
+| `/dk arch layers`         | arch.md     | Show layer documentation            |
+| `/dk webhooks`            | webhooks.md | Webhook status + detected services  |
+| `/dk webhooks start`      | webhooks.md | Start ngrok + Stripe CLI            |
+| `/dk webhooks urls`       | webhooks.md | Show webhook URLs for dashboards    |
+| `/dk webhooks test`       | webhooks.md | Send test events                    |
+| `/dk docs`                | docs.md     | Show docs status (all files)        |
+| `/dk docs update`         | docs.md     | Update all docs from config         |
+| `/dk docs init`           | docs.md     | Create missing docs                 |
+| `/dk docs arch`           | docs.md     | Generate/update ARCHITECTURE.md     |
+| `/dk docs plugin`         | docs.md     | Generate/update PLUGIN.md           |
+| `/dk docs claude`         | docs.md     | Generate/update CLAUDE.md           |
 
 ---
 
@@ -90,6 +94,7 @@ modules = {
     "vercel": "reference/vercel.md",
     "neon": "reference/neon.md",
     "arch": "reference/arch.md",
+    "webhooks": "reference/webhooks.md",
     "docs": "reference/docs.md"
 }
 
@@ -126,16 +131,17 @@ print('Commands: /dk plugin | dev | git | arch | docs | env | vercel | neon')
 
 **CRITICAL: YOU MUST load and follow the reference instructions for the requested subcommand.**
 
-| Subcommand              | Action                                          |
-| ----------------------- | ----------------------------------------------- |
-| `/dk plugin [sub]`      | Read `reference/plugin.md`, follow instructions |
-| `/dk dev [type] <desc>` | Read `reference/dev.md`, follow instructions    |
-| `/dk git [sub]`         | Read `reference/git.md`, follow instructions    |
-| `/dk env [sub]`         | Read `reference/env.md`, follow instructions    |
-| `/dk vercel [sub]`      | Read `reference/vercel.md`, follow instructions |
-| `/dk neon [sub]`        | Read `reference/neon.md`, follow instructions   |
-| `/dk arch [sub]`        | Read `reference/arch.md`, follow instructions   |
-| `/dk docs [sub]`        | Read `reference/docs.md`, follow instructions   |
+| Subcommand              | Action                                            |
+| ----------------------- | ------------------------------------------------- |
+| `/dk plugin [sub]`      | Read `reference/plugin.md`, follow instructions   |
+| `/dk dev [type] <desc>` | Read `reference/dev.md`, follow instructions      |
+| `/dk git [sub]`         | Read `reference/git.md`, follow instructions      |
+| `/dk env [sub]`         | Read `reference/env.md`, follow instructions      |
+| `/dk vercel [sub]`      | Read `reference/vercel.md`, follow instructions   |
+| `/dk neon [sub]`        | Read `reference/neon.md`, follow instructions     |
+| `/dk arch [sub]`        | Read `reference/arch.md`, follow instructions     |
+| `/dk webhooks [sub]`    | Read `reference/webhooks.md`, follow instructions |
+| `/dk docs [sub]`        | Read `reference/docs.md`, follow instructions     |
 
 **ALWAYS pass the remaining arguments to the module.**
 

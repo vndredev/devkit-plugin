@@ -28,11 +28,6 @@
           "default": "0.0.0",
           "description": "Semantic version (starting point for releases)"
         },
-        "devMode": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable dev mode: show commit-ID in statusline, auto-update plugin version for cache invalidation"
-        },
         "slogan": {
           "type": "string",
           "description": "Short tagline for the project"
@@ -514,6 +509,51 @@
             "fix": { "type": "string", "default": "Fixed" },
             "refactor": { "type": "string", "default": "Changed" },
             "perf": { "type": "string", "default": "Changed" }
+          }
+        }
+      }
+    },
+    "webhooks": {
+      "type": "object",
+      "description": "Webhook tunnel configuration for local development",
+      "properties": {
+        "ngrok": {
+          "type": "object",
+          "description": "ngrok tunnel configuration",
+          "properties": {
+            "domain": {
+              "type": "string",
+              "description": "Static ngrok domain (e.g., your-app.ngrok-free.app)"
+            },
+            "port": {
+              "type": "integer",
+              "default": 3000,
+              "description": "Local port to forward to"
+            }
+          }
+        },
+        "services": {
+          "type": "object",
+          "description": "Webhook service configurations",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Webhook endpoint path (e.g., /api/webhooks/stripe)"
+              },
+              "provider": {
+                "type": "string",
+                "enum": ["stripe", "livekit", "clerk", "resend", "custom"],
+                "description": "Service provider for CLI integration"
+              },
+              "events": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Events to listen for (provider-specific)"
+              }
+            },
+            "required": ["path"]
           }
         }
       }
