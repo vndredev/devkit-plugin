@@ -51,9 +51,14 @@ Example: `feat/add-login`, `fix/button-styling`
 ## Development
 
 ```bash
-# YOU MUST use uv run for Python
-uv run pytest tests/
-uv run python src/...
+# Development
+npm run dev
+
+# Testing
+npm test  # pytest
+
+# Build
+npm run build
 ```
 
 ## Resources

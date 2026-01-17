@@ -130,7 +130,7 @@ def main() -> None:
         if success:
             messages.append(formatted_tpl.format(file=Path(file_path).name))
 
-    # Check for missing tests - only for NEW files in src/
+    # Check for missing artifacts (tests, docs) - only for NEW files
     filepath = Path(file_path)
     is_new_file = tool_name == "Write"
     is_source_file = "/src/" in file_path and filepath.suffix == ".py"
@@ -138,15 +138,22 @@ def main() -> None:
     is_not_init = filepath.name != "__init__.py"
 
     if is_new_file and is_source_file and is_not_test and is_not_init:
-        # Check if test file exists in tests/ directory
-        # src/lib/config.py -> tests/test_config.py
-        test_file_name = f"test_{filepath.name}"
-        project_root = get("_project_root", filepath.parent.parent.parent)
-        tests_dir = Path(project_root) / "tests"
-        test_file = tests_dir / test_file_name
+        try:
+            from arch.consistency import get_missing_artifacts
 
-        if not test_file.exists():
-            messages.append(test_reminder_tpl.format(file=test_file_name))
+            missing = get_missing_artifacts(file_path)
+            if missing:
+                # Use configured template with first missing artifact
+                messages.append(test_reminder_tpl.format(file=missing[0]))
+        except ImportError:
+            # Fallback to simple check if consistency module not available
+            test_file_name = f"test_{filepath.name}"
+            project_root = get("_project_root", filepath.parent.parent.parent)
+            tests_dir = Path(project_root) / "tests"
+            test_file = tests_dir / test_file_name
+
+            if not test_file.exists():
+                messages.append(test_reminder_tpl.format(file=test_file_name))
 
     # Check architecture violations for src/ files
     arch_check = get("hooks.format.arch_check", True)

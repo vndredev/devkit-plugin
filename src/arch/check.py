@@ -458,6 +458,23 @@ def check_tests() -> tuple[str, list[str]]:
     return "FAIL" if issues else "PASS", issues
 
 
+def check_consistency_wrapper() -> tuple[bool, dict]:
+    """Run consistency checks.
+
+    Returns:
+        Tuple of (is_valid, results dict)
+    """
+    try:
+        from arch.consistency import check_consistency
+
+        all_valid, results = check_consistency()
+        return all_valid, results
+    except ImportError:
+        return True, {}
+    except Exception:
+        return True, {}
+
+
 def check_all() -> dict:
     """Run all health checks and return consolidated report.
 
@@ -471,6 +488,7 @@ def check_all() -> dict:
     test_status, test_issues = check_tests()
     user_files = check_user_files()
     versions_ok, versions_found, versions_errors = check_versions()
+    consistency_ok, consistency_results = check_consistency_wrapper()
 
     # Count sync issues
     sync_ok = all(r[1] for r in sync_results)
@@ -491,6 +509,7 @@ def check_all() -> dict:
 
     # Overall status (missing sections are warnings, not errors)
     # Version mismatch and missing templates are errors that affect health
+    # Consistency issues are warnings, don't block healthy status
     all_ok = config_ok and sync_ok and arch_ok and test_ok and versions_ok and templates_ok
 
     return {
@@ -522,6 +541,10 @@ def check_all() -> dict:
             "ok": versions_ok,
             "found": versions_found,
             "errors": versions_errors,
+        },
+        "consistency": {
+            "ok": consistency_ok,
+            "results": consistency_results,
         },
         "user_files": {
             "status": user_files,
@@ -700,6 +723,43 @@ def _format_versions_section(results: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _format_consistency_section(results: dict[str, Any]) -> list[str]:
+    """Format consistency section of health report.
+
+    Args:
+        results: Health check results.
+
+    Returns:
+        List of formatted lines.
+    """
+    lines = ["── Consistency ─────────────────────"]
+
+    consistency_data = results.get("consistency", {})
+    consistency_ok = consistency_data.get("ok", True)
+    consistency_results = consistency_data.get("results", {})
+
+    if not consistency_results:
+        lines.append("○ Skipped (not configured)")
+        return lines
+
+    if consistency_ok:
+        lines.append("✓ All consistency checks passed")
+    else:
+        # Count total violations
+        all_violations = []
+        for _, violations in consistency_results.values():
+            all_violations.extend(violations)
+
+        lines.append(f"✗ {len(all_violations)} consistency violation(s):")
+        for v in all_violations[:MAX_DISPLAY_ITEMS]:
+            severity_icon = "⚠" if v.get("severity") == "warning" else "✗"
+            lines.append(f"  {severity_icon} [{v['rule']}] {v['message']}")
+        if len(all_violations) > MAX_DISPLAY_ITEMS:
+            lines.append(f"  ... and {len(all_violations) - MAX_DISPLAY_ITEMS} more")
+
+    return lines
+
+
 def _format_user_files_section(results: dict[str, Any]) -> list[str]:
     """Format user files section of health report.
 
@@ -798,6 +858,7 @@ def format_report(results: dict[str, Any]) -> str:
         _format_arch_section(results),
         _format_templates_section(results),
         _format_tests_section(results),
+        _format_consistency_section(results),
         _format_user_files_section(results),
         _format_summary(results),
     ]
@@ -843,6 +904,12 @@ def format_compact(results: dict) -> str | None:
     # Add test issues if testing failed
     if results.get("tests", {}).get("status") == "FAIL":
         issues.extend(results["tests"]["issues"])
+
+    # Add consistency violations
+    consistency_results = results.get("consistency", {}).get("results", {})
+    for _, violations in consistency_results.values():
+        for v in violations:
+            issues.append(f"[{v['rule']}] {v['message']}")
 
     if not issues:
         return None

@@ -148,6 +148,31 @@ The config uses JSONC format (JSON with Comments) for better readability.
 }
 ```
 
+### Consistency Checks
+
+```jsonc
+"consistency": {
+  "enabled": true,                   // Enable consistency validation
+  "rules": {
+    "module_tests": {
+      "enabled": true,
+      "patterns": {                  // Source -> Test file mapping
+        "src/lib/*.py": "tests/test_{stem}.py"
+      },
+      "exclude": ["__init__.py"]     // Files to skip
+    },
+    "hook_handlers": { "enabled": true },   // Check hooks have handlers
+    "config_schema": { "enabled": true },   // Check config keys in schema
+    "skill_routes": { "enabled": true },    // Check skill doc references
+    "custom_imports": {
+      "enabled": false,              // Custom import rules
+      "deny": ["src/hooks/* -> @prisma/client"],  // Forbidden imports
+      "require": []                  // Required imports (future)
+    }
+  }
+}
+```
+
 ### Managed Files
 
 The `managed` section controls auto-generated files:
@@ -214,6 +239,13 @@ All commands use the `/dk` prefix.
 | `/dk arch check` | Check layer rule compliance |
 | `/dk arch init [python\|ts]` | Scaffold Clean Architecture |
 | `/dk arch layers` | Show layer documentation |
+
+### Plugin Health
+
+| Command | Description |
+|---------|-------------|
+| `/dk plugin check` | Run all health checks including consistency |
+| `/dk plugin update` | Sync managed files and fix issues |
 
 ### Environment
 

@@ -513,6 +513,80 @@
         }
       }
     },
+    "consistency": {
+      "type": "object",
+      "description": "Project consistency validation rules",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable consistency checks"
+        },
+        "rules": {
+          "type": "object",
+          "description": "Individual rule configurations",
+          "properties": {
+            "module_tests": {
+              "type": "object",
+              "description": "Check that source modules have test files",
+              "properties": {
+                "enabled": { "type": "boolean", "default": true },
+                "patterns": {
+                  "type": "object",
+                  "description": "Source pattern to test pattern mapping",
+                  "additionalProperties": { "type": "string" },
+                  "default": { "src/lib/*.py": "tests/test_{stem}.py" }
+                },
+                "exclude": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "default": ["__init__.py"],
+                  "description": "File names to exclude from checks"
+                }
+              }
+            },
+            "hook_handlers": {
+              "type": "object",
+              "description": "Check that enabled hooks have handler files",
+              "properties": {
+                "enabled": { "type": "boolean", "default": true }
+              }
+            },
+            "config_schema": {
+              "type": "object",
+              "description": "Check that config keys exist in schema",
+              "properties": {
+                "enabled": { "type": "boolean", "default": true }
+              }
+            },
+            "skill_routes": {
+              "type": "object",
+              "description": "Check that skill routes reference existing docs",
+              "properties": {
+                "enabled": { "type": "boolean", "default": true }
+              }
+            },
+            "custom_imports": {
+              "type": "object",
+              "description": "Custom import rules (deny/require)",
+              "properties": {
+                "enabled": { "type": "boolean", "default": false },
+                "deny": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Forbidden imports: 'src/hooks/* -> @prisma/client'"
+                },
+                "require": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Required imports (future)"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "webhooks": {
       "type": "object",
       "description": "Webhook tunnel configuration for local development",
