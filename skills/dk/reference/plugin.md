@@ -53,6 +53,7 @@ Full health check with content verification:
 - **Config:** Schema validation, required fields, missing optional sections
 - **Sync:** Content comparison against templates
 - **Architecture:** Layer rule compliance
+- **Consistency:** Module tests, hook handlers, skill routes, custom imports
 - **Upgradable:** Detects if config can be upgraded with new features
 
 ```bash
@@ -71,12 +72,6 @@ print(format_report(results))
 ✓ Schema valid
 ✓ Required fields present
 
-⚠ Missing optional sections (3):
-  - hooks.plan.planning
-  - hooks.plan.implementation
-  - hooks.plan.hints
-  → Run: /dk plugin update (adds defaults)
-
 ── Sync ────────────────────────────
 ✓ ruff.toml (in sync)
 ✓ .gitignore (in sync)
@@ -86,6 +81,13 @@ print(format_report(results))
 ── Architecture ────────────────────
 ✓ Layer rules compliant
   core (0) → lib (1) → arch (2) → events (3)
+
+── Consistency ─────────────────────
+✓ All consistency checks passed
+  OR
+✗ 2 consistency violation(s):
+  ⚠️ [module_tests] Missing test file for tools.py
+  ❌ [hook_handlers] Hook references missing handler
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Status: 1 issue found
@@ -248,6 +250,16 @@ The `config.jsonc` is the single source of truth:
   "project": { "name": "...", "type": "python|nextjs|..." },
   "linters": { "preset": "strict|relaxed|minimal", "overrides": {} },
   "arch": { "layers": { "core": { "tier": 0 }, ... } },
+  "consistency": {
+    "enabled": true,
+    "rules": {
+      "module_tests": { "enabled": true, "patterns": {...}, "exclude": [...] },
+      "hook_handlers": { "enabled": true },
+      "config_schema": { "enabled": true },
+      "skill_routes": { "enabled": true },
+      "custom_imports": { "enabled": false, "deny": [...] }
+    }
+  },
   "managed": {
     "linters": { "ruff.toml": { "template": "...", "enabled": true } },
     "github": { ".github/workflows/...": { "template": "...", "enabled": true } },
