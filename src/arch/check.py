@@ -259,7 +259,10 @@ def _get_changelog_version(root: Path) -> str | None:
 
 
 def _get_git_tag_version(root: Path) -> str | None:
-    """Get latest git tag version.
+    """Get latest git tag version using semver sorting.
+
+    Uses `git tag --sort=-version:refname` to get the latest semver tag
+    regardless of branch position. This works correctly on feature branches.
 
     Returns:
         Version string (without v prefix) or None if not found.
@@ -268,13 +271,14 @@ def _get_git_tag_version(root: Path) -> str | None:
 
     try:
         result = subprocess.run(
-            ["git", "describe", "--tags", "--abbrev=0"],
+            ["git", "tag", "--list", "v*", "--sort=-version:refname"],
             cwd=root,
             capture_output=True,
             text=True,
             check=True,
         )
-        tag = result.stdout.strip()
+        tags = result.stdout.strip().split("\n")
+        tag = tags[0] if tags and tags[0] else None
         # Remove 'v' prefix if present
         return tag.lstrip("v") if tag else None
     except (subprocess.SubprocessError, OSError):

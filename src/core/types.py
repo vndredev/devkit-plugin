@@ -11,6 +11,7 @@ class ProjectType(str, Enum):
 
     Base types: python, node
     Framework types: nextjs, typescript, javascript (all node-based)
+    Special types: claude-code-plugin (Claude Code plugins)
     """
 
     PYTHON = "python"
@@ -18,6 +19,7 @@ class ProjectType(str, Enum):
     NEXTJS = "nextjs"
     TYPESCRIPT = "typescript"
     JAVASCRIPT = "javascript"
+    CLAUDE_PLUGIN = "claude-code-plugin"
     UNKNOWN = "unknown"
 
     def is_node_based(self) -> bool:
@@ -28,6 +30,10 @@ class ProjectType(str, Enum):
             ProjectType.TYPESCRIPT,
             ProjectType.JAVASCRIPT,
         )
+
+    def is_plugin(self) -> bool:
+        """Check if project type is a Claude Code plugin."""
+        return self == ProjectType.CLAUDE_PLUGIN
 
 
 class ProjectSize(str, Enum):

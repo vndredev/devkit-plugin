@@ -9,7 +9,7 @@
 
 ### Added
 
-- **Git**: Add github branch protection based on repo type (#10)
+- **Git**: Add GitHub branch protection based on repo type (#10)
 - Add project consistency validation system (#7)
 - Add /dk webhooks command for local webhook management (#5)
 

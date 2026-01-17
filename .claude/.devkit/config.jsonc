@@ -60,7 +60,7 @@
   },
 
   "testing": {
-    "enabled": false,
+    "enabled": true,
     "framework": "pytest",
     "coverage": {
       "minimum": 70,

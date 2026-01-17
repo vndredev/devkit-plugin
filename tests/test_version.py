@@ -1,10 +1,18 @@
 """Tests for lib/version.py."""
 
 import json
+import os
+from unittest.mock import patch
 
 import pytest
 
-from lib.version import get_version, sync_versions
+from lib.version import (
+    get_plugin_dev_recommendation,
+    get_version,
+    is_plugin_loaded_via_plugin_dir,
+    is_project_a_plugin,
+    sync_versions,
+)
 
 
 class TestGetVersion:
@@ -184,3 +192,77 @@ class TestSyncVersions:
 
         data = json.loads(package_json.read_text())
         assert data["version"] == "9.9.9"
+
+
+class TestIsProjectAPlugin:
+    """Tests for is_project_a_plugin()."""
+
+    def test_returns_true_if_plugin_json_exists(self, tmp_path):
+        """Should return True if .claude-plugin/plugin.json exists."""
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+        (plugin_dir / "plugin.json").write_text('{"name": "test"}')
+
+        assert is_project_a_plugin(tmp_path) is True
+
+    def test_returns_false_if_no_plugin_json(self, tmp_path):
+        """Should return False if no plugin.json."""
+        assert is_project_a_plugin(tmp_path) is False
+
+    def test_returns_false_if_only_claude_plugin_dir(self, tmp_path):
+        """Should return False if only directory exists without plugin.json."""
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+
+        assert is_project_a_plugin(tmp_path) is False
+
+
+class TestIsPluginLoadedViaPluginDir:
+    """Tests for is_plugin_loaded_via_plugin_dir()."""
+
+    def test_returns_true_if_plugin_root_matches(self, tmp_path):
+        """Should return True if CLAUDE_PLUGIN_ROOT matches project dir."""
+        with patch.dict(os.environ, {"CLAUDE_PLUGIN_ROOT": str(tmp_path)}):
+            assert is_plugin_loaded_via_plugin_dir(tmp_path) is True
+
+    def test_returns_false_if_plugin_root_differs(self, tmp_path):
+        """Should return False if CLAUDE_PLUGIN_ROOT differs from project dir."""
+        with patch.dict(os.environ, {"CLAUDE_PLUGIN_ROOT": "/some/other/path"}):
+            assert is_plugin_loaded_via_plugin_dir(tmp_path) is False
+
+    def test_returns_false_if_no_plugin_root(self, tmp_path):
+        """Should return False if CLAUDE_PLUGIN_ROOT not set."""
+        with patch.dict(os.environ, {}, clear=True):
+            # Ensure CLAUDE_PLUGIN_ROOT is not set
+            os.environ.pop("CLAUDE_PLUGIN_ROOT", None)
+            assert is_plugin_loaded_via_plugin_dir(tmp_path) is False
+
+
+class TestGetPluginDevRecommendation:
+    """Tests for get_plugin_dev_recommendation()."""
+
+    def test_returns_none_if_not_plugin(self, tmp_path):
+        """Should return None if project is not a plugin."""
+        assert get_plugin_dev_recommendation(tmp_path) is None
+
+    def test_returns_none_if_already_loaded(self, tmp_path):
+        """Should return None if plugin is already loaded via --plugin-dir."""
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+        (plugin_dir / "plugin.json").write_text('{"name": "test"}')
+
+        with patch.dict(os.environ, {"CLAUDE_PLUGIN_ROOT": str(tmp_path)}):
+            assert get_plugin_dev_recommendation(tmp_path) is None
+
+    def test_returns_command_if_plugin_not_loaded(self, tmp_path):
+        """Should return command if plugin project not loaded via --plugin-dir."""
+        plugin_dir = tmp_path / ".claude-plugin"
+        plugin_dir.mkdir()
+        (plugin_dir / "plugin.json").write_text('{"name": "test"}')
+
+        with patch.dict(os.environ, {"CLAUDE_PLUGIN_ROOT": "/other/path"}):
+            result = get_plugin_dev_recommendation(tmp_path)
+
+        assert result is not None
+        assert "--plugin-dir" in result
+        assert str(tmp_path) in result

@@ -261,7 +261,11 @@ class TestUpdateGithubSettings:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
             with patch("lib.setup.is_org_repo", return_value=False):
-                results = update_github_settings("user/repo")
+                with patch(
+                    "lib.setup.check_ruleset_status",
+                    return_value={"exists": True, "has_bypass": False},
+                ):
+                    results = update_github_settings("user/repo")
 
         # Find the PATCH call for repo settings (after is_org_repo check)
         patch_calls = [c for c in mock_run.call_args_list if "-X" in c[0][0] and "PATCH" in c[0][0]]
@@ -270,34 +274,61 @@ class TestUpdateGithubSettings:
         assert "allow_squash_merge=true" in args
         assert "allow_merge_commit=false" in args
 
-    def test_update_github_settings_sets_branch_protection(self):
-        """Should configure branch protection."""
+    def test_update_github_settings_checks_ruleset_status(self):
+        """Should check ruleset protection status."""
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
             with patch("lib.setup.is_org_repo", return_value=False):
-                results = update_github_settings("user/repo")
+                with patch(
+                    "lib.setup.check_ruleset_status",
+                    return_value={"exists": True, "has_bypass": True},
+                ):
+                    results = update_github_settings("user/repo")
 
-        # Check for branch protection call
-        protection_calls = [c for c in mock_run.call_args_list if "protection" in " ".join(c[0][0])]
-        assert len(protection_calls) >= 1
-        args = protection_calls[0][0][0]
-        assert "branches/main/protection" in " ".join(args)
+        # Check for protection status in results
+        protection_results = [r for r in results if r[0] == "protection"]
+        assert len(protection_results) == 1
+        assert protection_results[0][1] is True
+        assert "Ruleset active" in protection_results[0][2]
+        assert "(with bypass)" in protection_results[0][2]
+
+    def test_update_github_settings_reports_missing_protection(self):
+        """Should report when protection is not configured."""
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            with patch("lib.setup.is_org_repo", return_value=False):
+                with patch(
+                    "lib.setup.check_ruleset_status",
+                    return_value={"exists": False, "has_bypass": False},
+                ):
+                    results = update_github_settings("user/repo")
+
+        # Check for protection status in results
+        protection_results = [r for r in results if r[0] == "protection"]
+        assert len(protection_results) == 1
+        assert protection_results[0][1] is False
+        assert "Not configured" in protection_results[0][2]
 
     def test_update_github_settings_handles_errors(self):
         """Should handle API errors gracefully."""
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = subprocess.CalledProcessError(1, "gh", stderr=b"API error")
             with patch("lib.setup.is_org_repo", return_value=False):
-                results = update_github_settings("user/repo")
+                with patch(
+                    "lib.setup.check_ruleset_status",
+                    return_value={"exists": False, "has_bypass": False},
+                ):
+                    results = update_github_settings("user/repo")
 
-        # Should have release_token + repo_settings + branch_protection = 3 results
+        # Should have release_token + repo_settings + protection = 3 results
         assert len(results) == 3
         # First is release token info (always succeeds)
         assert results[0][0] == "release token"
         assert results[0][1] is True
-        # Repo settings and branch protection should fail
+        # Repo settings should fail
         assert results[1][1] is False
-        assert results[2][1] is False
+        # Protection check still works (mocked)
+        assert results[2][0] == "protection"
 
 
 # Import subprocess for CalledProcessError

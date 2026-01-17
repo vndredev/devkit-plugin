@@ -57,27 +57,13 @@ Rule: Higher tiers may import from lower tiers only.
 ## Dependency Matrix
 
 ```
-Dependency Matrix (row imports column)
-=======================
-
-        cor lib arc eve
------------------------
-  core │  ✓   ·   ·   · 
-   lib │  ✓   ✓   X   · 
-  arch │  ✓   ✓   ✓   · 
-events │  ✓   ✓   ✓   · 
-
-Legend: ✓ = valid import, X = violation, · = no import
+No dependencies to display.
 ```
 
 ## Layer Dependencies
 
 | Layer | Imports |
 |-------|---------|
-| `arch` | arch, core, lib |
-| `core` | core |
-| `events` | arch, core, lib |
-| `lib` | arch, core, lib |
 
 ## Rules
 
