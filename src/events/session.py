@@ -12,20 +12,12 @@ from core.errors import GitError
 from lib.config import get
 from lib.git import git_branch, git_status
 from lib.hooks import consume_stdin, get_project_dir, output_response
-from lib.version import update_plugin_version
 
 
 def main() -> None:
     """Handle SessionStart hook."""
     # Consume stdin (hook data not needed)
     consume_stdin()
-
-    # Update plugin version with commit ID for cache invalidation (dev mode only)
-    # This runs in CLAUDE_PLUGIN_ROOT context
-    plugin_root = Path.cwd()
-    dev_mode = get("project.devMode", False)
-    if dev_mode:
-        update_plugin_version(plugin_root)
 
     # Check if hook is enabled
     if not get("hooks.session.enabled", True):

@@ -274,7 +274,7 @@ Issue management commands:
 
 ```bash
 # report - bug in devkit-plugin
-gh issue create --repo "andreschmidt/devkit-plugin" --title "$TITLE" --label "bug"
+gh issue create --repo "vndredev/devkit-plugin" --title "$TITLE" --label "bug"
 
 # create - issue in current project
 gh issue create --title "$TITLE" --label "$TYPE"
