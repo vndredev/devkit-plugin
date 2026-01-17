@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.23.0] - 2026-01-17
+## [v0.23.1] - 2026-01-17
+
+### Fixed
+
+- Release pending changes (schema sync, auto-merge)
 
 ### Added
 
