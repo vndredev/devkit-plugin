@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.23.2] - 2026-01-17
+## [v0.24.0] - 2026-01-17
 
 ### Fixed
 
@@ -9,6 +9,7 @@
 
 ### Added
 
+- **Git**: Add github branch protection based on repo type (#10)
 - Add project consistency validation system (#7)
 - Add /dk webhooks command for local webhook management (#5)
 
