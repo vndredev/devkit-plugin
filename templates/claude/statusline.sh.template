@@ -48,21 +48,23 @@ get_devkit_status() {
     local plugin_root=""
     local cache_base="$HOME/.claude/plugins/cache/vndredev-marketplace"
 
-    # Try to find devkit-plugin in cache (any version)
+    # Try to find devkit-plugin in cache (latest version)
     if [ -d "$cache_base" ]; then
         # Check devkit-plugin-dev first, then devkit-plugin
         for plugin_name in "devkit-plugin-dev" "devkit-plugin"; do
             local plugin_dir="$cache_base/$plugin_name"
             if [ -d "$plugin_dir" ]; then
-                # Find the latest version directory
-                for version_dir in "$plugin_dir"/*; do
+                # Find the latest version directory (sort by semver, highest first)
+                local latest_version
+                latest_version=$(ls -1 "$plugin_dir" 2>/dev/null | sort -V | tail -1)
+                if [ -n "$latest_version" ]; then
+                    local version_dir="$plugin_dir/$latest_version"
                     if [ -d "$version_dir" ] && [ -f "$version_dir/src/arch/check.py" ]; then
                         plugin_root="$version_dir"
-                        # Extract version from path (e.g., /0.22.0/)
-                        DEVKIT_VERSION=$(basename "$version_dir")
-                        break 2
+                        DEVKIT_VERSION="$latest_version"
+                        break
                     fi
-                done
+                fi
             fi
         done
     fi
