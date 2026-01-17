@@ -221,11 +221,11 @@ CONFIG_FILE=".claude/.devkit/config.jsonc"
 DELETE_BRANCH=$(jq -r '.github.pr.delete_branch // true' "$CONFIG_FILE" 2>/dev/null || echo "true")
 MERGE_METHOD=$(jq -r '.github.pr.merge_method // "squash"' "$CONFIG_FILE" 2>/dev/null || echo "squash")
 
-# Build merge command
-MERGE_ARGS="--$MERGE_METHOD"
-[ "$DELETE_BRANCH" = "true" ] && MERGE_ARGS="$MERGE_ARGS --delete-branch"
+# Build merge command with separate flags
+DELETE_FLAG=""
+[ "$DELETE_BRANCH" = "true" ] && DELETE_FLAG="--delete-branch"
 
-gh pr merge "$PR_NUM" $MERGE_ARGS
+gh pr merge "$PR_NUM" "--$MERGE_METHOD" $DELETE_FLAG
 git checkout main && git pull
 ```
 
