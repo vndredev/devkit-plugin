@@ -10,6 +10,7 @@ from pathlib import Path
 
 from lib.config import clear_cache, get, load_config
 from lib.git import run_git
+from lib.github import check_ruleset_status, setup_branch_protection
 from lib.sync import get_plugin_root, sync_all
 from lib.tools import detect_project_type, detect_project_version
 
@@ -208,6 +209,12 @@ def git_init(
         gh_results = setup_github(github_repo, visibility)
         results.extend(gh_results)
 
+        # 7. Branch protection (after GitHub setup)
+        protection_config = get("github.protection", {})
+        if protection_config.get("enabled", True):
+            protection_results = setup_branch_protection(github_repo, protection_config)
+            results.extend(protection_results)
+
     return results
 
 
@@ -245,6 +252,16 @@ def git_update(force: bool = False) -> list[tuple[str, bool, str]]:
         repo = github_url.replace("https://github.com/", "")
         gh_results = update_github_settings(repo)
         results.extend(gh_results)
+
+        # 4. Check branch protection status
+        protection_config = get("github.protection", {})
+        if protection_config.get("enabled", True):
+            protection_status = check_ruleset_status(repo)
+            if protection_status["exists"]:
+                bypass_info = " (with bypass)" if protection_status["has_bypass"] else ""
+                results.append(("protection", True, f"Ruleset active{bypass_info}"))
+            else:
+                results.append(("protection", False, "Not configured - run /dk git init"))
     else:
         results.append(("github", True, "No remote configured"))
 

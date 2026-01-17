@@ -72,6 +72,7 @@ Initialize a new project with full setup:
 4. Sync all managed files (linters, workflows, templates, CLAUDE.md)
 5. Create first commit: `chore: initial commit`
 6. (Optional) Create GitHub repo + configure settings
+7. (Optional) Setup branch protection ruleset
 
 ```bash
 PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
@@ -106,6 +107,50 @@ for step, ok, msg in git_update():
     icon = '✓' if ok else '✗'
     print(f'{icon} {step}: {msg}')
 "
+```
+
+---
+
+## Branch Protection
+
+Branch protection is automatically configured during `/dk git init` based on your GitHub plan:
+
+| Repo Type | Plan            | Bypass Actors | Solution                      |
+| --------- | --------------- | ------------- | ----------------------------- |
+| User      | Free            | ❌ No         | Warning: RELEASE_PAT required |
+| User      | Pro             | ✅ Yes        | Ruleset with admin bypass     |
+| Org       | Free            | ⚠️ Limited    | Warning about limitations     |
+| Org       | Team/Enterprise | ✅ Yes        | Ruleset with admin bypass     |
+
+**Config options** (in `config.jsonc`):
+
+```jsonc
+"github": {
+  "protection": {
+    "enabled": true,           // Enable branch protection
+    "require_reviews": 1,      // Required PR reviews (0 to disable)
+    "linear_history": true,    // Require linear commit history
+    "admin_bypass": true,      // Allow admins to bypass (requires Pro/Team+)
+    "dismiss_stale_reviews": false
+  }
+}
+```
+
+**What gets created:**
+
+- Ruleset named `devkit-protection` on `main` branch
+- Linear history requirement (no merge commits)
+- Required PR reviews (configurable)
+- Admin bypass (if plan supports it)
+
+**If you're on Free plan:**
+
+You need a `RELEASE_PAT` secret for automated releases:
+
+```bash
+# Create a fine-grained PAT at https://github.com/settings/tokens
+# Then add it as a secret:
+gh secret set RELEASE_PAT
 ```
 
 ---

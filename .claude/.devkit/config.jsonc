@@ -41,6 +41,13 @@
       "auto_merge": true,      // Enable auto-merge when PR is created
       "delete_branch": true,   // Delete branch after merge
       "merge_method": "squash" // squash, merge, or rebase
+    },
+    "protection": {
+      "enabled": true,           // Enable branch protection ruleset
+      "require_reviews": 1,      // Required PR reviews (0 to disable)
+      "linear_history": true,    // Require linear commit history
+      "admin_bypass": true,      // Allow admins to bypass (requires Pro/Team+)
+      "dismiss_stale_reviews": false
     }
   },
 
