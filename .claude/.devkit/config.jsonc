@@ -27,7 +27,7 @@
       "types": ["feat", "fix", "chore", "refactor", "test", "docs", "perf", "ci"],
       "scopes": {
         "mode": "strict",      // strict=error, warn=warning, off=disabled
-        "allowed": [],         // Project-specific scopes
+        "allowed": ["config", "sync", "hook", "arch", "docs", "git", "skill", "plugin", "statusline", "release", "schema", "session", "validate", "format", "plan"],
         "internal": ["internal", "review", "ci", "deps"]  // Skip release notes
       },
       "branch_pattern": "{type}/{description}"
