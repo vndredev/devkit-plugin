@@ -6,6 +6,7 @@
 # - Model and version display
 # - Git branch and status (staged/modified/ahead/behind)
 # - devkit health check (config/sync/arch)
+# - Plugin version with update notification
 #
 # Error handling: All errors are silently handled to prevent
 # statusline failures from breaking Claude Code.
@@ -36,6 +37,7 @@ fi
 # devkit plugin status - robust detection
 DEVKIT_STATUS=""
 DEVKIT_MSG=""
+DEVKIT_VERSION=""
 get_devkit_status() {
     # Check if this is a devkit project
     if [ ! -d "$CWD/.claude/.devkit" ]; then
@@ -56,6 +58,8 @@ get_devkit_status() {
                 for version_dir in "$plugin_dir"/*; do
                     if [ -d "$version_dir" ] && [ -f "$version_dir/src/arch/check.py" ]; then
                         plugin_root="$version_dir"
+                        # Extract version from path (e.g., /0.22.0/)
+                        DEVKIT_VERSION=$(basename "$version_dir")
                         break 2
                     fi
                 done
@@ -66,6 +70,10 @@ get_devkit_status() {
     # Fallback to direct plugin path
     if [ -z "$plugin_root" ] && [ -d "$HOME/.claude/plugins/devkit-plugin" ]; then
         plugin_root="$HOME/.claude/plugins/devkit-plugin"
+        # Try to get version from plugin.json
+        if [ -f "$plugin_root/.claude-plugin/plugin.json" ]; then
+            DEVKIT_VERSION=$(jq -r '.version // "?"' "$plugin_root/.claude-plugin/plugin.json" 2>/dev/null)
+        fi
     fi
 
     # Plugin not found
@@ -184,14 +192,20 @@ if [ -n "$GIT_BRANCH" ]; then
     fi
 fi
 
-# devkit status
+# devkit status with version
 if [ -n "$DEVKIT_STATUS" ]; then
     OUTPUT+=" \033[90m|\033[0m "
 
     if [ "$DEVKIT_STATUS" = "ok" ]; then
-        OUTPUT+="\033[32mdevkit ok\033[0m"
+        # Show version (green)
+        OUTPUT+="\033[32mdevkit"
+        [ -n "$DEVKIT_VERSION" ] && OUTPUT+=" $DEVKIT_VERSION"
+        OUTPUT+="\033[0m"
     else
-        OUTPUT+="\033[1;31mdevkit: $DEVKIT_MSG\033[0m"
+        # Show error with version if available
+        OUTPUT+="\033[1;31mdevkit"
+        [ -n "$DEVKIT_VERSION" ] && OUTPUT+=" $DEVKIT_VERSION"
+        OUTPUT+=": $DEVKIT_MSG\033[0m"
     fi
 fi
 

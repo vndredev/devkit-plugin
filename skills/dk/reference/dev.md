@@ -62,8 +62,21 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 ---
 
+## Consistency Checkliste
+
+**After creating new files, verify these artifacts exist:**
+
+- [ ] **Tests**: New modules in `src/` need test files in `tests/test_{module}.py`
+- [ ] **Handlers**: Enabled hooks need handler files in `src/events/`
+- [ ] **Docs**: New skills need reference docs in `skills/dk/reference/`
+
+**Run `/dk plugin check` to verify all consistency rules.**
+
+---
+
 ## IMPORTANT Reminders
 
 1. **NEVER** use raw `gh pr create` - **ALWAYS** use `/dk git pr`
 2. **NEVER** skip tests - **ALWAYS** run `uv run pytest` before committing
 3. **NEVER** skip linting - **ALWAYS** run `uv run ruff check` after changes
+4. **ALWAYS** run `/dk plugin check` before creating a PR
