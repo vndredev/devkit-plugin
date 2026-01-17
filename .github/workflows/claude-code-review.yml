@@ -117,50 +117,38 @@ jobs:
             - REQUEST_CHANGES: Any Security/Bug issue
             - The <!-- VERDICT:X --> marker is REQUIRED
 
-      - name: Check Review Verdict
+      - name: Submit GitHub Review
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Fetching review..."
+          echo "Fetching review comment..."
 
           REVIEW=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
             --jq '[.[] | select(.user.login | test("claude|github-actions"))] | last | .body' 2>&1) || REVIEW=""
 
           echo "Review length: ${#REVIEW} chars"
 
-          # Primary: machine-readable markers
-          if echo "$REVIEW" | grep -qF "<!-- VERDICT:APPROVE -->"; then
+          # Determine verdict and submit official GitHub review
+          if echo "$REVIEW" | grep -qF "<!-- VERDICT:APPROVE -->" || echo "$REVIEW" | grep -q "🟢.*APPROVE"; then
             echo ""; echo "════════════════════════════════════════════════════════════════"
-            echo "🟢 APPROVE - Ready to merge"
+            echo "🟢 APPROVE - Submitting official review"
             echo "════════════════════════════════════════════════════════════════"
+            gh pr review ${{ github.event.pull_request.number }} --approve --body "✅ Claude Code Review: APPROVED"
             exit 0
           fi
 
-          if echo "$REVIEW" | grep -qF "<!-- VERDICT:REQUEST_CHANGES -->"; then
+          if echo "$REVIEW" | grep -qF "<!-- VERDICT:REQUEST_CHANGES -->" || echo "$REVIEW" | grep -q "🔴.*REQUEST_CHANGES"; then
             echo ""; echo "════════════════════════════════════════════════════════════════"
-            echo "🔴 REQUEST_CHANGES - PR is BLOCKED"
+            echo "🔴 REQUEST_CHANGES - Submitting official review"
             echo "════════════════════════════════════════════════════════════════"
+            gh pr review ${{ github.event.pull_request.number }} --request-changes --body "❌ Claude Code Review: Changes requested - see review comment above"
             exit 1
           fi
 
-          # Fallback: emoji patterns (legacy compatibility)
-          if echo "$REVIEW" | grep -q "🟢.*APPROVE"; then
-            echo ""; echo "════════════════════════════════════════════════════════════════"
-            echo "🟢 APPROVE (legacy) - Ready to merge"
-            echo "════════════════════════════════════════════════════════════════"
-            exit 0
-          fi
-
-          if echo "$REVIEW" | grep -q "🔴.*REQUEST_CHANGES"; then
-            echo ""; echo "════════════════════════════════════════════════════════════════"
-            echo "🔴 REQUEST_CHANGES (legacy) - PR is BLOCKED"
-            echo "════════════════════════════════════════════════════════════════"
-            exit 1
-          fi
-
-          # No verdict
+          # No verdict - request changes to block
           echo ""; echo "════════════════════════════════════════════════════════════════"
-          echo "⚠️ No verdict found - PR is BLOCKED"
+          echo "⚠️ No verdict found - Requesting changes"
           echo "════════════════════════════════════════════════════════════════"
           echo "Review: ${REVIEW:0:300}..."
+          gh pr review ${{ github.event.pull_request.number }} --request-changes --body "⚠️ Claude Code Review: No verdict found"
           exit 1
