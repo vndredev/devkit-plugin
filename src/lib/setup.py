@@ -557,12 +557,14 @@ def update_github_settings(repo: str) -> list[tuple[str, bool, str]]:
     # Read PR settings from config
     merge_method = get("github.pr.merge_method", "squash")
     delete_branch = get("github.pr.delete_branch", True)
+    auto_merge = get("github.pr.auto_merge", False)
 
     # Build merge settings based on config
     allow_squash = "true" if merge_method == "squash" else "false"
     allow_merge = "true" if merge_method == "merge" else "false"
     allow_rebase = "true" if merge_method == "rebase" else "false"
     delete_on_merge = "true" if delete_branch else "false"
+    allow_auto_merge = "true" if auto_merge else "false"
 
     # Repo settings from config
     try:
@@ -582,12 +584,14 @@ def update_github_settings(repo: str) -> list[tuple[str, bool, str]]:
                 "-f",
                 f"delete_branch_on_merge={delete_on_merge}",
                 "-f",
+                f"allow_auto_merge={allow_auto_merge}",
+                "-f",
                 "squash_merge_commit_title=PR_TITLE",
             ],
             check=True,
             capture_output=True,
         )
-        msg = f"merge={merge_method}, delete_branch={delete_branch}"
+        msg = f"merge={merge_method}, delete_branch={delete_branch}, auto_merge={auto_merge}"
         results.append(("repo settings", True, msg))
     except subprocess.CalledProcessError as e:
         stderr = e.stderr.decode() if e.stderr else str(e)
