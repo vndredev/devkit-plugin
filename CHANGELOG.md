@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.22.0] - 2026-01-17
+## [v0.23.0] - 2026-01-17
 
 ### Added
 
+- Add project consistency validation system (#7)
 - Add /dk webhooks command for local webhook management (#5)
 
 ## [v0.21.0] - 2026-01-16
