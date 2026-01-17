@@ -100,33 +100,25 @@ Action: /dk plugin update
 
 Sync all managed files, upgrade config, and install user files:
 
-1. **Versions:** Syncs version across package.json, config.jsonc, pyproject.toml
-2. **Config upgrade:** Adds missing optional sections with defaults
-3. **Linters:** ruff.toml, .markdownlint.json, etc.
-4. **GitHub:** Workflows and issue templates
-5. **Docs:** CLAUDE.md, docs/PLUGIN.md
-6. **Ignore:** .gitignore, etc.
-7. **User files:** ~/.claude/statusline.sh (Claude Code status line)
+1. **Plugin update:** Checks GitHub for new version, clears cache if update available
+2. **Versions:** Syncs version across package.json, config.jsonc, pyproject.toml
+3. **Config upgrade:** Adds missing optional sections with defaults
+4. **Linters:** ruff.toml, .markdownlint.json, etc.
+5. **GitHub:** Workflows and issue templates
+6. **Docs:** CLAUDE.md, docs/PLUGIN.md
+7. **Ignore:** .gitignore, etc.
+8. **User files:** ~/.claude/statusline.sh (Claude Code status line)
 
 ```bash
 PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
 from lib.sync import sync_all, install_user_files
-from lib.version import sync_versions
-
-print('=== Syncing Versions ===')
-print()
-version_results = sync_versions()
-for target, success, msg in version_results:
-    icon = '✓' if success else '✗'
-    print(f'{icon} {target}: {msg}')
-print()
 
 print('=== Syncing Plugin Files ===')
 print()
 results = sync_all()
 for target, success, msg in results:
     icon = '✓' if success else '✗'
-    print(f'{icon} {target}')
+    print(f'{icon} {target}: {msg}')
 print()
 
 print('=== Installing User Files ===')
@@ -138,6 +130,21 @@ for target, success, msg in user_results:
 print()
 print('Done!')
 "
+```
+
+### Auto-Update Behavior
+
+When a new plugin version is available on GitHub:
+
+1. **Detection:** Compares cached version with latest GitHub release
+2. **Cache clear:** Removes `~/.claude/plugins/cache/vndredev-marketplace/devkit-plugin/`
+3. **User action:** Restart Claude Code session to load new version
+
+Example output when update is available:
+
+```
+✓ plugin update: 0.23.2 → 0.24.0
+✓ cache cleared: Restart session to load new version
 ```
 
 ---
@@ -301,3 +308,108 @@ Set `enabled: false` to skip a managed file:
 - Health check runs automatically at session start (compact warning)
 - **YOU MUST use `/dk plugin check`** for detailed report when issues occur
 - **YOU MUST use `/dk plugin update`** to fix sync issues - NEVER edit generated files manually
+
+---
+
+## Marketplace Management
+
+The marketplace (`~/dev/claude-marketplace`) has two layers:
+
+| Layer             | File               | Synced to GitHub  |
+| ----------------- | ------------------ | ----------------- |
+| **Prod** (public) | `marketplace.json` | ✓ Yes             |
+| **Dev** (local)   | `local.json`       | ✗ No (gitignored) |
+
+### /dk plugin marketplace
+
+Show marketplace status:
+
+```bash
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
+import json
+from pathlib import Path
+
+marketplace_dir = Path.home() / 'dev' / 'claude-marketplace'
+manifest = marketplace_dir / '.claude-plugin' / 'marketplace.json'
+local = marketplace_dir / '.claude-plugin' / 'local.json'
+
+if not manifest.exists():
+    print('❌ Marketplace not found')
+else:
+    data = json.loads(manifest.read_text())
+    local_data = json.loads(local.read_text()) if local.exists() else {}
+
+    print(f'Marketplace: {data[\"name\"]}')
+    print()
+    for plugin in data.get('plugins', []):
+        name = plugin['name']
+        dev_override = local_data.get(name, {}).get('source')
+        print(f'  {name}:')
+        print(f'    prod: v{plugin.get(\"version\", \"?\")}')
+        if dev_override:
+            print(f'    dev:  {dev_override}')
+"
+```
+
+### /dk plugin marketplace sync
+
+Sync prod marketplace to GitHub:
+
+```bash
+cd ~/dev/claude-marketplace && git add -A && git status --short
+```
+
+If changes exist, commit and push:
+
+```bash
+cd ~/dev/claude-marketplace && git commit -m "chore: update marketplace" && git push
+```
+
+### /dk plugin publish
+
+Update prod version in marketplace (after `git tag vX.Y.Z`):
+
+```bash
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
+import json
+from pathlib import Path
+from lib.version import get_version
+
+version = get_version()
+print(f'Publishing version: {version}')
+
+marketplace = Path.home() / 'dev' / 'claude-marketplace' / '.claude-plugin' / 'marketplace.json'
+data = json.loads(marketplace.read_text())
+
+for plugin in data.get('plugins', []):
+    if plugin['name'] == 'devkit-plugin':
+        plugin['version'] = version
+        break
+
+marketplace.write_text(json.dumps(data, indent=2) + '\n')
+print(f'✓ Updated marketplace.json')
+print()
+print('Next: /dk plugin marketplace sync')
+"
+```
+
+### /dk plugin dev
+
+Setup local dev override (local.json, gitignored):
+
+```bash
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
+import json
+from pathlib import Path
+
+plugin_dir = Path.cwd()
+local_file = Path.home() / 'dev' / 'claude-marketplace' / '.claude-plugin' / 'local.json'
+
+data = json.loads(local_file.read_text()) if local_file.exists() else {}
+data['devkit-plugin'] = {'source': str(plugin_dir)}
+
+local_file.write_text(json.dumps(data, indent=2) + '\n')
+print(f'✓ Dev override: {plugin_dir}')
+print('  (local.json is gitignored)')
+"
+```

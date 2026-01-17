@@ -11,6 +11,7 @@ from pathlib import Path
 from lib.config import clear_cache, get, load_config
 from lib.git import run_git
 from lib.github import check_ruleset_status, setup_branch_protection
+from lib.marketplace import get_marketplace_config, setup_marketplace
 from lib.sync import get_plugin_root, sync_all
 from lib.tools import detect_project_type, detect_project_version
 
@@ -24,18 +25,20 @@ def generate_config_jsonc(
     deployment: dict,
     managed: dict,
     test_framework: str,
+    marketplace: dict | None = None,
 ) -> str:
     """Generate JSONC config with comments and grouped sections.
 
     Args:
         name: Project name
-        project_type: python, node, nextjs, etc.
+        project_type: python, node, nextjs, claude-code-plugin, etc.
         version: Semantic version
         github_url: GitHub repository URL
         github_visibility: public, private, internal
         deployment: Deployment configuration dict
         managed: Managed files manifest dict
         test_framework: pytest, vitest, jest
+        marketplace: Marketplace configuration dict (for claude-code-plugin)
 
     Returns:
         JSONC content string with comments
@@ -45,6 +48,17 @@ def generate_config_jsonc(
     managed_indented = "  " + managed_json.replace("\n", "\n  ")
 
     deployment_json = json.dumps(deployment, indent=2).replace("\n", "\n  ")
+
+    # Marketplace section (only for claude-code-plugin)
+    marketplace_section = ""
+    if marketplace:
+        marketplace_json = json.dumps(marketplace, indent=2).replace("\n", "\n  ")
+        marketplace_section = f"""
+
+  // ============================================================================
+  // MARKETPLACE - Claude Code Plugin Marketplace
+  // ============================================================================
+  "marketplace": {marketplace_json},"""
 
     return f'''{{
   "$schema": "./config.schema.json",
@@ -133,7 +147,7 @@ def generate_config_jsonc(
   // ============================================================================
   "arch": {{
     "layers": {{}}               // Define layers: {{ "core": {{ "tier": 0 }} }}
-  }},
+  }},{marketplace_section}
 
   // ============================================================================
   // MANAGED FILES - Auto-generated files manifest
@@ -214,6 +228,11 @@ def git_init(
         if protection_config.get("enabled", True):
             protection_results = setup_branch_protection(github_repo, protection_config)
             results.extend(protection_results)
+
+    # 8. Marketplace setup (for Claude Code plugins only)
+    if project_type == "claude-code-plugin":
+        marketplace_results = setup_marketplace(create_repo=True, rename_local=False)
+        results.extend(marketplace_results)
 
     return results
 
@@ -365,8 +384,8 @@ def create_config(
             "platforms": ["railway", "render", "fly"],
             "note": "Python projects cannot be deployed to Vercel. Use Railway, Render, or Fly.io.",
         }
-    elif project_type == "plugin":
-        # Claude plugins are not deployed
+    elif project_type == "claude-code-plugin":
+        # Claude Code plugins are not deployed
         managed["github"][".github/workflows/release.yml"] = {
             "template": "github/workflows/release-python.yml.template",
             "enabled": True,
@@ -379,7 +398,7 @@ def create_config(
         deployment = {
             "enabled": False,
             "platforms": [],
-            "note": "Claude plugins are not deployed. They run locally via Claude Code.",
+            "note": "Claude Code plugins are not deployed. They run locally via Claude Code.",
         }
     else:  # node, nextjs, typescript, javascript
         managed["github"][".github/workflows/release.yml"] = {
@@ -408,6 +427,11 @@ def create_config(
     # Detect version from package.json or pyproject.toml
     version = detect_project_version(root)
 
+    # Get marketplace config for Claude Code plugins
+    marketplace = None
+    if project_type == "claude-code-plugin":
+        marketplace = get_marketplace_config()
+
     # Generate JSONC with comments
     jsonc_content = generate_config_jsonc(
         name=name,
@@ -418,6 +442,7 @@ def create_config(
         deployment=deployment,
         managed=managed,
         test_framework=test_framework,
+        marketplace=marketplace,
     )
 
     config_file = config_dir / "config.jsonc"
@@ -549,11 +574,14 @@ def configure_actions_permissions(repo: str) -> tuple[bool, str]:
 
 
 def update_github_settings(repo: str) -> list[tuple[str, bool, str]]:
-    """Update GitHub repo settings and branch protection.
+    """Update GitHub repo settings and check protection status.
 
     Reads settings from config.json:
     - github.pr.merge_method: squash (default), merge, or rebase
     - github.pr.delete_branch: delete branch after merge (default: true)
+
+    Note: Branch protection setup happens in git_init() via setup_branch_protection().
+    This function only checks the current protection status.
 
     Args:
         repo: GitHub repo in format owner/repo
@@ -614,40 +642,12 @@ def update_github_settings(repo: str) -> list[tuple[str, bool, str]]:
         stderr = e.stderr.decode() if e.stderr else str(e)
         results.append(("repo settings", False, stderr))
 
-    # Branch protection (requires all fields for GitHub API)
-    try:
-        protection = json.dumps(
-            {
-                "required_status_checks": None,
-                "enforce_admins": False,
-                "required_pull_request_reviews": {
-                    "required_approving_review_count": 1,
-                    "dismiss_stale_reviews": False,
-                    "require_code_owner_reviews": False,
-                },
-                "restrictions": None,
-                "required_linear_history": True,
-                "allow_force_pushes": False,
-                "allow_deletions": False,
-            }
-        )
-        subprocess.run(
-            [
-                "gh",
-                "api",
-                "-X",
-                "PUT",
-                f"/repos/{repo}/branches/main/protection",
-                "--input",
-                "-",
-            ],
-            input=protection.encode(),
-            check=True,
-            capture_output=True,
-        )
-        results.append(("branch protection", True, "Linear history, no force push"))
-    except subprocess.CalledProcessError as e:
-        stderr = e.stderr.decode() if e.stderr else str(e)
-        results.append(("branch protection", False, stderr))
+    # Branch protection status check (setup happens in git_init via setup_branch_protection)
+    protection_status = check_ruleset_status(repo)
+    if protection_status["exists"]:
+        bypass_info = " (with bypass)" if protection_status["has_bypass"] else ""
+        results.append(("protection", True, f"Ruleset active{bypass_info}"))
+    else:
+        results.append(("protection", False, "Not configured - run /dk git init"))
 
     return results

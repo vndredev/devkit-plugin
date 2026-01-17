@@ -62,6 +62,10 @@ graph TD
 
 Example: `feat/add-login`, `fix/button-styling`
 
+## Testing
+
+**Framework:** `pytest` | **Coverage:** ≥70%
+
 ## Commands
 
 **CRITICAL:** All commands via `/dk` - run `/dk` without args to see all.

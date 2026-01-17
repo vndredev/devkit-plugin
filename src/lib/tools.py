@@ -115,7 +115,11 @@ def detect_project_type(root: Path) -> ProjectType:
     Returns:
         Detected ProjectType.
     """
-    # Check Python first (pyproject.toml takes precedence)
+    # Check Claude Code plugin first (highest priority)
+    if (root / ".claude-plugin" / "plugin.json").exists():
+        return ProjectType.CLAUDE_PLUGIN
+
+    # Check Python (pyproject.toml takes precedence)
     if (root / "pyproject.toml").exists() or (root / "setup.py").exists():
         return ProjectType.PYTHON
 

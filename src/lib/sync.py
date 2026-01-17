@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from lib.config import get, get_project_root, upgrade_config
+from lib.version import auto_update_plugin
 
 # NOTE: lib.docs imports are done lazily in functions to avoid circular imports
 # (docs.py imports get_plugin_root and render_template from sync.py)
@@ -568,7 +569,7 @@ def _sync_managed_docs(
     return results
 
 
-def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
+def sync_all(root: Path | None = None, check_plugin_update: bool = True) -> list[tuple[str, bool, str]]:
     """Sync all generated files based on managed config.
 
     Also upgrades config.jsonc with missing optional sections.
@@ -577,6 +578,7 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
 
     Args:
         root: Project root directory (defaults to auto-detect).
+        check_plugin_update: Check for plugin updates and clear cache if needed.
 
     Returns:
         List of (file_path, success, message) tuples.
@@ -586,7 +588,11 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
 
     results: list[tuple[str, bool, str]] = []
 
-    # First: upgrade config with missing sections
+    # First: check for plugin updates (clears cache if new version available)
+    if check_plugin_update:
+        results.extend(auto_update_plugin())
+
+    # Second: upgrade config with missing sections
     results.extend(_upgrade_config_sections())
 
     managed = get("managed", {})

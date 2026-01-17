@@ -12,6 +12,11 @@ from core.errors import GitError
 from lib.config import get
 from lib.git import git_branch, git_status
 from lib.hooks import consume_stdin, get_project_dir, output_response
+from lib.version import (
+    check_plugin_update,
+    get_plugin_dev_recommendation,
+    is_plugin_loaded_via_plugin_dir,
+)
 
 
 def main() -> None:
@@ -36,14 +41,25 @@ def main() -> None:
     output_lines: list[str] = []
     has_issues = False
 
+    # Dev mode - show (dev) indicator only when loaded via --plugin-dir
+    dev_mode_indicator = ""
+    try:
+        project_dir = get_project_dir()
+
+        if is_plugin_loaded_via_plugin_dir(project_dir):
+            dev_mode_indicator = " (dev)"
+    except (ImportError, OSError):
+        project_dir = None
+
     # Git status - compact format
     if get("hooks.session.show_git_status", True):
         try:
-            project_dir = get_project_dir()
+            if project_dir is None:
+                project_dir = get_project_dir()
             branch = git_branch(cwd=project_dir)
             status = git_status(cwd=project_dir)
 
-            git_parts = [branch_tpl.format(branch=branch)]
+            git_parts = [branch_tpl.format(branch=branch) + dev_mode_indicator]
             if status["staged"]:
                 git_parts.append(staged_tpl.format(count=len(status["staged"])))
             if status["modified"]:
@@ -62,6 +78,30 @@ def main() -> None:
         if health_warning:
             output_lines.append("")
             output_lines.append(health_warning)
+            has_issues = True
+    except (ImportError, OSError):
+        pass
+
+    # Plugin update check - skip in dev mode (we're developing locally)
+    if not dev_mode_indicator:
+        try:
+            update_available, current, latest = check_plugin_update()
+            if update_available and latest:
+                output_lines.append("")
+                output_lines.append(f"🔄 Plugin update: {current or 'unknown'} → {latest}")
+                output_lines.append("   Run `/dk plugin update` to update")
+                has_issues = True
+        except (ImportError, OSError):
+            pass
+
+    # Plugin development recommendation - if working on a plugin project
+    # but not loaded via --plugin-dir
+    try:
+        plugin_dev_cmd = get_plugin_dev_recommendation(project_dir)
+        if plugin_dev_cmd:
+            output_lines.append("")
+            output_lines.append("🔌 Plugin project detected - for live testing:")
+            output_lines.append(f"   {plugin_dev_cmd}")
             has_issues = True
     except (ImportError, OSError):
         pass

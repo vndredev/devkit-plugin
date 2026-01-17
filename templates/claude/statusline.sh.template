@@ -38,35 +38,46 @@ fi
 DEVKIT_STATUS=""
 DEVKIT_MSG=""
 DEVKIT_VERSION=""
+DEVKIT_DEV_MODE=""
 get_devkit_status() {
     # Check if this is a devkit project
     if [ ! -d "$CWD/.claude/.devkit" ]; then
         return
     fi
 
-    # Find plugin root - search cache directories dynamically
-    local plugin_root=""
-    local cache_base="$HOME/.claude/plugins/cache/vndredev-marketplace"
+    # Check for dev mode - working in plugin directory itself
+    if [ -f "$CWD/.claude-plugin/plugin.json" ]; then
+        local plugin_name
+        plugin_name=$(jq -r '.name // ""' "$CWD/.claude-plugin/plugin.json" 2>/dev/null)
+        if [ "$plugin_name" = "devkit-plugin" ]; then
+            DEVKIT_DEV_MODE="true"
+            DEVKIT_VERSION=$(jq -r '.version // "?"' "$CWD/.claude-plugin/plugin.json" 2>/dev/null)
+            # Use current directory as plugin root in dev mode
+            if [ -f "$CWD/src/arch/check.py" ]; then
+                plugin_root="$CWD"
+            fi
+        fi
+    fi
 
-    # Try to find devkit-plugin in cache (latest version)
-    if [ -d "$cache_base" ]; then
-        # Check devkit-plugin-dev first, then devkit-plugin
-        for plugin_name in "devkit-plugin-dev" "devkit-plugin"; do
-            local plugin_dir="$cache_base/$plugin_name"
-            if [ -d "$plugin_dir" ]; then
-                # Find the latest version directory (sort by semver, highest first)
-                local latest_version
-                latest_version=$(ls -1 "$plugin_dir" 2>/dev/null | sort -V | tail -1)
-                if [ -n "$latest_version" ]; then
-                    local version_dir="$plugin_dir/$latest_version"
-                    if [ -d "$version_dir" ] && [ -f "$version_dir/src/arch/check.py" ]; then
-                        plugin_root="$version_dir"
-                        DEVKIT_VERSION="$latest_version"
-                        break
-                    fi
+    # Find plugin root - search cache directories dynamically
+    local plugin_root="${plugin_root:-}"
+    local cache_base="$HOME/.claude/plugins/cache/claude-marketplace"
+
+    # Try to find devkit-plugin in cache (latest version) - skip if in dev mode
+    if [ -z "$plugin_root" ] && [ -d "$cache_base" ]; then
+        local plugin_dir="$cache_base/devkit-plugin"
+        if [ -d "$plugin_dir" ]; then
+            # Find the latest version directory (sort by semver, highest first)
+            local latest_version
+            latest_version=$(ls -1 "$plugin_dir" 2>/dev/null | sort -V | tail -1)
+            if [ -n "$latest_version" ]; then
+                local version_dir="$plugin_dir/$latest_version"
+                if [ -d "$version_dir" ] && [ -f "$version_dir/src/arch/check.py" ]; then
+                    plugin_root="$version_dir"
+                    DEVKIT_VERSION="$latest_version"
                 fi
             fi
-        done
+        fi
     fi
 
     # Fallback to direct plugin path
@@ -199,14 +210,16 @@ if [ -n "$DEVKIT_STATUS" ]; then
     OUTPUT+=" \033[90m|\033[0m "
 
     if [ "$DEVKIT_STATUS" = "ok" ]; then
-        # Show version (green)
+        # Show version (green) + dev mode indicator
         OUTPUT+="\033[32mdevkit"
         [ -n "$DEVKIT_VERSION" ] && OUTPUT+=" $DEVKIT_VERSION"
+        [ -n "$DEVKIT_DEV_MODE" ] && OUTPUT+=" (dev)"
         OUTPUT+="\033[0m"
     else
         # Show error with version if available
         OUTPUT+="\033[1;31mdevkit"
         [ -n "$DEVKIT_VERSION" ] && OUTPUT+=" $DEVKIT_VERSION"
+        [ -n "$DEVKIT_DEV_MODE" ] && OUTPUT+=" (dev)"
         OUTPUT+=": $DEVKIT_MSG\033[0m"
     fi
 fi

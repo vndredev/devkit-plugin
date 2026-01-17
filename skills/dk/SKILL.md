@@ -27,6 +27,9 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 | `/dk plugin check`        | plugin.md   | Full health check                   |
 | `/dk plugin update`       | plugin.md   | Sync all managed files              |
 | `/dk plugin init`         | plugin.md   | Initialize new project              |
+| `/dk plugin marketplace`  | plugin.md   | Show marketplace status (dev/prod)  |
+| `/dk plugin publish`      | plugin.md   | Update prod version in marketplace  |
+| `/dk plugin dev`          | plugin.md   | Setup local dev override            |
 | `/dk dev feat <desc>`     | dev.md      | Develop new feature                 |
 | `/dk dev fix <desc>`      | dev.md      | Fix a bug                           |
 | `/dk dev chore <desc>`    | dev.md      | Maintenance task                    |
