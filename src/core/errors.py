@@ -32,3 +32,15 @@ class ArchitectureError(DevkitError):
     """Architecture rule violation."""
 
     pass
+
+
+class GitHubError(DevkitError):
+    """GitHub API operation failed."""
+
+    pass
+
+
+class ProtectionError(GitHubError):
+    """Branch protection operation failed."""
+
+    pass

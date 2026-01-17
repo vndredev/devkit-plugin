@@ -36,6 +36,26 @@ graph TD
 
 **Scope Mode:** `strict`
 
+**Allowed Scopes:**
+
+| Scope | Usage |
+|-------|-------|
+| `config` | - |
+| `sync` | File sync system |
+| `hook` | - |
+| `arch` | Architecture, layer rules |
+| `docs` | Documentation |
+| `git` | Git workflow, PRs, branches |
+| `skill` | - |
+| `plugin` | Plugin system |
+| `statusline` | - |
+| `release` | - |
+| `schema` | - |
+| `session` | - |
+| `validate` | - |
+| `format` | - |
+| `plan` | - |
+
 **Internal Scopes (skip release notes):** `internal, review, ci, deps`
 
 **Branch Pattern:** `{type}/{description}`
