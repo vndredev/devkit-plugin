@@ -485,6 +485,35 @@ def _sync_managed_ignore(
     return results
 
 
+def _sync_managed_config(
+    root: Path, plugin_root: Path, managed: dict[str, Any], values: dict[str, Any]
+) -> list[tuple[str, bool, str]]:
+    """Sync managed config files (schema, etc.).
+
+    Args:
+        root: Project root directory.
+        plugin_root: Plugin installation root.
+        managed: Managed config section.
+        values: Template values.
+
+    Returns:
+        List of sync results.
+    """
+    results: list[tuple[str, bool, str]] = []
+    for output_path, config in managed.get("config", {}).items():
+        if not config.get("enabled", True):
+            continue
+        template_path = config.get("template", "")
+
+        # Ensure parent directories exist
+        output_file = root / output_path
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+
+        result = _sync_template_file(root, plugin_root, output_path, template_path, values)
+        results.append(result)
+    return results
+
+
 def _sync_managed_docs(
     root: Path, plugin_root: Path, managed: dict[str, Any], values: dict[str, Any]
 ) -> list[tuple[str, bool, str]]:
@@ -574,6 +603,7 @@ def sync_all(root: Path | None = None) -> list[tuple[str, bool, str]]:
     values = _build_template_values()
 
     # Sync all managed file categories
+    results.extend(_sync_managed_config(root, plugin_root, managed, values))
     results.extend(_sync_managed_linters(root, plugin_root, managed, values))
     results.extend(_sync_managed_github(root, plugin_root, managed, values))
     results.extend(_sync_managed_ignore(root, plugin_root, managed, project_type))

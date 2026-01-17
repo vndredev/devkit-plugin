@@ -209,6 +209,12 @@
   // MANAGED FILES - Auto-generated files manifest
   // ============================================================================
   "managed": {
+    "config": {
+      ".claude/.devkit/config.schema.json": {
+        "template": "config/config.schema.json.template",
+        "enabled": true
+      }
+    },
     "linters": {
       ".markdownlint.json": {
         "template": "linters/common/markdownlint.json.template",
