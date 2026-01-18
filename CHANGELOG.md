@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.34.0] - 2026-01-18
+## [v0.35.0] - 2026-01-18
 
 ### Added
 
+- **Config**: Add project-type based logging strategy (#31)
 - **Skill**: Add axiom and browser skills with schema improvements (#30)
 - **Session**: Auto-sync outdated files on session start (#27)
 - **Statusline**: Support devkit_plugin_dir environment variable (#20)
