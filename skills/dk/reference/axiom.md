@@ -289,10 +289,12 @@ Add to `config.jsonc`:
 
 ## Next.js Integration
 
-### With @axiomhq/nextjs (Recommended)
+### With @axiomhq/js (Recommended)
+
+**Note:** `@axiomhq/nextjs` only supports Next.js 13-15. For Next.js 16+, use `@axiomhq/js` directly.
 
 ```bash
-npm install @axiomhq/nextjs
+npm install @axiomhq/js
 ```
 
 ```typescript
@@ -305,7 +307,27 @@ export const axiom = new Axiom({
 
 // Flush on serverless function end
 export const flushAxiom = () => axiom.flush();
+
+// Helper for logging
+export const log = (level: string, message: string, data?: object) => {
+  axiom.ingest(process.env.AXIOM_DATASET!, [
+    {
+      level,
+      message,
+      ...data,
+      _time: new Date().toISOString(),
+    },
+  ]);
+};
 ```
+
+### With @axiomhq/nextjs (Next.js 13-15 only)
+
+```bash
+npm install @axiomhq/nextjs
+```
+
+See [Axiom Next.js docs](https://axiom.co/docs/send-data/nextjs) for setup.
 
 ### Web Vitals (via proxy)
 
