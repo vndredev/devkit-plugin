@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.40.1] - 2026-01-18
+## [v0.40.2] - 2026-01-18
 
 ### Added
 
@@ -22,6 +22,7 @@
 
 ### Fixed
 
+- **Skill**: Update axiom docs for next.js 16+ compatibility (#39)
 - **Schema**: Add missing hook definitions (#38)
 - **Git**: Auto-return to main after /dk git pr (#36)
 - **Logging**: Update axiom detection and add enabled flags to schema (#29)
