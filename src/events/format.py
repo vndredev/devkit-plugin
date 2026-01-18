@@ -4,11 +4,60 @@
 Formats files, checks architecture, and provides hints.
 """
 
+import subprocess
 from pathlib import Path
 
 from lib.config import get
 from lib.hooks import noop_response, output_response, read_hook_input
 from lib.tools import format_file
+
+# Code file extensions that require workflow
+CODE_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rs", ".java"}
+
+
+def check_workflow_required(file_path: str) -> str | None:
+    """Check if editing code on main branch without workflow.
+
+    Args:
+        file_path: Path to the changed file.
+
+    Returns:
+        Warning message if workflow required, None otherwise.
+    """
+    # Check if enforcement is enabled
+    enforce_mode = get("hooks.format.enforce_workflow", "warn")
+    if enforce_mode == "off":
+        return None
+
+    # Check if it's a code file
+    suffix = Path(file_path).suffix
+    if suffix not in CODE_EXTENSIONS:
+        return None
+
+    # Skip test files and config files
+    if "/tests/" in file_path or "test_" in file_path:
+        return None
+
+    # Get current branch
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        branch = result.stdout.strip()
+    except Exception:
+        return None
+
+    # Check if on protected branch
+    protected = get("git.protected_branches", ["main", "master"])
+    if branch not in protected:
+        return None
+
+    # On main/master editing code - warn or block
+    msg = f"⚠️ Editing code on `{branch}` - use `/dk dev feat|fix|chore <desc>` first"
+    return msg
 
 
 def check_arch_violation(file_path: str) -> tuple[str | None, bool]:
@@ -127,6 +176,11 @@ def main() -> None:
     arch_synced_tpl = prompts.get("arch_synced", "📄 Updated docs/ARCHITECTURE.md")
 
     messages = []
+
+    # Check workflow enforcement (editing code on main)
+    workflow_msg = check_workflow_required(file_path)
+    if workflow_msg:
+        messages.append(workflow_msg)
 
     # Auto-format
     auto_format = get("hooks.format.auto_format", True)

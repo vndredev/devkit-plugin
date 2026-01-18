@@ -40,6 +40,7 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 | `/dk dev refactor <desc>`  | dev.md      | Code refactoring                    |
 | `/dk dev test <desc>`      | dev.md      | Add tests                           |
 | `/dk dev docs <desc>`      | dev.md      | Documentation changes               |
+| `/dk dev quick <desc>`     | dev.md      | Quick small change (typo, tweak)    |
 | `/dk analyze`              | analyze.md  | Deep Opus analysis with plan        |
 | `/dk analyze quick`        | analyze.md  | Quick single-agent analysis         |
 | `/dk analyze fix`          | analyze.md  | Continue fixing from existing plan  |
