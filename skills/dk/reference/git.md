@@ -2,6 +2,16 @@
 
 **CRITICAL:** Git workflow commands with Conventional Commits.
 
+## When to Use /dk git vs /dk dev
+
+| Scenario                      | Use                               |
+| ----------------------------- | --------------------------------- |
+| Starting new code work        | `/dk dev feat\|fix\|chore <desc>` |
+| Creating PR after code done   | `/dk git pr`                      |
+| Just git operations (no code) | `/dk git branch\|squash\|cleanup` |
+
+**Rule:** Use `/dk dev` to START work, use `/dk git` for git operations AFTER coding.
+
 ## MANDATORY Rules
 
 **YOU MUST follow these rules - NO EXCEPTIONS:**
