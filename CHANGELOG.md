@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.30.0] - 2026-01-18
+## [v0.31.0] - 2026-01-18
 
 ### Added
 
+- **Hook**: Enforce /dk dev workflow on protected branches (#23)
 - **Validate**: Enforce /dk commands instead of raw gh/vercel (#22)
 - **Plugin**: Add logging/observability service detection (#21)
 - **Session**: Warn when https remote used with workflow files (#19)
