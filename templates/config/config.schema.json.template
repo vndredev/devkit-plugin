@@ -663,8 +663,8 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "default": false,
-          "description": "Enable code similarity detection (/dk arch discover)"
+          "default": true,
+          "description": "Enable code similarity detection (shows warnings when similar code exists)"
         },
         "scan_patterns": {
           "type": "array",
