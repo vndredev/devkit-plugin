@@ -53,6 +53,11 @@
           "properties": {
             "enabled": { "type": "boolean", "default": true },
             "show_git_status": { "type": "boolean", "default": true },
+            "auto_sync": {
+              "type": "boolean",
+              "default": true,
+              "description": "Auto-sync outdated managed files on session start"
+            },
             "prompts": {
               "type": "object",
               "description": "Customizable output templates",
@@ -102,6 +107,11 @@
               "default": true,
               "description": "Block dangerous gh CLI commands (repo delete, secret delete)"
             },
+            "enforce_dk_commands": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enforce /dk commands instead of raw gh/vercel commands"
+            },
             "prompts": {
               "type": "object",
               "description": "Customizable error messages",
@@ -150,6 +160,12 @@
               "type": "boolean",
               "default": true,
               "description": "Check architecture violations after src/ file changes"
+            },
+            "enforce_workflow": {
+              "type": "string",
+              "enum": ["warn", "off"],
+              "default": "warn",
+              "description": "Warn when editing code on main without /dk dev workflow"
             },
             "auto_sync_arch": {
               "type": "boolean",
