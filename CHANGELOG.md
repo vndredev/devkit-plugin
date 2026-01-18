@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.32.1] - 2026-01-18
+## [v0.32.2] - 2026-01-18
 
 ### Added
 
@@ -14,6 +14,7 @@
 
 ### Fixed
 
+- **Release**: Sync uv.lock after version bump (#25)
 - **Validate**: Skip dk enforcement in self-development mode (#24)
 - **Sync**: Correct workflow yaml indentation (#18)
 - **Plugin**: Address 13 issues from system audit (#14)
