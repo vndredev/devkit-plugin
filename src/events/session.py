@@ -10,7 +10,7 @@ from subprocess import SubprocessError
 from arch.check import check_all, format_compact
 from core.errors import GitError
 from lib.config import get
-from lib.git import git_branch, git_status
+from lib.git import check_https_with_workflows, git_branch, git_status
 from lib.hooks import consume_stdin, get_project_dir, output_response
 from lib.version import (
     check_plugin_update,
@@ -103,6 +103,16 @@ def main() -> None:
             output_lines.append(f"   {plugin_dev_cmd}")
             has_issues = True
     except (ImportError, OSError):
+        pass
+
+    # HTTPS + Workflows warning - OAuth tokens can't push workflow changes
+    try:
+        if check_https_with_workflows(cwd=project_dir):
+            output_lines.append("")
+            output_lines.append("⚠️ HTTPS remote with workflows - can't push workflow changes")
+            output_lines.append("   Run: git remote set-url origin git@github.com:USER/REPO.git")
+            has_issues = True
+    except (SubprocessError, OSError, GitError):
         pass
 
     # Commands hint - only if no issues (otherwise they know what to fix)
