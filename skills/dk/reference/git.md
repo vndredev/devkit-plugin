@@ -246,7 +246,16 @@ if [ "$AUTO_MERGE" = "true" ]; then
   gh pr merge "$PR_NUM" --auto --$MERGE_METHOD
   echo "Auto-merge enabled ($MERGE_METHOD)"
 fi
+
+# CRITICAL: Return to main and pull to stay in sync
+echo ""
+echo "Returning to main branch..."
+git checkout main && git pull
+echo "✅ Ready for next task - run /dk dev to start"
 ```
+
+**IMPORTANT:** After PR creation, you are automatically returned to `main` with latest changes.
+This prevents "issues found" warnings in subsequent sessions.
 
 ---
 
