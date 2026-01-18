@@ -18,25 +18,77 @@
 
 Runs comprehensive analysis using **parallel Opus agents** across all code areas.
 
-### Phase 1: Parallel Agent Analysis
+### Phase 1: Detect Analysis Areas
 
-Launch 6-8 Opus agents simultaneously to analyze different areas:
+**CRITICAL: Areas are derived dynamically from project config or structure.**
+
+#### Option A: Use arch.layers from config (if defined)
+
+```bash
+# Check if arch.layers is defined in config
+CONFIG_FILE=".claude/.devkit/config.jsonc"
+if [ -f "$CONFIG_FILE" ]; then
+    LAYERS=$(jq -r '.arch.layers // empty' "$CONFIG_FILE" 2>/dev/null)
+fi
+```
+
+If `arch.layers` exists, create one agent per layer:
 
 ```
-Agent 1: Core Layer (types, errors, constants)
-Agent 2: Lib Layer Part 1 (config, git, sync)
-Agent 3: Lib Layer Part 2 (github, vercel, tools, webhooks)
-Agent 4: Arch Layer (analyze, check, rules, consistency)
-Agent 5: Events Layer (hooks, handlers)
-Agent 6: Config & Schema (config.jsonc, schema, templates)
-Agent 7: Skills & Docs (skill files, documentation)
-Agent 8: Tests (test coverage, missing tests)
+Example for project with 4 layers:
+Agent 1: core (tier 0) - patterns: src/core/**
+Agent 2: lib (tier 1) - patterns: src/lib/**
+Agent 3: arch (tier 2) - patterns: src/arch/**
+Agent 4: events (tier 3) - patterns: src/events/**
 ```
 
-**Each agent receives this prompt:**
+#### Option B: Auto-detect from project structure
+
+If no `arch.layers` defined, detect areas from directory structure:
+
+**Python projects** (pyproject.toml exists):
 
 ```
-Analyze ${AREA} for issues. Report findings in this format:
+Agent 1: src/ or main package directory
+Agent 2: tests/
+Agent 3: Config files (pyproject.toml, setup.py, etc.)
+```
+
+**Node projects** (package.json exists):
+
+```
+Agent 1: src/ or lib/
+Agent 2: tests/ or __tests__/
+Agent 3: Config files (package.json, tsconfig.json, etc.)
+```
+
+**Always add these cross-cutting agents:**
+
+```
+Agent N-1: Config & Schema (config files, JSON schemas)
+Agent N:   Tests (test coverage, missing tests)
+```
+
+### Phase 2: Launch Parallel Agents
+
+Launch Opus agents for each detected area:
+
+```python
+# Example Task tool configuration
+Task(
+    subagent_type="Explore",
+    model="opus",
+    prompt=ANALYSIS_PROMPT.format(area=area, patterns=patterns),
+    description=f"Analyze {area}"
+)
+```
+
+**Analysis prompt template:**
+
+```
+Analyze ${AREA} (files matching: ${PATTERNS}) for issues.
+
+Report findings in this format:
 
 ## ${AREA} Analysis
 
@@ -53,7 +105,7 @@ Analyze ${AREA} for issues. Report findings in this format:
 - [file:line] Issue description
 
 Focus on:
-1. Unhandled exceptions (TimeoutExpired, OSError, etc.)
+1. Unhandled exceptions
 2. Missing error handling
 3. Edge cases not covered
 4. Missing tests for critical functions
@@ -62,7 +114,7 @@ Focus on:
 7. Dead code or unused imports
 ```
 
-### Phase 2: Consolidate & Create Plan
+### Phase 3: Consolidate & Create Plan
 
 After all agents complete, consolidate findings into a plan file:
 
@@ -74,8 +126,8 @@ After all agents complete, consolidate findings into a plan file:
 # Codebase Analysis: {project-name}
 
 **Date:** {date}
-**Version:** {version}
-**Agents:** 8 parallel Opus agents
+**Version:** {version from config or package}
+**Agents:** {N} parallel Opus agents
 
 ## Summary
 
@@ -93,7 +145,7 @@ After all agents complete, consolidate findings into a plan file:
 
 ### 1. {Issue Title}
 
-**File:** `path/to/file.py:123`
+**File:** `path/to/file:123`
 **Problem:** Description
 **Fix:** Solution approach
 
@@ -135,7 +187,7 @@ After all agents complete, consolidate findings into a plan file:
 1. [ ] Fix {issue}
 ```
 
-### Phase 3: Execute Fixes
+### Phase 4: Execute Fixes
 
 Work through issues in priority order:
 
@@ -157,11 +209,10 @@ Work through issues in priority order:
 
 Quick single-agent analysis for key areas only:
 
-```bash
-# Quick analysis prompt
+```
 Analyze this codebase for the most critical issues:
 
-1. Unhandled exceptions in subprocess calls
+1. Unhandled exceptions in subprocess/async calls
 2. Missing error handling in I/O operations
 3. Security vulnerabilities
 4. Missing tests for public functions
@@ -184,7 +235,7 @@ Continue fixing issues from an existing analysis plan:
 ## Agent Configuration
 
 **Model:** `opus` (required for deep analysis)
-**Parallelism:** 6-8 agents simultaneously
+**Parallelism:** One agent per detected area
 **Thoroughness:** `very thorough`
 
 **Task tool configuration:**
@@ -202,16 +253,16 @@ Task(
 
 ## Cross-Check Phase
 
-After individual analysis, run cross-checks:
+After individual analysis, run cross-checks based on project config:
 
-| Check               | Description                             |
-| ------------------- | --------------------------------------- |
-| Hook Integration    | Verify all hooks are properly connected |
-| Config-Schema Sync  | Verify schema matches config structure  |
-| Import Dependencies | Check for layer violations              |
-| Template Sync       | Verify templates match implementations  |
-| Skill Integration   | Verify skill routes match handlers      |
-| Version Sync        | Verify all version files match          |
+| Check              | When to Run                       |
+| ------------------ | --------------------------------- |
+| Layer Violations   | If `arch.layers` defined          |
+| Config-Schema Sync | If schema files exist             |
+| Hook Integration   | If `hooks` section in config      |
+| Test Coverage      | If `testing.enabled` is true      |
+| Consistency Rules  | If `consistency.enabled` is true  |
+| Version Sync       | If multiple version sources exist |
 
 ---
 
@@ -220,15 +271,17 @@ After individual analysis, run cross-checks:
 ```
 === Opus Deep Analysis ===
 
-Launching 8 parallel agents...
-  [1/8] Core Layer: analyzing...
-  [2/8] Lib Layer Part 1: analyzing...
-  [3/8] Lib Layer Part 2: analyzing...
-  [4/8] Arch Layer: analyzing...
-  [5/8] Events Layer: analyzing...
-  [6/8] Config & Schema: analyzing...
-  [7/8] Skills & Docs: analyzing...
-  [8/8] Tests: analyzing...
+Detecting analysis areas...
+  Found arch.layers: core, lib, arch, events
+  Adding: config, tests
+
+Launching 6 parallel agents...
+  [1/6] core: analyzing src/core/**
+  [2/6] lib: analyzing src/lib/**
+  [3/6] arch: analyzing src/arch/**
+  [4/6] events: analyzing src/events/**
+  [5/6] config: analyzing config files
+  [6/6] tests: analyzing test coverage
 
 All agents completed.
 
@@ -242,7 +295,7 @@ All agents completed.
 | LOW      | 18    |
 | **Total**| 58    |
 
-Plan created: ~/.claude/plans/devkit-plugin-analysis.md
+Plan created: ~/.claude/plans/{project}-analysis.md
 
 === Ready to Fix ===
 
@@ -258,3 +311,4 @@ Start with CRITICAL issues? [Y/n]
 - **Create plan file** before starting fixes
 - **Track progress** with TodoWrite tool
 - **Commit after each phase** (CRITICAL, HIGH, MEDIUM/LOW)
+- **Areas are dynamic** - derived from config or project structure
