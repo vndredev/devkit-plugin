@@ -51,24 +51,42 @@
 
 ### `/dk dev feat <description>` - New Feature
 
-**REQUIRES Plan Mode for non-trivial features.**
+**REQUIRES Plan Mode - YOU MUST call EnterPlanMode before coding.**
 
-1. **Explore Phase**
-   - Read `CLAUDE.md` for project rules
-   - Use Explore agent to understand affected areas
-   - Identify related files and patterns
+#### Step 1: Create Branch
 
-2. **Plan Phase** (EnterPlanMode)
-   - Design the implementation approach
-   - Identify files to create/modify
-   - Consider edge cases and error handling
-   - Get user approval before coding
+```bash
+git checkout -b feat/{short-name}
+```
 
-3. **Build Phase**
-   - Create feature branch: `git checkout -b feat/{short-name}`
-   - Implement in small, testable units
-   - Write tests alongside code
-   - Commit after each logical unit
+#### Step 2: Explore (Quick Context)
+
+- Read `CLAUDE.md` for project rules
+- Use Explore agent to understand affected areas
+- Identify related files and patterns
+
+#### Step 3: Enter Plan Mode (REQUIRED)
+
+**YOU MUST call the `EnterPlanMode` tool now.** This ensures:
+
+- User reviews the plan before any code is written
+- Architecture decisions are documented
+- Edge cases are considered upfront
+
+In Plan Mode, write a plan that includes:
+
+- **Goal**: What the feature does
+- **Files**: Which files to create/modify
+- **Approach**: How to implement it
+- **Tests**: What tests to add
+- **Edge Cases**: Error handling, validation
+
+#### Step 4: Build (After Plan Approval)
+
+- Implement in small, testable units
+- Write tests alongside code
+- Commit after each logical unit
+- Run `/dk plugin check` before PR
 
 **Example:**
 
@@ -80,22 +98,42 @@
 
 ### `/dk dev fix <description>` - Bug Fix
 
-**Plan Mode optional - use for complex bugs.**
+**Plan Mode optional - use for complex bugs affecting multiple files.**
 
-1. **Investigate**
-   - Reproduce the bug
-   - Read error logs/stack traces
-   - Identify root cause
+#### Step 1: Create Branch
 
-2. **Fix**
-   - Create branch: `git checkout -b fix/{short-name}`
-   - Apply minimal fix
-   - Add regression test
+```bash
+git checkout -b fix/{short-name}
+```
 
-3. **Verify**
-   - Run tests
-   - Confirm bug is fixed
-   - Check for side effects
+#### Step 2: Investigate
+
+- Reproduce the bug
+- Read error logs/stack traces
+- Identify root cause
+
+#### Step 3: Plan Mode (If Complex)
+
+**Call `EnterPlanMode` if the bug:**
+
+- Affects multiple files
+- Has unclear root cause
+- Requires architectural changes
+- Could have side effects
+
+Skip Plan Mode for simple, isolated fixes.
+
+#### Step 4: Fix
+
+- Apply minimal fix
+- Add regression test
+- Run tests to verify
+
+#### Step 5: Verify
+
+- Confirm bug is fixed
+- Check for side effects
+- Run `/dk plugin check` before PR
 
 **Example:**
 
@@ -107,23 +145,42 @@
 
 ### `/dk dev refactor <description>` - Code Restructuring
 
-**REQUIRES Plan Mode - changes must be reviewed.**
+**REQUIRES Plan Mode - YOU MUST call EnterPlanMode before refactoring.**
 
-1. **Analyze**
-   - Run `/dk analyze quick` to identify issues
-   - Map dependencies
-   - Understand current architecture
+#### Step 1: Create Branch
 
-2. **Plan** (EnterPlanMode)
-   - Design target structure
-   - Plan migration steps
-   - Identify breaking changes
+```bash
+git checkout -b refactor/{short-name}
+```
 
-3. **Execute**
-   - Create branch: `git checkout -b refactor/{short-name}`
-   - Refactor in small steps
-   - Keep tests green throughout
-   - Commit frequently
+#### Step 2: Analyze
+
+- Run `/dk analyze quick` to identify issues
+- Map dependencies with `/dk arch analyze`
+- Understand current architecture
+
+#### Step 3: Enter Plan Mode (REQUIRED)
+
+**YOU MUST call the `EnterPlanMode` tool now.** This ensures:
+
+- Refactoring steps are reviewed before changes
+- Breaking changes are identified upfront
+- Migration path is clear
+
+In Plan Mode, write a plan that includes:
+
+- **Current State**: What exists now
+- **Target State**: What it should look like
+- **Migration Steps**: Order of changes
+- **Breaking Changes**: What might break
+- **Verification**: How to confirm success
+
+#### Step 4: Execute (After Plan Approval)
+
+- Refactor in small steps
+- Keep tests green throughout
+- Commit after each step
+- Run `/dk plugin check` before PR
 
 **Example:**
 
