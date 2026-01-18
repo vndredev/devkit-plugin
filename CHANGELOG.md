@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.39.0] - 2026-01-18
+## [v0.39.1] - 2026-01-18
 
 ### Added
 
@@ -21,6 +21,7 @@
 
 ### Fixed
 
+- **Git**: Auto-return to main after /dk git pr (#36)
 - **Logging**: Update axiom detection and add enabled flags to schema (#29)
 - **Validate**: Use claude_project_dir for self-development check (#26)
 - **Release**: Sync uv.lock after version bump (#25)
