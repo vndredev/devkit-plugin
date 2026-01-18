@@ -89,6 +89,7 @@ npm run build
 
 - **Claude Code docs**: ALWAYS use Task tool with `subagent_type=claude-code-guide`
 - **Library docs**: ALWAYS use Context7 MCP (`resolve-library-id` → `query-docs`)
+- **Development Guide**: Read `docs/DEVELOPMENT.md` before making changes
 <!-- AUTO:END -->
 
 <!-- CUSTOM:START - Your documentation below. Preserved during updates. -->

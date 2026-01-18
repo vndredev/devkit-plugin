@@ -205,9 +205,10 @@ RECOMMENDED_DEFAULTS = {
         ],
     },
     "hooks.plan.hints": [
+        "📋 Before adding features, read docs/DEVELOPMENT.md for checklists",
         "Respect layer boundaries if arch.layers is configured",
         "New modules should have corresponding tests",
-        "Public API changes need CHANGELOG consideration",
+        "Run /dk plugin check after changes to verify consistency",
     ],
     # === Git Conventions ===
     "git.conventions": {
@@ -318,6 +319,7 @@ MANAGED_DEFAULTS = {
     "docs": {
         "CLAUDE.md": {"type": "auto_sections", "enabled": True},
         "README.md": {"type": "auto_sections", "enabled": True},
+        "docs/DEVELOPMENT.md": {"type": "auto_generate", "enabled": True},
     },
 }
 

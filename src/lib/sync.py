@@ -563,7 +563,12 @@ def _sync_managed_docs(
     Returns:
         List of sync results.
     """
-    from lib.docs import update_claude_md, update_plugin_md, update_readme_md
+    from lib.docs import (
+        update_claude_md,
+        update_development_md,
+        update_plugin_md,
+        update_readme_md,
+    )
 
     results: list[tuple[str, bool, str]] = []
     for output_path, config in managed.get("docs", {}).items():
@@ -580,6 +585,8 @@ def _sync_managed_docs(
             success, msg = update_claude_md(root)
         elif output_path == "README.md":
             success, msg = update_readme_md(root)
+        elif output_path == "docs/DEVELOPMENT.md":
+            success, msg = update_development_md(root)
         elif output_path == "docs/ARCHITECTURE.md":
             # Cannot call arch layer from lib layer - check existence only
             arch_file = root / output_path

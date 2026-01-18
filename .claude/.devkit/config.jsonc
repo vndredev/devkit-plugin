@@ -366,6 +366,10 @@
         "template": "docs/PLUGIN.md.template",
         "enabled": false, // Disabled for devkit-plugin (it's the source)
       },
+      "docs/DEVELOPMENT.md": {
+        "type": "auto_generate", // 100% generated from config - development guide
+        "enabled": true,
+      },
     },
     "ignore": {
       ".gitignore": {

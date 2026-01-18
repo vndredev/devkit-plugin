@@ -311,6 +311,14 @@ def generate_auto_section() -> str:
         ]
     )
 
+    # Add Development Guide reference if project has hooks or layers
+    hooks = get("hooks", {})
+    layers = get("arch.layers", {})
+    has_dev_config = bool(hooks) or bool(layers)
+
+    if has_dev_config:
+        lines.append("- **Development Guide**: Read `docs/DEVELOPMENT.md` before making changes")
+
     return "\n".join(lines)
 
 
@@ -622,3 +630,119 @@ def update_plugin_md(root: Path | None = None) -> tuple[bool, str]:
         return True, f"Updated {plugin_md}"
     except Exception as e:
         return False, f"Failed to update PLUGIN.md: {e}"
+
+
+def generate_development_md(root: Path | None = None) -> str:
+    """Generate DEVELOPMENT.md content dynamically from config.
+
+    Creates a development guide that grows with the project, showing:
+    - Active hooks and their status
+    - Architecture layers
+    - Managed files
+    - Checklists for common development tasks
+
+    Args:
+        root: Project root directory. Uses config root if not provided.
+
+    Returns:
+        Generated DEVELOPMENT.md content.
+    """
+    from lib.sync import get_plugin_root, render_template
+
+    if root is None:
+        root = get_project_root()
+
+    # Gather config data
+    hooks_config = get("hooks", {})
+    layers_config = get("arch.layers", {})
+    managed_config = get("managed", {})
+
+    # Count active hooks
+    active_hooks = []
+    for hook_name, hook_cfg in hooks_config.items():
+        if isinstance(hook_cfg, dict) and hook_cfg.get("enabled", True):
+            active_hooks.append(hook_name)
+
+    # Count managed files
+    managed_count = 0
+    managed_items = []
+    for category, files in managed_config.items():
+        if isinstance(files, dict):
+            for file_path, file_cfg in files.items():
+                if isinstance(file_cfg, dict) and file_cfg.get("enabled", True):
+                    managed_count += 1
+                    managed_items.append(f"  - `{file_path}` ({category})")
+
+    # Count config sections (top-level keys)
+    config = get("", {}) or {}
+    section_count = len([k for k in config.keys() if not k.startswith("$")])
+
+    # Format hooks list
+    hooks_list_lines = []
+    for hook in active_hooks:
+        hook_cfg = hooks_config.get(hook, {})
+        enabled = "enabled" if hook_cfg.get("enabled", True) else "disabled"
+        hooks_list_lines.append(f"| `{hook}` | {enabled} | `hooks.{hook}` |")
+
+    hooks_list = "| Hook | Status | Config |\n|------|--------|--------|\n"
+    hooks_list += "\n".join(hooks_list_lines) if hooks_list_lines else "| - | - | - |"
+
+    # Format layers
+    layers_lines = []
+    sorted_layers = sorted(layers_config.items(), key=lambda x: x[1].get("tier", 0))
+    for layer_name, layer_cfg in sorted_layers:
+        tier = layer_cfg.get("tier", 0)
+        desc = layer_cfg.get("description", "-")
+        layers_lines.append(f"| `{layer_name}` | {tier} | {desc} |")
+
+    layers_list = "| Layer | Tier | Description |\n|-------|------|-------------|\n"
+    layers_list += "\n".join(layers_lines) if layers_lines else "| - | - | - |"
+
+    # Format managed files (grouped)
+    managed_list = "\n".join(managed_items) if managed_items else "  - None configured"
+
+    # Load template
+    plugin_root = get_plugin_root()
+    template_path = plugin_root / "templates" / "docs" / "DEVELOPMENT.md.template"
+
+    if template_path.exists():
+        template_content = template_path.read_text()
+
+        # Replace placeholders
+        content = template_content
+        content = content.replace("{{config.section_count}}", str(section_count))
+        content = content.replace("{{hooks.count}}", str(len(active_hooks)))
+        content = content.replace("{{arch.layer_count}}", str(len(layers_config)))
+        content = content.replace("{{managed.count}}", str(managed_count))
+        content = content.replace("{{hooks.list}}", hooks_list)
+        content = content.replace("{{arch.layers}}", layers_list)
+        content = content.replace("{{managed.list}}", managed_list)
+
+        return content
+
+    # Fallback if template not found
+    return f"# Development Guide\n\nTemplate not found at {template_path}"
+
+
+def update_development_md(root: Path | None = None) -> tuple[bool, str]:
+    """Update DEVELOPMENT.md with generated content.
+
+    Args:
+        root: Project root directory. Uses config root if not provided.
+
+    Returns:
+        Tuple of (success, message).
+    """
+    if root is None:
+        root = get_project_root()
+
+    docs_dir = root / "docs"
+    docs_dir.mkdir(exist_ok=True)
+    dev_md = docs_dir / "DEVELOPMENT.md"
+
+    try:
+        content = generate_development_md(root)
+        dev_md.write_text(content)
+        return True, f"Updated {dev_md}"
+    except Exception as e:
+        return False, f"Failed to update DEVELOPMENT.md: {e}"
