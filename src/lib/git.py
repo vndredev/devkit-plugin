@@ -84,12 +84,35 @@ def git_branch(cwd: Path | None = None) -> str:
     return run_git(["branch", "--show-current"], cwd=cwd)
 
 
-def git_commit(message: str, co_author: str | None = None) -> tuple[bool, str]:
+def git_add(files: list[str], cwd: Path | None = None) -> tuple[bool, str]:
+    """Stage files for commit.
+
+    Args:
+        files: List of file paths to stage.
+        cwd: Working directory (defaults to current).
+
+    Returns:
+        Tuple of (success, message).
+    """
+    if not files:
+        return False, "No files to stage"
+
+    try:
+        run_git(["add", *files], cwd=cwd)
+        return True, f"Staged {len(files)} file(s)"
+    except GitError as e:
+        return False, str(e)
+
+
+def git_commit(
+    message: str, co_author: str | None = None, cwd: Path | None = None
+) -> tuple[bool, str]:
     """Create a commit.
 
     Args:
         message: Commit message.
         co_author: Optional co-author line.
+        cwd: Working directory (defaults to current).
 
     Returns:
         Tuple of (success, message).
@@ -98,7 +121,7 @@ def git_commit(message: str, co_author: str | None = None) -> tuple[bool, str]:
         message = f"{message}\n\nCo-Authored-By: {co_author}"
 
     try:
-        run_git(["commit", "-m", message])
+        run_git(["commit", "-m", message], cwd=cwd)
         return True, "Commit created"
     except GitError as e:
         return False, str(e)
