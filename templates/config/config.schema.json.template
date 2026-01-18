@@ -102,6 +102,11 @@
               "default": true,
               "description": "Block dangerous gh CLI commands (repo delete, secret delete)"
             },
+            "enforce_dk_commands": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enforce /dk commands instead of raw gh/vercel commands"
+            },
             "prompts": {
               "type": "object",
               "description": "Customizable error messages",
