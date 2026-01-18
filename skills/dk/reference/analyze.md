@@ -88,30 +88,45 @@ Task(
 ```
 Analyze ${AREA} (files matching: ${PATTERNS}) for issues.
 
-Report findings in this format:
+## CRITICAL: Verify Before Reporting
+
+Before reporting ANY issue, you MUST:
+1. Check if it's INTENTIONAL (look for comments like "intentionally", "by design", "TODO")
+2. Check if error handling exists ELSEWHERE (caller, wrapper, middleware)
+3. Check if it's a KNOWN PATTERN in this codebase (look at similar code)
+4. Check if the "missing" thing is actually UNNECESSARY in this context
+
+ONLY report issues where you are 90%+ confident it's a REAL bug.
+
+## What NOT to Report (Common False Positives)
+
+- Missing timeout on quick local operations
+- Broad except blocks that log or re-raise appropriately
+- "Unsafe" patterns that are safe in their specific context
+- Room/session passwords that don't need hashing (not user credentials)
+- Missing validation when input comes from trusted internal source
+- "Could be improved" suggestions - only report actual bugs
+
+## Report Format
 
 ## ${AREA} Analysis
 
-### CRITICAL (blocks functionality)
-- [file:line] Issue description
+### CRITICAL (blocks functionality - 95%+ confidence)
+- [file:line] Issue + WHY you're confident this is real
 
-### HIGH (causes bugs or security issues)
-- [file:line] Issue description
+### HIGH (causes bugs or security - 90%+ confidence)
+- [file:line] Issue + WHY you're confident this is real
 
-### MEDIUM (code quality, maintainability)
-- [file:line] Issue description
+### MEDIUM (likely bugs - 85%+ confidence)
+- [file:line] Issue + evidence from code
 
-### LOW (style, minor improvements)
-- [file:line] Issue description
+(Skip LOW - too many false positives)
 
-Focus on:
-1. Unhandled exceptions
-2. Missing error handling
-3. Edge cases not covered
-4. Missing tests for critical functions
-5. Security issues (injection, path traversal)
-6. Inconsistencies with documentation
-7. Dead code or unused imports
+Focus ONLY on:
+1. Unhandled exceptions that WILL crash (not might crash)
+2. Security issues with ACTUAL exploit path
+3. Logic errors that produce WRONG results
+4. Race conditions with REAL impact
 ```
 
 ### Phase 3: Consolidate & Create Plan
