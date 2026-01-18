@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.41.0] - 2026-01-18
+## [v0.42.0] - 2026-01-18
 
 ### Added
 
+- **Hook**: Add plan_guard to block edits until plan approved (#42)
 - **Skill**: Enforce explicit enterplanmode for feat/refactor workflows (#40)
 - **Session**: Auto-commit managed files on main after sync (#37)
 - **Hook**: Complete workflow enforcement across all touchpoints (#35)
