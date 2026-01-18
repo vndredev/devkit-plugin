@@ -14,6 +14,9 @@ from lib.tools import format_file
 # Code file extensions that require workflow
 CODE_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rs", ".java"}
 
+# Frontend file extensions for browser verification
+FRONTEND_EXTENSIONS = {".tsx", ".jsx", ".vue", ".svelte", ".css", ".scss", ".html", ".astro"}
+
 
 def check_workflow_required(file_path: str) -> str | None:
     """Check if editing code on main branch without workflow.
@@ -58,6 +61,36 @@ def check_workflow_required(file_path: str) -> str | None:
     # On main/master editing code - warn or block
     msg = f"⚠️ Editing code on `{branch}` - use `/dk dev feat|fix|chore <desc>` first"
     return msg
+
+
+def check_frontend_change(file_path: str) -> str | None:
+    """Return reminder if frontend file changed.
+
+    Args:
+        file_path: Path to the changed file.
+
+    Returns:
+        Reminder message if frontend file, None otherwise.
+    """
+    # Check if browser hook is enabled
+    if not get("hooks.browser.enabled", True):
+        return None
+
+    suffix = Path(file_path).suffix
+    if suffix not in FRONTEND_EXTENSIONS:
+        return None
+
+    # Get dev server URL from config
+    dev_url = get("hooks.browser.dev_server.url", "http://localhost:3000")
+
+    # Load prompt template
+    prompts = get("hooks.browser.prompts", {})
+    reminder_tpl = prompts.get(
+        "frontend_changed",
+        "🌐 Frontend changed - verify UI: `/dk browser verify` or browser_snapshot on {url}",
+    )
+
+    return reminder_tpl.format(url=dev_url)
 
 
 def check_arch_violation(file_path: str) -> tuple[str | None, bool]:
@@ -238,6 +271,11 @@ def main() -> None:
         sync_msg = sync_architecture_md(file_path, arch_synced_tpl)
         if sync_msg:
             messages.append(sync_msg)
+
+    # Check frontend file changes for browser verification reminder
+    frontend_msg = check_frontend_change(file_path)
+    if frontend_msg:
+        messages.append(frontend_msg)
 
     # Output with proper hook format
     result: dict = {"hookSpecificOutput": {"hookEventName": "PostToolUse"}}

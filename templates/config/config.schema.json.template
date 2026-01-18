@@ -243,6 +243,48 @@
               "description": "Project-specific planning hints (shown in both phases)"
             }
           }
+        },
+        "browser": {
+          "type": "object",
+          "description": "PostToolUse hook - reminds to verify UI after frontend changes",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "dev_server": {
+              "type": "object",
+              "description": "Development server configuration",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "default": "http://localhost:3000",
+                  "description": "Dev server URL for browser verification"
+                },
+                "wait_seconds": {
+                  "type": "integer",
+                  "default": 2,
+                  "minimum": 0,
+                  "maximum": 30,
+                  "description": "Seconds to wait for hot-reload after navigation"
+                }
+              }
+            },
+            "frontend_patterns": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": ["*.tsx", "*.jsx", "*.vue", "*.css"],
+              "description": "File patterns that trigger browser verification reminder"
+            },
+            "prompts": {
+              "type": "object",
+              "description": "Customizable output templates",
+              "properties": {
+                "frontend_changed": {
+                  "type": "string",
+                  "default": "🌐 Frontend changed - verify UI: `/dk browser verify` or browser_snapshot on {url}",
+                  "description": "Reminder shown after frontend file changes"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -663,8 +705,8 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "default": false,
-          "description": "Enable code similarity detection (/dk arch discover)"
+          "default": true,
+          "description": "Enable code similarity detection (shows warnings when similar code exists)"
         },
         "scan_patterns": {
           "type": "array",
@@ -755,6 +797,25 @@
                 "type": "string",
                 "description": "Environment variable name for credentials"
               }
+            }
+          }
+        },
+        "axiom": {
+          "type": "object",
+          "description": "Axiom-specific configuration",
+          "properties": {
+            "dataset": {
+              "type": "string",
+              "description": "Default dataset for queries and ingestion"
+            },
+            "org_id": {
+              "type": "string",
+              "description": "Axiom organization ID"
+            },
+            "proxy_endpoint": {
+              "type": "string",
+              "default": "/api/log",
+              "description": "Server-side proxy endpoint for frontend logs (never expose token to client)"
             }
           }
         }
