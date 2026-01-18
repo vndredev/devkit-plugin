@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.38.0] - 2026-01-18
+## [v0.39.0] - 2026-01-18
 
 ### Added
 
+- **Hook**: Complete workflow enforcement across all touchpoints (#35)
 - **Hook**: Enforce /dk dev workflow on protected branches (#34)
 - **Docs**: Add auto-generated development.md guide (#33)
 - **Config**: Add config upgrade for missing sections (#32)
