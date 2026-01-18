@@ -305,7 +305,7 @@ jobs:
           [ -f "package.json" ] && git add package.json
           [ -f ".claude-plugin/plugin.json" ] && git add .claude-plugin/plugin.json
           [ -f "uv.lock" ] && git add uv.lock
-          git commit -m "chore(release): ${{ steps.release.outputs.version }}"
+          git commit -m "chore(release): ${{ steps.release.outputs.version }} [skip ci]"
           git push
 
       - name: Create Tag
