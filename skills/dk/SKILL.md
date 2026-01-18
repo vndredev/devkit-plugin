@@ -35,6 +35,10 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 | `/dk dev chore <desc>`    | dev.md      | Maintenance task                    |
 | `/dk dev refactor <desc>` | dev.md      | Code refactoring                    |
 | `/dk dev test <desc>`     | dev.md      | Add tests                           |
+| `/dk dev docs <desc>`     | dev.md      | Documentation changes               |
+| `/dk analyze`             | analyze.md  | Deep Opus analysis with plan        |
+| `/dk analyze quick`       | analyze.md  | Quick single-agent analysis         |
+| `/dk analyze fix`         | analyze.md  | Continue fixing from existing plan  |
 | `/dk git`                 | git.md      | Git workflow help                   |
 | `/dk git init`            | git.md      | Initialize new project (full setup) |
 | `/dk git update`          | git.md      | Sync files and GitHub settings      |
@@ -96,6 +100,7 @@ cmd = args[0] if args else ""
 modules = {
     "plugin": "reference/plugin.md",
     "dev": "reference/dev.md",
+    "analyze": "reference/analyze.md",
     "git": "reference/git.md",
     "env": "reference/env.md",
     "vercel": "reference/vercel.md",
@@ -128,7 +133,7 @@ print(f'Project: {project.get(\"name\", \"unknown\")}')
 print(f'Type: {project.get(\"type\", \"unknown\")}')
 print(f'Linter preset: {linters.get(\"preset\", \"strict\")}')
 print()
-print('Commands: /dk plugin | dev | git | arch | docs | env | vercel | neon')
+print('Commands: /dk plugin | dev | analyze | git | arch | docs | env | vercel | neon')
 "
 ```
 
@@ -142,6 +147,7 @@ print('Commands: /dk plugin | dev | git | arch | docs | env | vercel | neon')
 | ----------------------- | ------------------------------------------------- |
 | `/dk plugin [sub]`      | Read `reference/plugin.md`, follow instructions   |
 | `/dk dev [type] <desc>` | Read `reference/dev.md`, follow instructions      |
+| `/dk analyze [sub]`     | Read `reference/analyze.md`, follow instructions  |
 | `/dk git [sub]`         | Read `reference/git.md`, follow instructions      |
 | `/dk env [sub]`         | Read `reference/env.md`, follow instructions      |
 | `/dk vercel [sub]`      | Read `reference/vercel.md`, follow instructions   |
