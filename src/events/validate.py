@@ -155,6 +155,33 @@ DEFAULT_BLOCKED_GH_COMMANDS = [
     "gh api -X DELETE",
 ]
 
+# Commands that must use /dk alternatives
+DK_COMMAND_MAPPINGS = {
+    "gh pr create": "/dk git pr",
+    "gh pr merge": "/dk git pr merge",
+    "vercel deploy": "/dk vercel deploy",
+    "vercel env": "/dk vercel env",
+}
+
+
+def validate_dk_enforcement(cmd: str) -> tuple[bool, str]:
+    """Check if command should use /dk alternative.
+
+    Only checks if the command STARTS with a blocked command (not substring match).
+    This avoids false positives in commit messages or other text.
+
+    Args:
+        cmd: Full command string.
+
+    Returns:
+        Tuple of (valid, message). If invalid, message contains the /dk alternative.
+    """
+    cmd_stripped = cmd.strip()
+    for raw_cmd, dk_cmd in DK_COMMAND_MAPPINGS.items():
+        if cmd_stripped.startswith(raw_cmd):
+            return False, f"🚫 Use `{dk_cmd}` instead of `{raw_cmd}`"
+    return True, ""
+
 
 def validate_gh_command(
     cmd: str, gh_blocked_tpl: str, pr_missing_body_tpl: str
@@ -226,6 +253,14 @@ def main() -> None:
     )
 
     command = tool_input.get("command", "")
+
+    # Enforce /dk commands (check first, before other validations)
+    enforce_dk = get("hooks.validate.enforce_dk_commands", True)
+    if enforce_dk:
+        valid, msg = validate_dk_enforcement(command)
+        if not valid:
+            deny_response(msg)
+            return
 
     # Validate gh commands
     if command.startswith("gh "):
