@@ -626,6 +626,25 @@
         }
       }
     },
+    "discovery": {
+      "type": "object",
+      "description": "Code discovery configuration for duplicate detection",
+      "properties": {
+        "scan_patterns": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["src/**/*.py"],
+          "description": "Glob patterns for files to scan for similar code"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.7,
+          "description": "Similarity threshold (0.0-1.0) for detecting duplicates"
+        }
+      }
+    },
     "webhooks": {
       "type": "object",
       "description": "Webhook tunnel configuration for local development",

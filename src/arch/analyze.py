@@ -128,17 +128,16 @@ def analyze_project_size(root: Path) -> dict:
     }
 
 
-def extract_python_imports(file_path: Path) -> list[str]:
-    """Extract imports from a Python file using AST.
+def extract_imports_from_content(content: str) -> list[str]:
+    """Extract imports from Python source content using AST.
 
     Args:
-        file_path: Path to Python file.
+        content: Python source code as string.
 
     Returns:
-        List of imported module names.
+        List of imported module names (top-level only).
     """
     try:
-        content = file_path.read_text()
         tree = ast.parse(content)
     except (SyntaxError, UnicodeDecodeError):
         return []
@@ -151,6 +150,23 @@ def extract_python_imports(file_path: Path) -> list[str]:
             imports.append(node.module.split(".")[0])
 
     return imports
+
+
+def extract_python_imports(file_path: Path) -> list[str]:
+    """Extract imports from a Python file using AST.
+
+    Args:
+        file_path: Path to Python file.
+
+    Returns:
+        List of imported module names.
+    """
+    try:
+        content = file_path.read_text()
+    except (OSError, UnicodeDecodeError):
+        return []
+
+    return extract_imports_from_content(content)
 
 
 def extract_ts_imports(file_path: Path) -> list[str]:

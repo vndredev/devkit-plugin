@@ -320,8 +320,19 @@ def check_config_schema() -> tuple[bool, list[Violation]]:
     schema_path = root / ".claude" / ".devkit" / "config.schema.json"
     config_path = root / ".claude" / ".devkit" / "config.jsonc"
 
-    if not schema_path.exists() or not config_path.exists():
+    if not config_path.exists():
         return True, []
+
+    if not schema_path.exists():
+        return False, [
+            {
+                "rule": "config_schema",
+                "source": str(schema_path),
+                "expected": "file exists",
+                "message": "Schema file missing - run /dk plugin sync to create it",
+                "severity": "error",
+            }
+        ]
 
     try:
         import json

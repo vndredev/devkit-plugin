@@ -33,6 +33,16 @@
         ]
       },
       {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PLUGIN_ROOT}\" && PYTHONPATH=src .venv/bin/python src/events/arch_guard.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
         "matcher": "EnterPlanMode",
         "hooks": [
           {

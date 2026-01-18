@@ -411,19 +411,47 @@ def check_arch() -> tuple[bool, list[dict]]:
 def check_templates() -> tuple[bool, list[str]]:
     """Validate that all required templates exist.
 
-    Templates are the single source of truth for generated files.
+    Templates are dynamically loaded from config.managed sections.
+    Also includes core templates that are always required.
 
     Returns:
         Tuple of (all_exist, list of missing template paths)
     """
     plugin_root = get_plugin_root()
+    managed = get("managed", {})
 
+    # Core templates (always required, not in managed config)
     required_templates = [
         "CLAUDE.md.template",
-        "docs/PLUGIN.md.template",
         "docs/README.md.template",
         "claude/statusline.sh.template",
     ]
+
+    # Dynamically collect templates from managed config sections
+    for category in ["config", "linters", "github"]:
+        for config in managed.get(category, {}).values():
+            if config.get("enabled", True) and config.get("template"):
+                required_templates.append(config["template"])
+
+    # Docs templates (type=template only)
+    for config in managed.get("docs", {}).values():
+        if (
+            config.get("enabled", True)
+            and config.get("type") == "template"
+            and (template := config.get("template"))
+        ):
+            required_templates.append(template)
+
+    # Ignore templates (can be single string or array)
+    for config in managed.get("ignore", {}).values():
+        if config.get("enabled", True):
+            templates = config.get("template", [])
+            if isinstance(templates, str):
+                templates = [templates]
+            required_templates.extend(templates)
+
+    # Deduplicate
+    required_templates = list(set(required_templates))
 
     missing = []
     for template in required_templates:

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from core.errors import ConfigError
-from core.jsonc import strip_comments
+from core.jsonc import parse_jsonc
 
 # Cache for loaded config
 _config_cache: dict | None = None
@@ -97,9 +97,9 @@ def load_config() -> dict:
     try:
         content = config_path.read_text()
 
-        # Strip comments if JSONC
+        # Parse JSONC (strip comments and trailing commas)
         if config_path.suffix == ".jsonc":
-            content = strip_comments(content)
+            content = parse_jsonc(content)
 
         _config_cache = json.loads(content)
         return _config_cache

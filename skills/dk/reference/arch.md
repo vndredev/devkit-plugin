@@ -11,6 +11,7 @@
 | `/dk arch`                   | Show architecture overview                 |
 | `/dk arch analyze`           | Analyze dependencies and detect violations |
 | `/dk arch check`             | Check layer rule compliance                |
+| `/dk arch discover <name>`   | Find similar code before writing           |
 | `/dk arch init [python\|ts]` | Scaffold Clean Architecture structure      |
 | `/dk arch layers`            | Show layer documentation                   |
 
@@ -97,6 +98,33 @@ Returns:
 
 - ✅ if all imports follow rules
 - ❌ with violation details if not
+
+### /dk arch discover <name>
+
+Find similar code before writing new functions/classes:
+
+```python
+from arch.discovery import find_duplicates_for_name, format_matches_report
+
+# Search for similar function names
+matches = find_duplicates_for_name("extract_imports", code_type="function")
+print(format_matches_report(matches, context="for 'extract_imports'"))
+```
+
+Output:
+
+```
+Similar code found for 'extract_imports':
+
+  [100%] src/arch/analyze.py:131
+       def extract_imports_from_content(content: str) -> list[str]
+
+  [80%] src/arch/analyze.py:165
+       def extract_python_imports(file_path: Path) -> list[str]
+```
+
+**IMPORTANT:** Before writing new code, ALWAYS run `/dk arch discover <name>` to check
+if similar functionality already exists. This prevents code duplication.
 
 ### /dk arch init [python|ts]
 

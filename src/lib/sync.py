@@ -231,6 +231,40 @@ def sync_prettierignore(root: Path) -> tuple[bool, str]:
     return True, f"Generated {output_file}"
 
 
+def sync_schema(root: Path | None = None) -> tuple[str, bool, str]:
+    """Sync config schema file (required for config validation).
+
+    The schema file is always required - this is not optional.
+
+    Args:
+        root: Project root directory (defaults to auto-detect).
+
+    Returns:
+        Tuple of (file_path, success, message).
+    """
+    if root is None:
+        root = get_project_root()
+
+    plugin_root = get_plugin_root()
+    schema_src = plugin_root / ".claude" / ".devkit" / "config.schema.json"
+    schema_dst = root / ".claude" / ".devkit" / "config.schema.json"
+
+    if not schema_src.exists():
+        return ("config.schema.json", False, "Schema source not found in plugin")
+
+    # Ensure target directory exists
+    schema_dst.parent.mkdir(parents=True, exist_ok=True)
+
+    # Check if schema needs update
+    if schema_dst.exists():
+        if schema_dst.read_text() == schema_src.read_text():
+            return ("config.schema.json", True, "Schema up to date")
+
+    # Copy schema
+    schema_dst.write_text(schema_src.read_text())
+    return ("config.schema.json", True, "Schema synced")
+
+
 def sync_github(root: Path) -> list[tuple[str, bool, str]]:
     """Sync GitHub workflows and issue templates."""
     # Lazy import to avoid circular imports
@@ -596,6 +630,9 @@ def sync_all(
 
     # Second: upgrade config with missing sections
     results.extend(_upgrade_config_sections())
+
+    # Third: sync schema (always required)
+    results.append(sync_schema(root))
 
     managed = get("managed", {})
 

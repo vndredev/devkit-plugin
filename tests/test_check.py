@@ -203,19 +203,22 @@ class TestCheckTemplates:
     """Tests for check_templates()."""
 
     def test_check_templates_all_exist(self, tmp_path):
-        """Should pass when all templates exist."""
-        # Create plugin structure with all required templates
+        """Should pass when all templates exist (core templates only)."""
+        # Create plugin structure with all required core templates
         plugin_root = tmp_path / "plugin"
         templates_dir = plugin_root / "templates"
         templates_dir.mkdir(parents=True)
         (templates_dir / "CLAUDE.md.template").write_text("# Template")
         (templates_dir / "docs").mkdir(parents=True)
-        (templates_dir / "docs" / "PLUGIN.md.template").write_text("# Plugin")
         (templates_dir / "docs" / "README.md.template").write_text("# README")
         (templates_dir / "claude").mkdir(parents=True)
         (templates_dir / "claude" / "statusline.sh.template").write_text("#!/bin/bash")
 
-        with patch("arch.check.get_plugin_root", return_value=plugin_root):
+        # Mock get() to return empty managed config (no dynamic templates)
+        with (
+            patch("arch.check.get_plugin_root", return_value=plugin_root),
+            patch("arch.check.get", return_value={}),
+        ):
             ok, missing = check_templates()
 
         assert ok is True
@@ -229,10 +232,13 @@ class TestCheckTemplates:
         templates_dir.mkdir(parents=True)
         (templates_dir / "CLAUDE.md.template").write_text("# Template")
         (templates_dir / "docs").mkdir(parents=True)
-        (templates_dir / "docs" / "PLUGIN.md.template").write_text("# Plugin")
         # Missing: README.md.template and statusline.sh.template
 
-        with patch("arch.check.get_plugin_root", return_value=plugin_root):
+        # Mock get() to return empty managed config
+        with (
+            patch("arch.check.get_plugin_root", return_value=plugin_root),
+            patch("arch.check.get", return_value={}),
+        ):
             ok, missing = check_templates()
 
         assert ok is False
@@ -244,11 +250,16 @@ class TestCheckTemplates:
         plugin_root = tmp_path / "plugin"
         (plugin_root / "templates").mkdir(parents=True)
 
-        with patch("arch.check.get_plugin_root", return_value=plugin_root):
+        # Mock get() to return empty managed config (only core templates checked)
+        with (
+            patch("arch.check.get_plugin_root", return_value=plugin_root),
+            patch("arch.check.get", return_value={}),
+        ):
             ok, missing = check_templates()
 
         assert ok is False
-        assert len(missing) == 4
+        # Core templates: CLAUDE.md.template, docs/README.md.template, claude/statusline.sh.template
+        assert len(missing) == 3
 
 
 class TestCheckAll:
