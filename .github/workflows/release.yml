@@ -282,6 +282,18 @@ jobs:
           print(f"Audience: {AUDIENCE}")
           EOF
 
+      - name: Install uv
+        if: steps.release.outputs.skip != 'true'
+        uses: astral-sh/setup-uv@v5
+
+      - name: Update uv.lock
+        if: steps.release.outputs.skip != 'true'
+        run: |
+          if [ -f "uv.lock" ]; then
+            uv lock
+            echo "Updated uv.lock"
+          fi
+
       - name: Commit Version Bump
         if: steps.release.outputs.skip != 'true'
         run: |
@@ -292,6 +304,7 @@ jobs:
           [ -f ".claude/.devkit/config.jsonc" ] && git add .claude/.devkit/config.jsonc
           [ -f "package.json" ] && git add package.json
           [ -f ".claude-plugin/plugin.json" ] && git add .claude-plugin/plugin.json
+          [ -f "uv.lock" ] && git add uv.lock
           git commit -m "chore(release): ${{ steps.release.outputs.version }}"
           git push
 
