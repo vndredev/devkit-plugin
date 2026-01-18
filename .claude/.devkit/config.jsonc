@@ -180,9 +180,15 @@
       },
     },
 
-    // === Plan Hook (PostToolUse: ExitPlanMode) ===
+    // === Plan Hook (PreToolUse: EnterPlanMode + PostToolUse: ExitPlanMode) ===
     "plan": {
       "enabled": true,
+      "enforce_workflow": "warn", // warn=show warning, block=prevent plan mode, off=disabled
+
+      // Prompts for workflow enforcement
+      "prompts": {
+        "workflow_required": "⚠️ You're on `{branch}` - use `/dk dev feat|fix|chore <desc>` to create a feature branch first.",
+      },
 
       // Guidelines for creating plans
       "planning": {

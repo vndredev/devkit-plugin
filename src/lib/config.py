@@ -179,6 +179,13 @@ RECOMMENDED_DEFAULTS = {
         "arch_synced": "📄 Updated docs/ARCHITECTURE.md",
     },
     # === Plan Hook ===
+    "hooks.plan.enforce_workflow": "warn",  # warn, block, off
+    "hooks.plan.prompts": {
+        "workflow_required": (
+            "⚠️ You're on `{branch}` - use `/dk dev feat|fix|chore <desc>` "
+            "to create a feature branch first."
+        ),
+    },
     "hooks.plan.planning": {
         "requirements": [
             "Identify affected layers (check arch.layers)",

@@ -4,6 +4,26 @@
 
 **YOU MUST use this for comprehensive code quality analysis.**
 
+## Pre-Condition: Feature Branch
+
+**CRITICAL: Before running `/dk analyze`, verify you're on a feature branch!**
+
+```bash
+# Check current branch
+BRANCH=$(git branch --show-current)
+PROTECTED_BRANCHES="main master"
+
+for protected in $PROTECTED_BRANCHES; do
+    if [ "$BRANCH" = "$protected" ]; then
+        echo "⚠️ You're on '$BRANCH' - use '/dk dev feat|fix|chore <desc>' first!"
+        exit 1
+    fi
+done
+echo "✓ On feature branch: $BRANCH"
+```
+
+If on a protected branch, **YOU MUST** redirect to `/dk dev` workflow first.
+
 ## Commands
 
 | Command             | Action                                    |

@@ -2,6 +2,19 @@
 
 **CRITICAL:** Development workflow commands. YOU MUST use these for ALL code changes.
 
+## Why Use /dk dev?
+
+**ALWAYS use `/dk dev` instead of directly entering Plan Mode!**
+
+| Direct Plan Mode                  | `/dk dev` Workflow                      |
+| --------------------------------- | --------------------------------------- |
+| ❌ Might be on protected branch   | ✓ Creates feature branch automatically  |
+| ❌ No git conventions enforced    | ✓ Branch name follows `{type}/{desc}`   |
+| ❌ Easy to forget proper workflow | ✓ Guides through Explore → Plan → Build |
+| ❌ Hooks only warn                | ✓ Proper workflow from the start        |
+
+**If you're on `main` and enter Plan Mode, the hook will warn you to use `/dk dev` first.**
+
 ## Commands
 
 | Command                   | Type     | Description        | Plan Mode? |
