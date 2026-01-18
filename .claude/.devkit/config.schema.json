@@ -689,6 +689,35 @@
           }
         }
       }
+    },
+    "logging": {
+      "type": "object",
+      "description": "Logging and observability service configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable logging service detection and status checks"
+        },
+        "services": {
+          "type": "object",
+          "description": "Explicit logging service configurations",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": ["axiom", "sentry", "logrocket", "datadog", "pino", "winston", "custom"],
+                "description": "Logging service provider"
+              },
+              "env_var": {
+                "type": "string",
+                "description": "Environment variable name for credentials"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "$defs": {

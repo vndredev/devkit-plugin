@@ -574,6 +574,22 @@ def check_github_secrets() -> tuple[bool, dict[str, bool], list[str]]:
         return True, {}, [f"Secret check failed: {e}"]
 
 
+def check_logging() -> dict[str, Any]:
+    """Check logging service configuration.
+
+    Returns:
+        Status dictionary with detected services and credential info
+    """
+    try:
+        from lib.logging import logging_status
+
+        return logging_status()
+    except ImportError:
+        return {"enabled": False, "services": {}, "service_count": 0}
+    except Exception as e:
+        return {"enabled": False, "services": {}, "error": str(e)}
+
+
 def check_all() -> dict:
     """Run all health checks and return consolidated report.
 
@@ -589,6 +605,7 @@ def check_all() -> dict:
     versions_ok, versions_found, versions_errors = check_versions()
     consistency_ok, consistency_results = check_consistency_wrapper()
     secrets_ok, secrets_status, secrets_warnings = check_github_secrets()
+    logging_results = check_logging()
 
     # Count sync issues
     sync_ok = all(r[1] for r in sync_results)
@@ -655,6 +672,7 @@ def check_all() -> dict:
             "status": secrets_status,
             "warnings": secrets_warnings,
         },
+        "logging": logging_results,
         "upgradable": has_missing,
     }
 
@@ -989,6 +1007,69 @@ def _format_secrets_section(results: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _format_logging_section(results: dict[str, Any]) -> list[str]:
+    """Format logging section of health report.
+
+    Args:
+        results: Health check results.
+
+    Returns:
+        List of formatted lines.
+    """
+    lines = ["### 📊 Logging & Observability", ""]
+
+    logging_data = results.get("logging", {})
+
+    if not logging_data.get("enabled", True):
+        lines.append("⏭️ Disabled in config")
+        return lines
+
+    services = logging_data.get("services", {})
+    if not services:
+        lines.append("No logging services detected")
+        return lines
+
+    # Summary
+    cloud = logging_data.get("cloud_services", [])
+    local = logging_data.get("local_loggers", [])
+    with_creds = logging_data.get("with_credentials", 0)
+    without_creds = logging_data.get("without_credentials", 0)
+
+    if cloud:
+        lines.append(f"**Cloud:** {', '.join(cloud)}")
+    if local:
+        lines.append(f"**Local:** {', '.join(local)}")
+    lines.append("")
+
+    # Details table
+    lines.append("| Service | Source | Credentials |")
+    lines.append("|---------|--------|-------------|")
+
+    for name, info in services.items():
+        source = info.get("detected_from", "unknown")
+        has_creds = info.get("has_credentials", False)
+        creds_status = "✅" if has_creds else "⚠️ missing"
+
+        # Services without env requirements don't need credentials
+        if info.get("dashboard") is None:
+            creds_status = "n/a"
+
+        lines.append(f"| {name} | {source} | {creds_status} |")
+
+    # Warning for missing credentials
+    if without_creds > 0:
+        cloud_without = [
+            name
+            for name, info in services.items()
+            if not info.get("has_credentials") and info.get("dashboard")
+        ]
+        if cloud_without:
+            lines.append("")
+            lines.append(f"⚠️ Missing credentials for: {', '.join(cloud_without)}")
+
+    return lines
+
+
 def _format_summary(results: dict[str, Any]) -> list[str]:
     """Format summary section of health report.
 
@@ -1050,6 +1131,7 @@ def format_report(results: dict[str, Any]) -> str:
         _format_consistency_section(results),
         _format_user_files_section(results),
         _format_secrets_section(results),
+        _format_logging_section(results),
         _format_summary(results),
     ]
 
