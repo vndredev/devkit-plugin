@@ -180,21 +180,36 @@ This command creates a PR with the proper template and configuration.
 - `github.pr.delete_branch` - Delete branch after merge (default: true)
 - `github.pr.merge_method` - squash/merge/rebase (default: squash)
 
+### Workflow Steps
+
+**YOU MUST execute ALL steps in order - DO NOT skip any step:**
+
+1. **Push branch** to remote
+2. **Read config** for auto_merge, delete_branch, merge_method
+3. **Create PR** with template body
+4. **Enable auto-merge** if `auto_merge: true` in config - **YOU MUST NOT SKIP THIS**
+5. **Return to main** and pull latest
+
+### Commands
+
+**YOU MUST run these commands in sequence:**
+
 ```bash
+# Step 1: Push branch
 BRANCH=$(git branch --show-current)
 git push -u origin "$BRANCH"
 
-# Get commit info
+# Step 2: Get commit info
 TITLE=$(git log -1 --format=%s)
 COMMITS=$(git log main..$BRANCH --format='- %s' | head -10)
 
-# Read PR config (use lib.config for JSONC support)
+# Step 3: Read PR config (use lib.config for JSONC support)
 read AUTO_MERGE DELETE_BRANCH MERGE_METHOD <<< $(PYTHONPATH=${PLUGIN_ROOT}/src python3 -c "
 from lib.config import get
 print(str(get('github.pr.auto_merge', False)).lower(), str(get('github.pr.delete_branch', True)).lower(), get('github.pr.merge_method', 'squash'))
 " 2>/dev/null || echo "false true squash")
 
-# Determine change type from first commit
+# Step 4: Determine change type from first commit
 TYPE=$(echo "$TITLE" | grep -oE '^(feat|fix|docs|chore|refactor|test|ci)' || echo "chore")
 
 # Map type to checkbox
@@ -206,7 +221,7 @@ case "$TYPE" in
   *)        CHECKBOX="- [x] Chore - Maintenance/tooling" ;;
 esac
 
-# Build PR body from template structure
+# Step 5: Build PR body from template structure
 BODY="## Summary
 $COMMITS
 
@@ -237,25 +252,39 @@ $COMMITS
 ---
 Generated with [Claude Code](https://claude.ai/code)"
 
-# Create PR
+# Step 6: Create PR
 gh pr create --title "$TITLE" --body "$BODY"
+```
 
-# Enable auto-merge if configured
+**CRITICAL - YOU MUST execute this auto-merge step if AUTO_MERGE is true:**
+
+```bash
+# Step 7: Enable auto-merge if configured - DO NOT SKIP
 if [ "$AUTO_MERGE" = "true" ]; then
   PR_NUM=$(gh pr view --json number -q .number)
   gh pr merge "$PR_NUM" --auto --$MERGE_METHOD
-  echo "Auto-merge enabled ($MERGE_METHOD)"
+  echo "✓ Auto-merge enabled ($MERGE_METHOD)"
 fi
+```
 
-# CRITICAL: Return to main and pull to stay in sync
+**CRITICAL - YOU MUST return to main after PR creation:**
+
+```bash
+# Step 8: Return to main and pull to stay in sync
 echo ""
 echo "Returning to main branch..."
 git checkout main && git pull
 echo "✅ Ready for next task - run /dk dev to start"
 ```
 
-**IMPORTANT:** After PR creation, you are automatically returned to `main` with latest changes.
-This prevents "issues found" warnings in subsequent sessions.
+### Post-PR Verification
+
+**YOU MUST verify these after PR creation:**
+
+- [ ] PR URL is shown to user
+- [ ] Auto-merge enabled (if configured) - check for "✓ Auto-merge enabled" message
+- [ ] Returned to `main` branch
+- [ ] `main` is up to date with remote
 
 ---
 
