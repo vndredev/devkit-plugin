@@ -145,9 +145,11 @@ def main() -> None:
                 messages.append(test_reminder_tpl.format(file=missing[0]))
         except ImportError:
             # Fallback to simple check if consistency module not available
+            from lib.config import get_project_root
+
             test_file_name = f"test_{filepath.name}"
-            project_root = get("_project_root", filepath.parent.parent.parent)
-            tests_dir = Path(project_root) / "tests"
+            project_root = get_project_root()
+            tests_dir = project_root / "tests"
             test_file = tests_dir / test_file_name
 
             if not test_file.exists():

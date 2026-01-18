@@ -6,7 +6,14 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from core.errors import GitError
-from lib.git import git_branch, git_commit, git_status, is_protected_branch, run_git
+from lib.git import (
+    extract_git_args,
+    git_branch,
+    git_commit,
+    git_status,
+    is_protected_branch,
+    run_git,
+)
 
 
 class TestRunGit:
@@ -233,3 +240,58 @@ class TestIsProtectedBranch:
             result = is_protected_branch(protected=["production"])
 
             assert result is False
+
+
+class TestExtractGitArgs:
+    """Tests for extract_git_args()."""
+
+    def test_extract_git_args_simple_command(self):
+        """Should extract subcommand and args from simple command."""
+        subcmd, args = extract_git_args("git status")
+
+        assert subcmd == "status"
+        assert args == []
+
+    def test_extract_git_args_with_arguments(self):
+        """Should extract args from command with arguments."""
+        subcmd, args = extract_git_args("git commit -m message")
+
+        assert subcmd == "commit"
+        assert args == ["-m", "message"]
+
+    def test_extract_git_args_checkout_branch(self):
+        """Should extract checkout -b command."""
+        subcmd, args = extract_git_args("git checkout -b feat/new-feature")
+
+        assert subcmd == "checkout"
+        assert args == ["-b", "feat/new-feature"]
+
+    def test_extract_git_args_push_force(self):
+        """Should extract push with force flag."""
+        subcmd, args = extract_git_args("git push --force origin main")
+
+        assert subcmd == "push"
+        assert "--force" in args
+        assert "origin" in args
+        assert "main" in args
+
+    def test_extract_git_args_not_git_command(self):
+        """Should return empty for non-git command."""
+        subcmd, args = extract_git_args("npm install")
+
+        assert subcmd == ""
+        assert args == []
+
+    def test_extract_git_args_empty_string(self):
+        """Should handle empty string."""
+        subcmd, args = extract_git_args("")
+
+        assert subcmd == ""
+        assert args == []
+
+    def test_extract_git_args_only_git(self):
+        """Should handle bare git command."""
+        subcmd, args = extract_git_args("git")
+
+        assert subcmd == ""
+        assert args == []

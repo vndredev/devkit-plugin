@@ -35,11 +35,11 @@ jobs:
             2. Read .claude/.devkit/config.jsonc for project rules (if exists)
             3. Read modified files for context
             4. Check ALL categories below
-            5. Post review comment: gh pr comment ${{ github.event.pull_request.number }} --body "REVIEW"
+            5. Submit official GitHub review (APPROVE or REQUEST_CHANGES)
             6. Update PR body checkboxes (see below)
 
             ## Update PR Body Checkboxes (REQUIRED)
-            After posting your review comment, you MUST update the PR body checkboxes.
+            After submitting your review, you MUST update the PR body checkboxes.
             Check the boxes that passed your review:
 
             ```bash
@@ -115,40 +115,18 @@ jobs:
             ## Rules
             - APPROVE: No Security/Bug issues
             - REQUEST_CHANGES: Any Security/Bug issue
-            - The <!-- VERDICT:X --> marker is REQUIRED
 
-      - name: Submit GitHub Review
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo "Fetching review comment..."
+            ## Submitting the Review (REQUIRED)
+            After your analysis, you MUST submit an official GitHub review:
 
-          REVIEW=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
-            --jq '[.[] | select(.user.login | test("claude|github-actions"))] | last | .body' 2>&1) || REVIEW=""
+            If APPROVE:
+            ```bash
+            gh pr review ${{ github.event.pull_request.number }} --approve --body "YOUR_REVIEW_CONTENT"
+            ```
 
-          echo "Review length: ${#REVIEW} chars"
+            If REQUEST_CHANGES:
+            ```bash
+            gh pr review ${{ github.event.pull_request.number }} --request-changes --body "YOUR_REVIEW_CONTENT"
+            ```
 
-          # Determine verdict and submit official GitHub review
-          if echo "$REVIEW" | grep -qF "<!-- VERDICT:APPROVE -->" || echo "$REVIEW" | grep -q "🟢.*APPROVE"; then
-            echo ""; echo "════════════════════════════════════════════════════════════════"
-            echo "🟢 APPROVE - Submitting official review"
-            echo "════════════════════════════════════════════════════════════════"
-            gh pr review ${{ github.event.pull_request.number }} --approve --body "✅ Claude Code Review: APPROVED"
-            exit 0
-          fi
-
-          if echo "$REVIEW" | grep -qF "<!-- VERDICT:REQUEST_CHANGES -->" || echo "$REVIEW" | grep -q "🔴.*REQUEST_CHANGES"; then
-            echo ""; echo "════════════════════════════════════════════════════════════════"
-            echo "🔴 REQUEST_CHANGES - Submitting official review"
-            echo "════════════════════════════════════════════════════════════════"
-            gh pr review ${{ github.event.pull_request.number }} --request-changes --body "❌ Claude Code Review: Changes requested - see review comment above"
-            exit 1
-          fi
-
-          # No verdict - request changes to block
-          echo ""; echo "════════════════════════════════════════════════════════════════"
-          echo "⚠️ No verdict found - Requesting changes"
-          echo "════════════════════════════════════════════════════════════════"
-          echo "Review: ${REVIEW:0:300}..."
-          gh pr review ${{ github.event.pull_request.number }} --request-changes --body "⚠️ Claude Code Review: No verdict found"
-          exit 1
+            Use the full review content as the body. This submits an official PR review from Claude.

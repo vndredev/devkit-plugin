@@ -58,7 +58,7 @@ Add to `.claude/.devkit/config.jsonc`:
 Show webhook status and detected services:
 
 ```bash
-uv run python -c "
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
 from lib.webhooks import webhooks_status
 import json
 
@@ -93,7 +93,7 @@ if not status['services']:
 Start ngrok tunnel and provider CLIs:
 
 ```bash
-uv run python -c "
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
 from lib.webhooks import webhooks_start
 
 print('=== Starting Webhook Tunnels ===')
@@ -120,7 +120,7 @@ stripe listen --forward-to http://localhost:3000/api/webhooks/stripe
 Show webhook URLs to configure in provider dashboards:
 
 ```bash
-uv run python -c "
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
 from lib.webhooks import webhooks_urls
 
 print('=== Webhook URLs ===')

@@ -28,8 +28,10 @@ def validate_branch_name(branch: str, prompt_tpl: str) -> tuple[bool, str]:
     if branch in protected:
         return True, "Protected branch"
 
-    # Get types from config
+    # Get types from config (fallback to defaults if empty)
     types = get("git.conventions.types", DEFAULT_TYPES)
+    if not types:
+        types = DEFAULT_TYPES
     types_pattern = "|".join(types)
 
     # Get branch pattern from config (default: {type}/{description})
@@ -63,8 +65,10 @@ def validate_commit_message(
     Returns:
         Tuple of (valid, message).
     """
-    # Get config
+    # Get config (fallback to defaults if empty)
     types = get("git.conventions.types", DEFAULT_TYPES)
+    if not types:
+        types = DEFAULT_TYPES
     scope_mode = get("git.conventions.scopes.mode", "strict")
     allowed_scopes = get("git.conventions.scopes.allowed", [])
     internal_scopes = get("git.conventions.scopes.internal", [])
@@ -165,10 +169,12 @@ def main() -> None:
     hook_data = read_hook_input()
     if not hook_data:
         allow_response()
+        return
 
     # Check if hook is enabled
     if not get("hooks.validate.enabled", True):
         allow_response()
+        return
 
     tool_name = hook_data.get("tool_name", "")
     tool_input = hook_data.get("tool_input", {})
@@ -176,6 +182,7 @@ def main() -> None:
     # Only validate Bash commands
     if tool_name != "Bash":
         allow_response()
+        return
 
     # Load prompts from config
     prompts = get("hooks.validate.prompts", {})
@@ -204,10 +211,12 @@ def main() -> None:
             if not valid:
                 deny_response(msg)
         allow_response()
+        return
 
     # Validate git commands
     if not command.startswith("git "):
         allow_response()
+        return
 
     subcmd, args = extract_git_args(command)
 
@@ -239,6 +248,7 @@ def main() -> None:
 
     # All validations passed
     allow_response()
+    return
 
 
 if __name__ == "__main__":

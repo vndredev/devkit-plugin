@@ -10,7 +10,6 @@ Provides unified webhook management:
 """
 
 import json
-import os
 import re
 import subprocess
 from collections.abc import Generator
@@ -72,6 +71,7 @@ def check_ngrok_cli() -> tuple[bool, str]:
             capture_output=True,
             text=True,
             check=True,
+            timeout=30,
         )
         version = result.stdout.strip()
         return True, f"ngrok {version}"
@@ -93,6 +93,7 @@ def check_stripe_cli() -> tuple[bool, str]:
             capture_output=True,
             text=True,
             check=True,
+            timeout=30,
         )
         version = result.stdout.strip()
 
@@ -101,6 +102,7 @@ def check_stripe_cli() -> tuple[bool, str]:
             ["stripe", "config", "--list"],
             capture_output=True,
             text=True,
+            timeout=30,
         )
         if status.returncode != 0 or "test_mode_api_key" not in status.stdout:
             return False, f"Stripe CLI {version} (not logged in - run: stripe login)"

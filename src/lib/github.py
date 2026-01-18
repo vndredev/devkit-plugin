@@ -56,6 +56,7 @@ def get_repo_info(repo: str | None = None) -> RepoInfo | None:
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=30,
             )
             url = result.stdout.strip()
             # Extract owner/repo from various URL formats
@@ -65,7 +66,7 @@ def get_repo_info(repo: str | None = None) -> RepoInfo | None:
                     repo = url.split(":")[-1].replace(".git", "")
                 else:
                     repo = url.split("github.com/")[-1].replace(".git", "")
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             return None
 
     if not repo or "/" not in repo:
@@ -80,8 +81,11 @@ def get_repo_info(repo: str | None = None) -> RepoInfo | None:
             capture_output=True,
             text=True,
             check=True,
+            timeout=30,
         )
         repo_data = json.loads(result.stdout)
+    except subprocess.TimeoutExpired as e:
+        raise GitHubError("GitHub API request timed out") from e
     except subprocess.CalledProcessError as e:
         raise GitHubError(f"Failed to get repo info: {e.stderr}") from e
     except json.JSONDecodeError as e:
@@ -125,6 +129,7 @@ def _detect_plan(owner: str, owner_type: OwnerType) -> PlanTier:
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=30,
             )
             org_data = json.loads(result.stdout)
             plan_name = org_data.get("plan", {}).get("name", "free").lower()
@@ -136,7 +141,7 @@ def _detect_plan(owner: str, owner_type: OwnerType) -> PlanTier:
             elif "pro" in plan_name:
                 return PlanTier.PRO
             return PlanTier.FREE
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             return PlanTier.FREE
     else:
         # Check user plan - users have Pro if they have certain features
@@ -146,6 +151,7 @@ def _detect_plan(owner: str, owner_type: OwnerType) -> PlanTier:
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=30,
             )
             user_data = json.loads(result.stdout)
             plan_name = user_data.get("plan", {}).get("name", "free").lower()
@@ -153,7 +159,7 @@ def _detect_plan(owner: str, owner_type: OwnerType) -> PlanTier:
             if "pro" in plan_name:
                 return PlanTier.PRO
             return PlanTier.FREE
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             return PlanTier.FREE
 
 
@@ -243,13 +249,16 @@ def create_ruleset(
             input=json.dumps(payload).encode(),
             check=True,
             capture_output=True,
+            timeout=30,
         )
         msg = "Created ruleset: devkit-protection"
         if bypass_actors:
             msg += " (with admin bypass)"
         return True, msg
+    except subprocess.TimeoutExpired as e:
+        raise ProtectionError("Ruleset creation timed out") from e
     except subprocess.CalledProcessError as e:
-        stderr = e.stderr.decode() if e.stderr else str(e)
+        stderr = e.stderr.decode(errors="replace") if e.stderr else str(e)
         raise ProtectionError(f"Failed to create ruleset: {stderr}") from e
 
 
@@ -272,6 +281,7 @@ def check_ruleset_status(repo: str) -> dict:
             capture_output=True,
             text=True,
             check=True,
+            timeout=30,
         )
         rulesets = json.loads(result.stdout)
 
@@ -285,7 +295,7 @@ def check_ruleset_status(repo: str) -> dict:
                 }
 
         return {"exists": False, "ruleset_id": None, "enforcement": None, "has_bypass": False}
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return {"exists": False, "ruleset_id": None, "enforcement": None, "has_bypass": False}
 
 
@@ -304,10 +314,13 @@ def delete_ruleset(repo: str, ruleset_id: int) -> tuple[bool, str]:
             ["gh", "api", "-X", "DELETE", f"/repos/{repo}/rulesets/{ruleset_id}"],
             check=True,
             capture_output=True,
+            timeout=30,
         )
         return True, f"Deleted ruleset {ruleset_id}"
+    except subprocess.TimeoutExpired:
+        return False, "Ruleset deletion timed out"
     except subprocess.CalledProcessError as e:
-        stderr = e.stderr.decode() if e.stderr else str(e)
+        stderr = e.stderr.decode(errors="replace") if e.stderr else str(e)
         return False, f"Failed to delete ruleset: {stderr}"
 
 

@@ -105,6 +105,8 @@ def load_config() -> dict:
         return _config_cache
     except json.JSONDecodeError as e:
         raise ConfigError(f"Invalid {config_path.name}: {e}") from e
+    except UnicodeDecodeError as e:
+        raise ConfigError(f"Cannot read {config_path.name}: encoding error - {e}") from e
 
 
 def get(key: str, default: Any = None) -> Any:

@@ -11,6 +11,7 @@ from lib.setup import (
     create_config,
     git_init,
     git_update,
+    install_git_hooks,
     setup_github,
     update_github_settings,
 )
@@ -333,3 +334,97 @@ class TestUpdateGithubSettings:
 
 # Import subprocess for CalledProcessError
 import subprocess
+
+
+class TestInstallGitHooks:
+    """Tests for install_git_hooks()."""
+
+    def test_install_git_hooks_no_git_repo(self, tmp_path, monkeypatch):
+        """Should fail if not a git repository."""
+        monkeypatch.chdir(tmp_path)
+        results = install_git_hooks(tmp_path)
+
+        assert len(results) == 1
+        assert results[0][0] == "git hooks"
+        assert results[0][1] is False
+        assert "Not a git repository" in results[0][2]
+
+    def test_install_git_hooks_disabled_in_config(self, tmp_path, monkeypatch):
+        """Should skip if local_protection is disabled."""
+        # Create .git/hooks directory
+        hooks_dir = tmp_path / ".git" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        monkeypatch.chdir(tmp_path)
+
+        with patch("lib.setup.get", return_value=False):
+            results = install_git_hooks(tmp_path)
+
+        assert len(results) == 1
+        assert results[0][1] is True
+        assert "disabled" in results[0][2]
+
+    def test_install_git_hooks_installs_hook(self, tmp_path, monkeypatch):
+        """Should install pre-push hook."""
+        # Create .git/hooks directory
+        hooks_dir = tmp_path / ".git" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        monkeypatch.chdir(tmp_path)
+
+        # Create mock template
+        with patch("lib.setup.get", return_value=True):
+            with patch("lib.setup.get_plugin_root") as mock_root:
+                plugin_root = tmp_path / "plugin"
+                template_dir = plugin_root / "templates" / "git-hooks"
+                template_dir.mkdir(parents=True)
+                (template_dir / "pre-push.template").write_text("#!/bin/bash\n# devkit-plugin hook")
+                mock_root.return_value = plugin_root
+
+                results = install_git_hooks(tmp_path)
+
+        assert any("pre-push hook" in r[0] and r[1] is True for r in results)
+        assert (hooks_dir / "pre-push").exists()
+
+    def test_install_git_hooks_skips_if_already_installed(self, tmp_path, monkeypatch):
+        """Should skip if hook already installed by devkit-plugin."""
+        # Create .git/hooks directory with existing hook
+        hooks_dir = tmp_path / ".git" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        (hooks_dir / "pre-push").write_text("#!/bin/bash\n# devkit-plugin hook")
+        monkeypatch.chdir(tmp_path)
+
+        with patch("lib.setup.get", return_value=True):
+            with patch("lib.setup.get_plugin_root") as mock_root:
+                plugin_root = tmp_path / "plugin"
+                template_dir = plugin_root / "templates" / "git-hooks"
+                template_dir.mkdir(parents=True)
+                (template_dir / "pre-push.template").write_text("#!/bin/bash\n# devkit-plugin hook")
+                mock_root.return_value = plugin_root
+
+                results = install_git_hooks(tmp_path)
+
+        assert len(results) == 1
+        assert results[0][1] is True
+        assert "Already installed" in results[0][2]
+
+    def test_install_git_hooks_backs_up_existing(self, tmp_path, monkeypatch):
+        """Should backup existing non-devkit hook."""
+        # Create .git/hooks directory with existing hook
+        hooks_dir = tmp_path / ".git" / "hooks"
+        hooks_dir.mkdir(parents=True)
+        (hooks_dir / "pre-push").write_text("#!/bin/bash\n# custom hook")
+        monkeypatch.chdir(tmp_path)
+
+        with patch("lib.setup.get", return_value=True):
+            with patch("lib.setup.get_plugin_root") as mock_root:
+                plugin_root = tmp_path / "plugin"
+                template_dir = plugin_root / "templates" / "git-hooks"
+                template_dir.mkdir(parents=True)
+                (template_dir / "pre-push.template").write_text("#!/bin/bash\n# devkit-plugin hook")
+                mock_root.return_value = plugin_root
+
+                results = install_git_hooks(tmp_path)
+
+        # Should have backup result
+        assert any("backup" in r[0] for r in results)
+        assert (hooks_dir / "pre-push.backup").exists()
+        assert (hooks_dir / "pre-push.backup").read_text() == "#!/bin/bash\n# custom hook"

@@ -96,11 +96,12 @@ def check_vercel_cli() -> tuple[bool, str]:
             capture_output=True,
             text=True,
             check=True,
+            timeout=30,
         )
         version = result.stdout.strip().split("\n")[0]
     except FileNotFoundError:
         return False, "Vercel CLI not installed. Run: npm i -g vercel"
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return False, "Vercel CLI not working"
 
     # Check if authenticated
@@ -110,10 +111,11 @@ def check_vercel_cli() -> tuple[bool, str]:
             capture_output=True,
             text=True,
             check=True,
+            timeout=30,
         )
         user = result.stdout.strip()
         return True, f"{version} (logged in as {user})"
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return False, f"{version} - not logged in. Run: vercel login"
 
 
@@ -151,6 +153,7 @@ def link_project(root: Path, project_name: str | None = None) -> tuple[bool, str
             text=True,
             check=True,
             cwd=root,
+            timeout=60,
         )
 
         # Read the created project.json
@@ -160,6 +163,8 @@ def link_project(root: Path, project_name: str | None = None) -> tuple[bool, str
             return True, f"Linked to {name}"
         return True, "Linked successfully"
 
+    except subprocess.TimeoutExpired:
+        return False, "Link timed out"
     except subprocess.CalledProcessError as e:
         stderr = e.stderr if e.stderr else str(e)
         return False, f"Link failed: {stderr}"
@@ -194,6 +199,7 @@ def get_project_info(root: Path) -> dict | None:
                 text=True,
                 check=True,
                 cwd=root,
+                timeout=30,
             )
             projects = json.loads(result.stdout)
             for proj in projects:
@@ -201,7 +207,7 @@ def get_project_info(root: Path) -> dict | None:
                     info["production_url"] = proj.get("latestDeployment", {}).get("url")
                     info["framework"] = proj.get("framework")
                     break
-        except (subprocess.CalledProcessError, json.JSONDecodeError):
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError):
             pass  # API call failed, continue with basic info
 
         # Get org name
@@ -211,9 +217,10 @@ def get_project_info(root: Path) -> dict | None:
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=30,
             )
             info["org"] = result.stdout.strip()
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             pass  # Not logged in or CLI issue
 
         return info
@@ -242,6 +249,7 @@ def check_github_integration(info: dict | None, auto_connect: bool = True) -> tu
             capture_output=True,
             text=True,
             check=True,
+            timeout=30,
         )
         remote = result.stdout.strip()
         if "github.com" not in remote:
@@ -262,11 +270,12 @@ def check_github_integration(info: dict | None, auto_connect: bool = True) -> tu
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=30,
             )
             # If we get output with the repo, it's connected
             if repo.lower() in git_result.stdout.lower():
                 return True, f"Connected to {repo}"
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             pass  # Not connected, will try to connect
 
         # Try to connect if auto_connect is enabled
@@ -278,7 +287,7 @@ def check_github_integration(info: dict | None, auto_connect: bool = True) -> tu
 
         return False, f"Not connected to {repo} - run vercel git connect"
 
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return False, "No git remote configured"
 
 
@@ -297,8 +306,11 @@ def connect_vercel_github(github_url: str) -> tuple[bool, str]:
             capture_output=True,
             text=True,
             check=True,
+            timeout=30,
         )
         return True, "Connected"
+    except subprocess.TimeoutExpired:
+        return False, "Connection timed out"
     except subprocess.CalledProcessError as e:
         stderr = e.stderr if e.stderr else str(e)
         return False, stderr
@@ -322,6 +334,7 @@ def check_production_domain(info: dict | None) -> tuple[bool, str]:
             capture_output=True,
             text=True,
             check=True,
+            timeout=30,
         )
         domains = json.loads(result.stdout)
 
@@ -333,7 +346,7 @@ def check_production_domain(info: dict | None) -> tuple[bool, str]:
             return True, domain
         return True, f"{info['name']}.vercel.app (default)"
 
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return True, "Using default .vercel.app domain"
     except json.JSONDecodeError:
         return True, "Domain check skipped (invalid JSON response)"
@@ -363,6 +376,7 @@ def sync_env_vars(root: Path) -> list[tuple[str, bool, str]]:
             text=True,
             check=True,
             cwd=root,
+            timeout=30,
         )
         existing_vars = set()
         for line in result.stdout.strip().split("\n"):
@@ -372,7 +386,7 @@ def sync_env_vars(root: Path) -> list[tuple[str, bool, str]]:
                     existing_vars.add(var_data.get("key", ""))
                 except json.JSONDecodeError:
                     pass
-    except (subprocess.CalledProcessError, OSError):
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
         existing_vars = set()  # CLI not available, assume no vars
 
     # Parse .env.local
@@ -438,8 +452,11 @@ def add_env_var(
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=30,
             )
             results.append((f"env:{key}:{env}", True, "Added"))
+        except subprocess.TimeoutExpired:
+            results.append((f"env:{key}:{env}", False, "Timed out"))
         except subprocess.CalledProcessError as e:
             stderr = e.stderr if e.stderr else str(e)
             results.append((f"env:{key}:{env}", False, stderr))
@@ -471,6 +488,7 @@ def sync_env_to_vercel(root: Path) -> list[tuple[str, bool, str]]:
             text=True,
             check=True,
             cwd=root,
+            timeout=30,
         )
         existing_vars = set()
         for line in result.stdout.strip().split("\n"):
@@ -480,7 +498,7 @@ def sync_env_to_vercel(root: Path) -> list[tuple[str, bool, str]]:
                     existing_vars.add(var_data.get("key", ""))
                 except json.JSONDecodeError:
                     pass
-    except (subprocess.CalledProcessError, OSError):
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
         existing_vars = set()  # CLI not available, assume no vars
 
     # Parse .env.local and sync
@@ -532,6 +550,7 @@ def check_neon_integration(info: dict | None) -> tuple[bool, str]:
             capture_output=True,
             text=True,
             check=True,
+            timeout=30,
         )
         output = result.stdout
 
@@ -542,7 +561,7 @@ def check_neon_integration(info: dict | None) -> tuple[bool, str]:
             return True, "DATABASE_URL configured"
         return True, "No DATABASE_URL - Neon integration not needed"
 
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return True, "Could not check env vars (CLI error)"
 
 
@@ -572,11 +591,14 @@ def vercel_deploy(
             capture_output=True,
             text=True,
             check=True,
+            timeout=300,  # Deploy can take longer
         )
         url = result.stdout.strip().split("\n")[-1]
         env = "Production" if production else "Preview"
         return True, f"{env} deployment complete", url
 
+    except subprocess.TimeoutExpired:
+        return False, "Deploy timed out after 5 minutes", None
     except subprocess.CalledProcessError as e:
         return False, f"Deploy failed: {e.stderr}", None
 
