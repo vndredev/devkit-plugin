@@ -668,24 +668,27 @@ def _format_config_section(results: dict[str, Any]) -> list[str]:
     Returns:
         List of formatted lines.
     """
-    lines = ["── Config ──────────────────────────"]
+    lines = ["### ⚙️ Config", ""]
 
     if results["config"]["ok"]:
-        lines.append("✓ Schema valid")
-        lines.append("✓ Required fields present")
+        lines.append("| Check | Status |")
+        lines.append("|-------|--------|")
+        lines.append("| Schema | ✅ valid |")
+        lines.append("| Required fields | ✅ present |")
     else:
-        lines.append("✗ Config invalid:")
-        lines.extend(f"  - {error}" for error in results["config"]["errors"])
+        lines.append("❌ **Config invalid:**")
+        lines.extend(f"- {error}" for error in results["config"]["errors"])
 
     # Show missing optional sections
     missing = results["config"].get("missing_sections", [])
     if missing:
         lines.append("")
-        lines.append(f"⚠ Missing optional sections ({len(missing)}):")
-        lines.extend(f"  - {section}" for section in missing[:MAX_DISPLAY_ITEMS])
+        lines.append(f"⚠️ Missing optional sections ({len(missing)}):")
+        lines.extend(f"- `{section}`" for section in missing[:MAX_DISPLAY_ITEMS])
         if len(missing) > MAX_DISPLAY_ITEMS:
-            lines.append(f"  - ... and {len(missing) - MAX_DISPLAY_ITEMS} more")
-        lines.append("  → Run: /dk plugin update (adds defaults)")
+            lines.append(f"- ... and {len(missing) - MAX_DISPLAY_ITEMS} more")
+        lines.append("")
+        lines.append("→ Run: `/dk plugin update`")
 
     return lines
 
@@ -699,16 +702,33 @@ def _format_sync_section(results: dict[str, Any]) -> list[str]:
     Returns:
         List of formatted lines.
     """
-    lines = ["── Sync ────────────────────────────"]
+    lines = ["### 🔄 Sync Status", ""]
 
-    for path, ok, msg in results["sync"]["results"]:
-        if msg == "disabled":
-            continue
-        symbol = "✓" if ok else "✗"
-        lines.append(f"{symbol} {path} ({msg})")
+    # Count totals
+    sync_results = [r for r in results["sync"]["results"] if r[2] != "disabled"]
+    ok_count = sum(1 for _, ok, _ in sync_results if ok)
+    total = len(sync_results)
 
-    if not results["sync"]["ok"]:
-        lines.append("  → Run: /dk plugin update")
+    if results["sync"]["ok"]:
+        lines.append(f"All **{total} files** in sync ✅")
+        lines.append("")
+        lines.append("<details>")
+        lines.append("<summary>Details</summary>")
+        lines.append("")
+        for path, ok, msg in sync_results:
+            lines.append(f"- `{path}` ✅")
+        lines.append("")
+        lines.append("</details>")
+    else:
+        lines.append(f"**{ok_count}/{total}** files in sync")
+        lines.append("")
+        lines.append("| File | Status |")
+        lines.append("|------|--------|")
+        for path, ok, msg in sync_results:
+            status = "✅" if ok else f"❌ {msg}"
+            lines.append(f"| `{path}` | {status} |")
+        lines.append("")
+        lines.append("→ Run: `/dk plugin update`")
 
     return lines
 
@@ -722,20 +742,25 @@ def _format_arch_section(results: dict[str, Any]) -> list[str]:
     Returns:
         List of formatted lines.
     """
-    lines = ["── Architecture ────────────────────"]
+    lines = ["### 🏗️ Architecture", ""]
 
     if results["arch"]["ok"]:
         layers = get("arch.layers", {})
         if layers:
             sorted_layers = sorted(layers.items(), key=lambda x: x[1].get("tier", 0))
-            layer_str = " → ".join(f"{name} ({cfg['tier']})" for name, cfg in sorted_layers)
-            lines.append("✓ Layer rules compliant")
-            lines.append(f"  {layer_str}")
+            layer_str = " → ".join(f"`{name}` ({cfg['tier']})" for name, cfg in sorted_layers)
+            lines.append(f"Layer rules compliant ✅")
+            lines.append("")
+            lines.append("```")
+            lines.append(layer_str)
+            lines.append("```")
         else:
-            lines.append("✓ No layers configured")
+            lines.append("No layers configured ✅")
     else:
-        lines.append("✗ Layer violations:")
-        lines.extend(f"  - {violation}" for violation in results["arch"]["violations"])
+        lines.append("❌ **Layer violations:**")
+        lines.append("")
+        for violation in results["arch"]["violations"]:
+            lines.append(f"- {violation}")
 
     return lines
 
@@ -749,19 +774,21 @@ def _format_templates_section(results: dict[str, Any]) -> list[str]:
     Returns:
         List of formatted lines.
     """
-    lines = ["── Templates ───────────────────────"]
+    lines = ["### 📄 Templates", ""]
 
     templates_data = results.get("templates", {})
     templates_ok = templates_data.get("ok", True)
     templates_missing = templates_data.get("missing", [])
 
     if templates_ok:
-        lines.append("✓ All required templates present")
+        lines.append("All required templates present ✅")
     else:
-        lines.append("✗ Missing templates:")
+        lines.append("❌ **Missing templates:**")
+        lines.append("")
         for template in templates_missing:
-            lines.append(f"  - templates/{template}")
-        lines.append("  → Plugin installation may be corrupted")
+            lines.append(f"- `templates/{template}`")
+        lines.append("")
+        lines.append("⚠️ Plugin installation may be corrupted")
 
     return lines
 
@@ -775,22 +802,24 @@ def _format_tests_section(results: dict[str, Any]) -> list[str]:
     Returns:
         List of formatted lines.
     """
-    lines = ["── Tests ───────────────────────────"]
+    lines = ["### 🧪 Tests", ""]
 
     test_status = results.get("tests", {}).get("status", "SKIP")
     test_issues = results.get("tests", {}).get("issues", [])
 
     if test_status == "SKIP":
-        lines.append("○ Skipped (testing not enabled)")
+        lines.append("⏭️ Skipped (testing not enabled)")
     elif test_status == "PASS":
         required = get("testing.required_modules", {})
         total_funcs = sum(len(funcs) for funcs in required.values())
-        lines.append(f"✓ All required tests present ({total_funcs} functions)")
+        lines.append(f"All required tests present ({total_funcs} functions) ✅")
     else:
-        lines.append(f"✗ Missing tests ({len(test_issues)} issues):")
-        lines.extend(f"  - {issue}" for issue in test_issues[:MAX_DISPLAY_ITEMS])
+        lines.append(f"❌ **Missing tests ({len(test_issues)} issues):**")
+        lines.append("")
+        for issue in test_issues[:MAX_DISPLAY_ITEMS]:
+            lines.append(f"- {issue}")
         if len(test_issues) > MAX_DISPLAY_ITEMS:
-            lines.append(f"  - ... and {len(test_issues) - MAX_DISPLAY_ITEMS} more")
+            lines.append(f"- ... and {len(test_issues) - MAX_DISPLAY_ITEMS} more")
 
     return lines
 
@@ -804,26 +833,26 @@ def _format_versions_section(results: dict[str, Any]) -> list[str]:
     Returns:
         List of formatted lines.
     """
-    lines = ["── Versions ────────────────────────"]
+    lines = ["### 📦 Versions", ""]
 
     versions_data = results.get("versions", {})
     versions_found = versions_data.get("found", {})
-    versions_errors = versions_data.get("errors", [])
     versions_ok = versions_data.get("ok", True)
 
     if not versions_found:
-        lines.append("○ No version files found")
+        lines.append("⏭️ No version files found")
     elif versions_ok:
-        # All versions match - show the version
         version = next(iter(versions_found.values()))
-        files = ", ".join(versions_found.keys())
-        lines.append(f"✓ All in sync: {version}")
-        lines.append(f"  ({files})")
+        lines.append(f"**{version}** — all in sync ✅")
     else:
-        lines.append("✗ Version mismatch:")
+        lines.append("❌ **Version mismatch:**")
+        lines.append("")
+        lines.append("| File | Version |")
+        lines.append("|------|---------|")
         for file, version in versions_found.items():
-            lines.append(f"  - {file}: {version}")
-        lines.append("  → Run: /dk plugin update (syncs versions)")
+            lines.append(f"| `{file}` | {version} |")
+        lines.append("")
+        lines.append("→ Run: `/dk plugin update`")
 
     return lines
 
@@ -837,30 +866,30 @@ def _format_consistency_section(results: dict[str, Any]) -> list[str]:
     Returns:
         List of formatted lines.
     """
-    lines = ["── Consistency ─────────────────────"]
+    lines = ["### 🔍 Consistency", ""]
 
     consistency_data = results.get("consistency", {})
     consistency_ok = consistency_data.get("ok", True)
     consistency_results = consistency_data.get("results", {})
 
     if not consistency_results:
-        lines.append("○ Skipped (not configured)")
+        lines.append("⏭️ Skipped (not configured)")
         return lines
 
     if consistency_ok:
-        lines.append("✓ All consistency checks passed")
+        lines.append("All consistency checks passed ✅")
     else:
-        # Count total violations
         all_violations = []
         for _, violations in consistency_results.values():
             all_violations.extend(violations)
 
-        lines.append(f"✗ {len(all_violations)} consistency violation(s):")
+        lines.append(f"❌ **{len(all_violations)} violation(s):**")
+        lines.append("")
         for v in all_violations[:MAX_DISPLAY_ITEMS]:
-            severity_icon = "⚠" if v.get("severity") == "warning" else "✗"
-            lines.append(f"  {severity_icon} [{v['rule']}] {v['message']}")
+            severity_icon = "⚠️" if v.get("severity") == "warning" else "❌"
+            lines.append(f"- {severity_icon} **[{v['rule']}]** {v['message']}")
         if len(all_violations) > MAX_DISPLAY_ITEMS:
-            lines.append(f"  ... and {len(all_violations) - MAX_DISPLAY_ITEMS} more")
+            lines.append(f"- ... and {len(all_violations) - MAX_DISPLAY_ITEMS} more")
 
     return lines
 
@@ -874,36 +903,39 @@ def _format_user_files_section(results: dict[str, Any]) -> list[str]:
     Returns:
         List of formatted lines.
     """
-    lines = ["── User Files ──────────────────────"]
+    lines = ["### 👤 User Files", ""]
 
     user_files = results.get("user_files", {}).get("status", {})
     user_issues = results.get("user_files", {}).get("issues", [])
 
     if not user_files:
-        lines.append("○ No user files configured")
+        lines.append("⏭️ No user files configured")
     else:
+        lines.append("| File | Status |")
+        lines.append("|------|--------|")
         for path, status in user_files.items():
             if status.get("error"):
-                lines.append(f"✗ {path} ({status['error']})")
+                lines.append(f"| `{path}` | ❌ {status['error']} |")
             elif not status.get("exists"):
-                lines.append(f"✗ {path} (missing)")
+                lines.append(f"| `{path}` | ❌ missing |")
             elif status.get("outdated"):
-                lines.append(f"⚠ {path} (outdated)")
+                lines.append(f"| `{path}` | ⚠️ outdated |")
             elif not status.get("configured", True):
-                lines.append(f"⚠ {path} (not configured in settings.json)")
+                lines.append(f"| `{path}` | ⚠️ not configured |")
             else:
-                lines.append(f"✓ {path} (current)")
+                lines.append(f"| `{path}` | ✅ current |")
 
     if user_issues:
-        lines.append("  → Run: /dk plugin update (installs)")
+        lines.append("")
+        lines.append("→ Run: `/dk plugin update`")
 
     # Check for unconfigured statusline
     for path, status in user_files.items():
         if "statusline.sh" in path and status.get("exists") and not status.get("configured", True):
             lines.append("")
-            lines.append("  ⚠ Statusline not activated in Claude Code!")
-            lines.append("  → Add to settings.json:")
-            lines.append(f'    "statusLine": {{ "command": "{path}" }}')
+            lines.append("> ⚠️ **Statusline not activated in Claude Code!**")
+            lines.append("> Add to `settings.json`:")
+            lines.append(f'> `"statusLine": {{ "command": "{path}" }}`')
             break
 
     return lines
@@ -918,7 +950,7 @@ def _format_secrets_section(results: dict[str, Any]) -> list[str]:
     Returns:
         List of formatted lines.
     """
-    lines = ["── GitHub Secrets ──────────────────"]
+    lines = ["### 🔐 GitHub Secrets", ""]
 
     secrets_data = results.get("secrets", {})
     secrets_status = secrets_data.get("status", {})
@@ -926,12 +958,14 @@ def _format_secrets_section(results: dict[str, Any]) -> list[str]:
 
     if not secrets_status:
         if secrets_warnings:
-            lines.append(f"○ {secrets_warnings[0]}")
+            lines.append(f"⏭️ {secrets_warnings[0]}")
         else:
-            lines.append("○ Not checked")
+            lines.append("⏭️ Not checked")
         return lines
 
-    # Show status of each secret
+    lines.append("| Secret | Status |")
+    lines.append("|--------|--------|")
+
     for secret, exists in secrets_status.items():
         if secret == "CLAUDE_CODE_OAUTH_TOKEN":
             label = "Claude App"
@@ -941,15 +975,16 @@ def _format_secrets_section(results: dict[str, Any]) -> list[str]:
             label = secret
 
         if exists:
-            lines.append(f"✓ {label} configured")
+            lines.append(f"| {label} | ✅ |")
         else:
             if secret == "CLAUDE_CODE_OAUTH_TOKEN":
-                lines.append(f"✗ {label} missing (Claude reviews won't work)")
+                lines.append(f"| {label} | ❌ missing |")
             else:
-                lines.append(f"○ {label} not set (optional)")
+                lines.append(f"| {label} | ⏭️ optional |")
 
     if not secrets_data.get("ok") and secrets_status.get("CLAUDE_CODE_OAUTH_TOKEN") is False:
-        lines.append("  → Install Claude GitHub App: https://github.com/apps/claude")
+        lines.append("")
+        lines.append("→ Install: https://github.com/apps/claude")
 
     return lines
 
@@ -963,10 +998,10 @@ def _format_summary(results: dict[str, Any]) -> list[str]:
     Returns:
         List of formatted lines.
     """
-    lines = ["━" * 35]
+    lines = ["---", ""]
 
     if results["healthy"]:
-        lines.append("Status: HEALTHY")
+        lines.append("## ✅ HEALTHY")
     else:
         issue_count = (
             len(results["config"]["errors"])
@@ -980,14 +1015,15 @@ def _format_summary(results: dict[str, Any]) -> list[str]:
                 else 0
             )
         )
-        lines.append(f"Status: {issue_count} issue(s) found")
-        lines.append("Action: /dk plugin update")
+        lines.append(f"## ❌ {issue_count} issue(s) found")
+        lines.append("")
+        lines.append("→ Run: `/dk plugin update`")
 
     # User files warning (separate from health status)
     user_issues = results.get("user_files", {}).get("issues", [])
     if user_issues:
         lines.append("")
-        lines.append(f"⚠ User files need update ({len(user_issues)} files)")
+        lines.append(f"> ⚠️ User files need update ({len(user_issues)} files)")
 
     return lines
 
@@ -999,8 +1035,11 @@ def format_report(results: dict[str, Any]) -> str:
         results: Output from check_all()
 
     Returns:
-        Formatted string for terminal output
+        Formatted Markdown string
     """
+    # Header
+    lines: list[str] = ["## 🔍 Plugin Health Check", ""]
+
     sections = [
         _format_config_section(results),
         _format_versions_section(results),
@@ -1014,7 +1053,6 @@ def format_report(results: dict[str, Any]) -> str:
         _format_summary(results),
     ]
 
-    lines: list[str] = []
     for section in sections:
         lines.extend(section)
         lines.append("")
