@@ -867,3 +867,67 @@ def check_user_files() -> dict[str, dict[str, Any]]:
     )
 
     return status
+
+
+def format_sync_report(
+    sync_results: list[tuple[str, bool, str]],
+    user_results: list[tuple[str, bool, str]],
+) -> str:
+    """Format sync results as Markdown.
+
+    Args:
+        sync_results: Results from sync_all().
+        user_results: Results from install_user_files().
+
+    Returns:
+        Formatted Markdown string.
+    """
+    lines = ["## 🔄 Plugin Sync", ""]
+
+    # Plugin files section
+    lines.append("### 📦 Plugin Files")
+    lines.append("")
+
+    ok_count = sum(1 for _, ok, _ in sync_results if ok)
+    total = len(sync_results)
+
+    if ok_count == total:
+        lines.append(f"All **{total} files** synced ✅")
+        lines.append("")
+        lines.append("<details>")
+        lines.append("<summary>Details</summary>")
+        lines.append("")
+        for target, ok, msg in sync_results:
+            icon = "✅" if ok else "❌"
+            lines.append(f"- `{target}`: {msg} {icon}")
+        lines.append("")
+        lines.append("</details>")
+    else:
+        lines.append(f"**{ok_count}/{total}** files synced")
+        lines.append("")
+        lines.append("| File | Status |")
+        lines.append("|------|--------|")
+        for target, ok, msg in sync_results:
+            status = "✅" if ok else f"❌ {msg}"
+            lines.append(f"| `{target}` | {status} |")
+
+    # User files section
+    lines.append("")
+    lines.append("### 👤 User Files")
+    lines.append("")
+
+    if not user_results:
+        lines.append("No user files configured")
+    else:
+        lines.append("| File | Status |")
+        lines.append("|------|--------|")
+        for target, ok, msg in user_results:
+            status = "✅" if ok else f"❌ {msg}"
+            lines.append(f"| `{target}` | {msg} {status} |")
+
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("## ✅ Done")
+
+    return "\n".join(lines)

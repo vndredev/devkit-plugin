@@ -18,6 +18,8 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 4. **NEVER execute raw git/gh commands** when a `/dk` equivalent exists
 5. **ALWAYS read CLAUDE.md** before making code changes
 6. **FIX LAYER VIOLATIONS IMMEDIATELY** - If you see "🚫 LAYER VIOLATION" in hook output, you MUST fix it NOW before continuing. Layer rules enforce Clean Architecture - higher tiers cannot import from lower tiers.
+7. **ALWAYS show full output** - After every Bash command, repeat the COMPLETE output in a formatted Markdown code block. Claude Code truncates output, so you MUST show it again for the user.
+8. **ALWAYS offer `/dk git pr`** - After completing code changes, ALWAYS ask: "Soll ich einen PR erstellen? (`/dk git pr`)" - This ensures changes get properly reviewed and merged.
 
 ## Commands
 

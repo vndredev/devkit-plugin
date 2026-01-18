@@ -111,24 +111,11 @@ Sync all managed files, upgrade config, and install user files:
 
 ```bash
 PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
-from lib.sync import sync_all, install_user_files
+from lib.sync import sync_all, install_user_files, format_sync_report
 
-print('=== Syncing Plugin Files ===')
-print()
 results = sync_all()
-for target, success, msg in results:
-    icon = '✓' if success else '✗'
-    print(f'{icon} {target}: {msg}')
-print()
-
-print('=== Installing User Files ===')
-print()
 user_results = install_user_files()
-for target, success, msg in user_results:
-    icon = '✓' if success else '✗'
-    print(f'{icon} {target}: {msg}')
-print()
-print('Done!')
+print(format_sync_report(results, user_results))
 "
 ```
 
