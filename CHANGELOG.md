@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.40.2] - 2026-01-18
+## [v0.41.0] - 2026-01-18
 
 ### Added
 
+- **Skill**: Enforce explicit enterplanmode for feat/refactor workflows (#40)
 - **Session**: Auto-commit managed files on main after sync (#37)
 - **Hook**: Complete workflow enforcement across all touchpoints (#35)
 - **Hook**: Enforce /dk dev workflow on protected branches (#34)
