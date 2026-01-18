@@ -8,11 +8,35 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 
 **CRITICAL:** Unified devkit-plugin interface. YOU MUST use `/dk` commands for ALL workflows.
 
+## Workflow Enforcement
+
+**The plugin enforces proper git workflow through hooks:**
+
+| Hook            | When               | Action                                    |
+| --------------- | ------------------ | ----------------------------------------- |
+| `SessionStart`  | Session begins     | ⚠️ Warns if on protected branch           |
+| `EnterPlanMode` | Before plan mode   | ⚠️ Warns or 🚫 blocks on protected branch |
+| `Write/Edit`    | After code changes | ⚠️ Warns if editing code on main          |
+
+**Configuration:** `hooks.plan.enforce_workflow` (`warn`, `block`, `off`)
+
+### When to Use Which Command
+
+| I want to...                    | Use this command                  |
+| ------------------------------- | --------------------------------- |
+| Start working on code           | `/dk dev feat\|fix\|chore <desc>` |
+| Analyze code for issues         | `/dk analyze`                     |
+| Create a PR after coding        | `/dk git pr`                      |
+| Check plugin health             | `/dk plugin check`                |
+| Sync files after config changes | `/dk plugin update`               |
+
+**If you're on `main` and try to enter Plan Mode, the hook will warn you!**
+
 ## MANDATORY Rules
 
 **YOU MUST follow these rules at ALL times:**
 
-1. **ALWAYS start clean** - Before ANY work, run `git checkout main && git pull` to ensure you have the latest code. Reset any uncommitted changes if needed.
+1. **ALWAYS start with `/dk dev`** - Before ANY code work, use `/dk dev feat|fix|chore <desc>` to create a feature branch.
 2. **ALWAYS use `/dk git pr`** for pull requests - NEVER use raw `gh pr create`
 3. **ALWAYS use `/dk dev`** for development workflows - NEVER skip the workflow
 4. **ALWAYS use `/dk vercel deploy`** for deployments - NEVER use raw `vercel deploy`

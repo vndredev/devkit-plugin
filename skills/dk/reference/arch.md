@@ -4,6 +4,17 @@
 
 **YOU MUST respect layer boundaries at ALL times.**
 
+## When to Use /dk arch vs /dk dev
+
+| Scenario                       | Use                        |
+| ------------------------------ | -------------------------- |
+| Analyze/check architecture     | `/dk arch analyze\|check`  |
+| Find similar code before write | `/dk arch discover <name>` |
+| Scaffold new project structure | `/dk arch init` (on main)  |
+| Writing code in layers         | `/dk dev feat\|fix <desc>` |
+
+**Note:** `/dk arch init` scaffolds structure - use on `main` then branch for code.
+
 ## Commands
 
 | Command                      | Description                                |

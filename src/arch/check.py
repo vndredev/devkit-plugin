@@ -590,6 +590,34 @@ def check_logging() -> dict[str, Any]:
         return {"enabled": False, "services": {}, "error": str(e)}
 
 
+def check_workflow() -> dict[str, Any]:
+    """Check workflow enforcement configuration.
+
+    Returns:
+        Status dictionary with enforcement settings and recommendations
+    """
+    plan_enforce = get("hooks.plan.enforce_workflow", "warn")
+    format_enforce = get("hooks.format.enforce_workflow", "warn")
+
+    # Determine overall enforcement status
+    if plan_enforce == "off" and format_enforce == "off":
+        status = "disabled"
+        recommendation = "Consider enabling workflow enforcement for better git hygiene"
+    elif plan_enforce == "block" or format_enforce == "block":
+        status = "strict"
+        recommendation = None
+    else:
+        status = "enabled"
+        recommendation = None
+
+    return {
+        "status": status,
+        "plan_enforce": plan_enforce,
+        "format_enforce": format_enforce,
+        "recommendation": recommendation,
+    }
+
+
 def check_all() -> dict:
     """Run all health checks and return consolidated report.
 
@@ -606,6 +634,7 @@ def check_all() -> dict:
     consistency_ok, consistency_results = check_consistency_wrapper()
     secrets_ok, secrets_status, secrets_warnings = check_github_secrets()
     logging_results = check_logging()
+    workflow_results = check_workflow()
 
     # Count sync issues
     sync_ok = all(r[1] for r in sync_results)
@@ -673,6 +702,7 @@ def check_all() -> dict:
             "warnings": secrets_warnings,
         },
         "logging": logging_results,
+        "workflow": workflow_results,
         "upgradable": has_missing,
     }
 
@@ -1092,6 +1122,57 @@ def _format_logging_section(results: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _format_workflow_section(results: dict[str, Any]) -> list[str]:
+    """Format workflow enforcement section of health report.
+
+    Args:
+        results: Health check results.
+
+    Returns:
+        List of formatted lines.
+    """
+    lines = ["### 🔄 Workflow Enforcement", ""]
+
+    workflow = results.get("workflow", {})
+    status = workflow.get("status", "unknown")
+    plan_enforce = workflow.get("plan_enforce", "warn")
+    format_enforce = workflow.get("format_enforce", "warn")
+
+    # Status indicator
+    status_icons = {
+        "strict": "🔒 Strict (blocks on protected branch)",
+        "enabled": "✅ Enabled (warns on protected branch)",
+        "disabled": "⚠️ Disabled",
+    }
+    lines.append(f"**Status:** {status_icons.get(status, status)}")
+
+    # Settings table
+    lines.append("")
+    lines.append("| Hook | Mode | Effect |")
+    lines.append("|------|------|--------|")
+
+    mode_effects = {
+        "warn": "Shows warning",
+        "block": "Blocks action",
+        "off": "No check",
+    }
+
+    lines.append(
+        f"| Plan (EnterPlanMode) | `{plan_enforce}` | {mode_effects.get(plan_enforce, plan_enforce)} |"
+    )
+    lines.append(
+        f"| Format (Write/Edit) | `{format_enforce}` | {mode_effects.get(format_enforce, format_enforce)} |"
+    )
+
+    # Show recommendation if present
+    recommendation = workflow.get("recommendation")
+    if recommendation:
+        lines.append("")
+        lines.append(f"💡 {recommendation}")
+
+    return lines
+
+
 def _format_summary(results: dict[str, Any]) -> list[str]:
     """Format summary section of health report.
 
@@ -1154,6 +1235,7 @@ def format_report(results: dict[str, Any]) -> str:
         _format_user_files_section(results),
         _format_secrets_section(results),
         _format_logging_section(results),
+        _format_workflow_section(results),
         _format_summary(results),
     ]
 

@@ -82,6 +82,11 @@
                   "default": "❓{count} untracked",
                   "description": "Untracked files template"
                 },
+                "protected_branch": {
+                  "type": "string",
+                  "default": "⚠️ On `{branch}` - use `/dk dev feat|fix|chore <desc>` first!",
+                  "description": "Warning shown when on protected branch"
+                },
                 "hint": {
                   "type": "string",
                   "default": "Use `/dk` for commands, `/dk dev` for workflow",

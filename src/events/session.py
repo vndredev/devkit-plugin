@@ -72,12 +72,16 @@ def main() -> None:
             # Workflow reminder if on protected branch
             protected = get("git.protected_branches", ["main", "master"])
             if branch in protected:
-                enforce_mode = get("hooks.format.enforce_workflow", "warn")
-                if enforce_mode != "off":
-                    output_lines.append("")
-                    output_lines.append(
-                        f"💡 On `{branch}` - start with `/dk dev feat|fix|chore <desc>`"
+                # Check both plan and format enforcement (either enables warning)
+                plan_enforce = get("hooks.plan.enforce_workflow", "warn")
+                format_enforce = get("hooks.format.enforce_workflow", "warn")
+                if plan_enforce != "off" or format_enforce != "off":
+                    protected_tpl = prompts.get(
+                        "protected_branch",
+                        "⚠️ On `{branch}` - use `/dk dev feat|fix|chore <desc>` first!",
                     )
+                    output_lines.append("")
+                    output_lines.append(protected_tpl.format(branch=branch))
         except (SubprocessError, OSError, GitError):
             pass
 

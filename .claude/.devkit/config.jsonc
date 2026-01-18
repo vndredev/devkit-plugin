@@ -127,6 +127,7 @@
         "staged": "⚡{count} staged",
         "modified": "✏️{count} modified",
         "untracked": "❓{count} untracked",
+        "protected_branch": "⚠️ On `{branch}` - use `/dk dev feat|fix|chore <desc>` first!",
         "hint": "CRITICAL: YOU MUST use `/dk` for ALL commands. Run `/dk dev` for workflow. NEVER execute raw git/gh commands directly.",
         "system_warning": "⚠️ Project has issues - YOU MUST run /dk plugin check",
       },
