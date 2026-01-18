@@ -31,10 +31,21 @@ def validate_branch_name(branch: str, prompt_tpl: str) -> tuple[bool, str]:
     # Get types from config
     types = get("git.conventions.types", DEFAULT_TYPES)
     types_pattern = "|".join(types)
-    pattern = rf"^({types_pattern})/[\w-]+$"
 
-    if not re.match(pattern, branch):
-        return False, prompt_tpl.format(branch=branch, pattern=f"{{{types_pattern}}}/description")
+    # Get branch pattern from config (default: {type}/{description})
+    branch_pattern = get("git.conventions.branch_pattern", "{type}/{description}")
+
+    # Convert config pattern to regex
+    # {type} -> (feat|fix|...), {description} -> [\w-]+
+    regex_pattern = branch_pattern
+    regex_pattern = regex_pattern.replace("{type}", f"({types_pattern})")
+    regex_pattern = regex_pattern.replace("{description}", r"[\w-]+")
+    regex_pattern = f"^{regex_pattern}$"
+
+    if not re.match(regex_pattern, branch):
+        # Show human-readable pattern in error
+        display_pattern = branch_pattern.replace("{type}", f"{{{types_pattern}}}")
+        return False, prompt_tpl.format(branch=branch, pattern=display_pattern)
 
     return True, "Valid branch name"
 

@@ -892,37 +892,83 @@ def format_compact(results: dict) -> str | None:
     if results["healthy"]:
         return None
 
-    issues = list(results["config"]["errors"])
+    # Categorize issues for clear reporting
+    categories: dict[str, list[str]] = {
+        "config": [],
+        "sync": [],
+        "arch": [],
+        "versions": [],
+        "templates": [],
+        "tests": [],
+        "consistency": [],
+    }
 
+    # Config errors
+    categories["config"].extend(results["config"]["errors"])
+
+    # Sync issues
     for path, _ok, msg in results["sync"]["issues"]:
-        issues.append(f"{path} {msg}")
+        categories["sync"].append(f"{path}: {msg}")
 
-    issues.extend(v["message"] for v in results["arch"]["violations"])
+    # Architecture violations
+    for v in results["arch"]["violations"]:
+        categories["arch"].append(v["message"])
 
-    # Add missing templates
+    # Missing templates
     for template in results.get("templates", {}).get("missing", []):
-        issues.append(f"templates/{template} missing")
+        categories["templates"].append(f"templates/{template}")
 
-    # Add version mismatch errors
-    issues.extend(results.get("versions", {}).get("errors", []))
+    # Version mismatch errors
+    categories["versions"].extend(results.get("versions", {}).get("errors", []))
 
-    # Add test issues if testing failed
+    # Test issues
     if results.get("tests", {}).get("status") == "FAIL":
-        issues.extend(results["tests"]["issues"])
+        categories["tests"].extend(results["tests"]["issues"])
 
-    # Add consistency violations
+    # Consistency violations
     consistency_results = results.get("consistency", {}).get("results", {})
     for _, violations in consistency_results.values():
         for v in violations:
-            issues.append(f"[{v['rule']}] {v['message']}")
+            categories["consistency"].append(f"{v['rule']}: {v['message']}")
 
-    if not issues:
+    # Build summary with category counts
+    category_labels = {
+        "config": "Config",
+        "sync": "Sync",
+        "arch": "Arch",
+        "versions": "Version",
+        "templates": "Template",
+        "tests": "Test",
+        "consistency": "Consistency",
+    }
+
+    active_categories = [(k, v) for k, v in categories.items() if v]
+    total_issues = sum(len(v) for _, v in active_categories)
+
+    if total_issues == 0:
         return None
 
-    lines = [f"⚠️ Plugin: {len(issues)} issue(s) found"]
-    lines.extend(f"   - {issue}" for issue in issues[:3])  # Show max 3
-    if len(issues) > 3:
-        lines.append(f"   - ... and {len(issues) - 3} more")
-    lines.append("   Run: /dk plugin check (details) or /dk plugin update (fix)")
+    # Build header with category breakdown
+    category_summary = ", ".join(
+        f"{len(issues)} {category_labels[cat]}" for cat, issues in active_categories
+    )
+    lines = [f"⚠️ Plugin issues: {category_summary}"]
+
+    # Show up to 3 specific issues
+    shown = 0
+    for cat, issues in active_categories:
+        for issue in issues:
+            if shown >= 3:
+                break
+            lines.append(f"   • [{category_labels[cat]}] {issue}")
+            shown += 1
+        if shown >= 3:
+            break
+
+    remaining = total_issues - shown
+    if remaining > 0:
+        lines.append(f"   ... and {remaining} more")
+
+    lines.append("   Run: /dk plugin check")
 
     return "\n".join(lines)
