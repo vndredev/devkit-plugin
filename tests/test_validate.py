@@ -499,32 +499,42 @@ EOF
 class TestIsPluginSelfDevelopment:
     """Tests for is_plugin_self_development()."""
 
-    def test_returns_false_when_no_env_var(self, monkeypatch):
+    def test_returns_false_when_no_plugin_root(self, monkeypatch):
         """Should return False when CLAUDE_PLUGIN_ROOT is not set."""
         monkeypatch.delenv("CLAUDE_PLUGIN_ROOT", raising=False)
+        monkeypatch.delenv("CLAUDE_PROJECT_DIR", raising=False)
 
         result = is_plugin_self_development()
 
         assert result is False
 
-    def test_returns_true_when_cwd_matches_plugin_root(self, tmp_path, monkeypatch):
-        """Should return True when cwd matches CLAUDE_PLUGIN_ROOT."""
+    def test_returns_false_when_no_project_dir(self, tmp_path, monkeypatch):
+        """Should return False when CLAUDE_PROJECT_DIR is not set."""
         monkeypatch.setenv("CLAUDE_PLUGIN_ROOT", str(tmp_path))
-        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("CLAUDE_PROJECT_DIR", raising=False)
+
+        result = is_plugin_self_development()
+
+        assert result is False
+
+    def test_returns_true_when_project_matches_plugin_root(self, tmp_path, monkeypatch):
+        """Should return True when CLAUDE_PROJECT_DIR matches CLAUDE_PLUGIN_ROOT."""
+        monkeypatch.setenv("CLAUDE_PLUGIN_ROOT", str(tmp_path))
+        monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(tmp_path))
 
         result = is_plugin_self_development()
 
         assert result is True
 
-    def test_returns_false_when_cwd_differs_from_plugin_root(self, tmp_path, monkeypatch):
-        """Should return False when cwd differs from CLAUDE_PLUGIN_ROOT."""
+    def test_returns_false_when_project_differs_from_plugin_root(self, tmp_path, monkeypatch):
+        """Should return False when CLAUDE_PROJECT_DIR differs from CLAUDE_PLUGIN_ROOT."""
         plugin_root = tmp_path / "plugin"
         plugin_root.mkdir()
-        other_dir = tmp_path / "other"
-        other_dir.mkdir()
+        project_dir = tmp_path / "other"
+        project_dir.mkdir()
 
         monkeypatch.setenv("CLAUDE_PLUGIN_ROOT", str(plugin_root))
-        monkeypatch.chdir(other_dir)
+        monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(project_dir))
 
         result = is_plugin_self_development()
 
@@ -538,7 +548,7 @@ class TestIsPluginSelfDevelopment:
         symlink.symlink_to(real_dir)
 
         monkeypatch.setenv("CLAUDE_PLUGIN_ROOT", str(real_dir))
-        monkeypatch.chdir(symlink)
+        monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(symlink))
 
         result = is_plugin_self_development()
 

@@ -172,17 +172,22 @@ def is_plugin_self_development() -> bool:
     When working in the plugin's own directory, we need to allow raw commands
     because /dk workflows internally use these commands.
 
+    Note: Hooks run from CLAUDE_PLUGIN_ROOT, so we must check CLAUDE_PROJECT_DIR
+    (the user's actual project directory) instead of cwd.
+
     Returns:
-        True if cwd matches CLAUDE_PLUGIN_ROOT (self-development mode).
+        True if CLAUDE_PROJECT_DIR matches CLAUDE_PLUGIN_ROOT (self-development mode).
     """
     plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
-    if not plugin_root:
+    project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
+
+    if not plugin_root or not project_dir:
         return False
 
     try:
-        cwd = Path.cwd().resolve()
         plugin_path = Path(plugin_root).resolve()
-        return cwd == plugin_path
+        project_path = Path(project_dir).resolve()
+        return project_path == plugin_path
     except (OSError, ValueError):
         return False
 
