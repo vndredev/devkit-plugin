@@ -122,6 +122,12 @@
               "default": true,
               "description": "Enforce /dk commands instead of raw gh/vercel commands"
             },
+            "blocked_commands": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": ["gh repo delete", "gh secret delete", "gh api -X DELETE"],
+              "description": "List of dangerous commands to block (matched as prefix)"
+            },
             "prompts": {
               "type": "object",
               "description": "Customizable error messages",
@@ -205,6 +211,11 @@
                   "type": "string",
                   "default": "📄 Updated docs/ARCHITECTURE.md",
                   "description": "Architecture doc updated message"
+                },
+                "arch_blocking": {
+                  "type": "string",
+                  "default": "🚫 LAYER VIOLATION - FIX NOW: {message}. Revert or fix the import.",
+                  "description": "Error shown when blocking layer violation is detected"
                 }
               }
             }
@@ -308,6 +319,41 @@
                   "type": "string",
                   "default": "🌐 Frontend changed - verify UI: `/dk browser verify` or browser_snapshot on {url}",
                   "description": "Reminder shown after frontend file changes"
+                }
+              }
+            }
+          }
+        },
+        "arch_guard": {
+          "type": "object",
+          "description": "PreToolUse hook - blocks layer violations before writing code",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "discovery_enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable code similarity detection when writing new code"
+            },
+            "discovery_threshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.7,
+              "description": "Similarity threshold (0.0-1.0) for showing duplicate warnings"
+            },
+            "prompts": {
+              "type": "object",
+              "description": "Customizable output templates",
+              "properties": {
+                "blocked": {
+                  "type": "string",
+                  "default": "🚫 BLOCKED - Layer violation: {message}. Fix imports before writing.",
+                  "description": "Message when blocking a write due to layer violation"
+                },
+                "similar_found": {
+                  "type": "string",
+                  "default": "⚠️ Similar code exists - consider reusing: {matches}",
+                  "description": "Warning when similar code is detected"
                 }
               }
             }
