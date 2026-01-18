@@ -168,21 +168,28 @@ def detect_services(project_root: Path | None = None) -> dict[str, dict]:
 
     detected: dict[str, dict] = {}
 
+    # Get env vars first (needed for credential checks)
+    env_vars = check_env_vars(project_root)
+
     # Check config first (explicit configuration takes precedence)
     config_services = get("logging.services", {})
     for name, config in config_services.items():
         provider = config.get("provider", name)
         provider_info = PROVIDERS.get(provider, {})
+
+        # Check for credential env var (support multiple field names)
+        env_var_name = config.get("env_var") or config.get("token")
+        has_credentials = env_var_name in env_vars if env_var_name else False
+
         detected[name] = {
             "provider": provider,
             "detected_from": "config",
-            "has_credentials": bool(config.get("env_var")),
+            "has_credentials": has_credentials,
             "dashboard": provider_info.get("dashboard"),
             "description": provider_info.get("description", "Custom logging service"),
         }
 
-    # Get env vars and deps for detection
-    env_vars = check_env_vars(project_root)
+    # Get deps for detection
     package_deps = check_package_deps(project_root)
 
     # Check for known providers
@@ -251,14 +258,10 @@ def logging_status(project_root: Path | None = None) -> dict:
 
     # Generate recommendation based on strategy
     recommendation = None
-    if strategy == "terminal":
-        if not cloud_services:
-            recommendation = (
-                "Python logging configured (no cloud service needed for this project type)"
-            )
-    elif strategy == "service":
-        if not cloud_services:
-            recommendation = "Consider adding Axiom: npm install @axiomhq/nextjs"
+    if strategy == "terminal" and not cloud_services:
+        recommendation = "Python logging configured (no cloud service needed for this project type)"
+    elif strategy == "service" and not cloud_services:
+        recommendation = "Consider adding Axiom: npm install @axiomhq/nextjs"
 
     return {
         "enabled": enabled,
