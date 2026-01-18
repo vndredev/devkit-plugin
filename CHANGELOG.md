@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.25.1] - 2026-01-18
+## [v0.25.2] - 2026-01-18
 
 ### Fixed
 
+- **Hook**: Improve status line detail and branch pattern validation
 - **Arch**: Resolve typeerror in format.py and sync issues
 
 ## [v0.25.0] - 2026-01-17
