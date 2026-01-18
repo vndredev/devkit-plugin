@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.25.1] - 2026-01-18
+
+### Fixed
+
+- **Arch**: Resolve typeerror in format.py and sync issues
+
 ## [v0.25.0] - 2026-01-17
 
 ### Fixed
