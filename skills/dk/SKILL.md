@@ -93,6 +93,14 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 | `/dk docs arch`            | docs.md     | Generate/update ARCHITECTURE.md     |
 | `/dk docs plugin`          | docs.md     | Generate/update PLUGIN.md           |
 | `/dk docs claude`          | docs.md     | Generate/update CLAUDE.md           |
+| `/dk axiom`                | axiom.md    | Axiom status + auth                 |
+| `/dk axiom login`          | axiom.md    | Authenticate with Axiom             |
+| `/dk axiom datasets`       | axiom.md    | List/manage datasets                |
+| `/dk axiom query`          | axiom.md    | Execute APL query                   |
+| `/dk axiom stream`         | axiom.md    | Livestream logs                     |
+| `/dk axiom web`            | axiom.md    | Open dashboard                      |
+| `/dk axiom token`          | axiom.md    | Token management                    |
+| `/dk axiom test`           | axiom.md    | Test connectivity                   |
 
 ---
 
@@ -115,7 +123,8 @@ modules = {
     "neon": "reference/neon.md",
     "arch": "reference/arch.md",
     "webhooks": "reference/webhooks.md",
-    "docs": "reference/docs.md"
+    "docs": "reference/docs.md",
+    "axiom": "reference/axiom.md"
 }
 
 if cmd in modules:
@@ -163,6 +172,7 @@ print('Commands: /dk plugin | dev | analyze | git | arch | docs | env | vercel |
 | `/dk arch [sub]`        | Read `reference/arch.md`, follow instructions     |
 | `/dk webhooks [sub]`    | Read `reference/webhooks.md`, follow instructions |
 | `/dk docs [sub]`        | Read `reference/docs.md`, follow instructions     |
+| `/dk axiom [sub]`       | Read `reference/axiom.md`, follow instructions    |
 
 **ALWAYS pass the remaining arguments to the module.**
 

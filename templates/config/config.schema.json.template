@@ -757,6 +757,25 @@
               }
             }
           }
+        },
+        "axiom": {
+          "type": "object",
+          "description": "Axiom-specific configuration",
+          "properties": {
+            "dataset": {
+              "type": "string",
+              "description": "Default dataset for queries and ingestion"
+            },
+            "org_id": {
+              "type": "string",
+              "description": "Axiom organization ID"
+            },
+            "proxy_endpoint": {
+              "type": "string",
+              "default": "/api/log",
+              "description": "Server-side proxy endpoint for frontend logs (never expose token to client)"
+            }
+          }
         }
       }
     }
