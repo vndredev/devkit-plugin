@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.42.0] - 2026-01-18
+## [v0.42.1] - 2026-01-18
 
 ### Added
 
@@ -24,6 +24,7 @@
 
 ### Fixed
 
+- **Hook**: Check actual env var existence for logging credentials (#43)
 - **Skill**: Update axiom docs for next.js 16+ compatibility (#39)
 - **Schema**: Add missing hook definitions (#38)
 - **Git**: Auto-return to main after /dk git pr (#36)
