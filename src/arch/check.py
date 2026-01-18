@@ -28,6 +28,17 @@ def check_config() -> tuple[bool, list[str], list[str]]:
     except Exception as e:
         return False, [f"Config load failed: {e}"], []
 
+    # Check $schema reference - if present, verify file exists
+    schema_ref = config.get("$schema")
+    if schema_ref:
+        # Schema is referenced - check if file exists
+        root = get_project_root()
+        config_dir = root / ".claude" / ".devkit"
+        schema_path = (config_dir / schema_ref).resolve()
+
+        if not schema_path.exists():
+            errors.append(f"Schema file missing: {schema_ref} (run /dk plugin update)")
+
     # Check required fields
     if "project" not in config:
         errors.append("Missing required field: project")
