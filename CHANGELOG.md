@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.42.1] - 2026-01-18
+## [v0.42.2] - 2026-01-18
 
 ### Added
 
@@ -24,6 +24,7 @@
 
 ### Fixed
 
+- **Skill**: Enforce auto-merge step with you must keywords (#44)
 - **Hook**: Check actual env var existence for logging credentials (#43)
 - **Skill**: Update axiom docs for next.js 16+ compatibility (#39)
 - **Schema**: Add missing hook definitions (#38)
