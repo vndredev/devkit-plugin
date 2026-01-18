@@ -278,6 +278,9 @@ class TestVercelConnect:
         """Should run full workflow."""
         monkeypatch.chdir(tmp_path)
 
+        # Create .git directory (needed for project root detection)
+        (tmp_path / ".git").mkdir()
+
         # Create .vercel directory
         vercel_dir = tmp_path / ".vercel"
         vercel_dir.mkdir()

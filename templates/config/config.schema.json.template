@@ -156,6 +156,12 @@
               "default": true,
               "description": "Check architecture violations after src/ file changes"
             },
+            "enforce_workflow": {
+              "type": "string",
+              "enum": ["warn", "off"],
+              "default": "warn",
+              "description": "Warn when editing code on main without /dk dev workflow"
+            },
             "auto_sync_arch": {
               "type": "boolean",
               "default": true,

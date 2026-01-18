@@ -4,14 +4,15 @@
 
 ## Commands
 
-| Command                   | Type     | Description       | Plan Mode? |
-| ------------------------- | -------- | ----------------- | ---------- |
-| `/dk dev feat <desc>`     | feat     | New feature       | YES        |
-| `/dk dev fix <desc>`      | fix      | Bug fix           | Optional   |
-| `/dk dev chore <desc>`    | chore    | Maintenance       | No         |
-| `/dk dev refactor <desc>` | refactor | Restructure code  | YES        |
-| `/dk dev test <desc>`     | test     | Add/improve tests | No         |
-| `/dk dev docs <desc>`     | docs     | Documentation     | No         |
+| Command                   | Type     | Description        | Plan Mode? |
+| ------------------------- | -------- | ------------------ | ---------- |
+| `/dk dev feat <desc>`     | feat     | New feature        | YES        |
+| `/dk dev fix <desc>`      | fix      | Bug fix            | Optional   |
+| `/dk dev chore <desc>`    | chore    | Maintenance        | No         |
+| `/dk dev refactor <desc>` | refactor | Restructure code   | YES        |
+| `/dk dev test <desc>`     | test     | Add/improve tests  | No         |
+| `/dk dev docs <desc>`     | docs     | Documentation      | No         |
+| `/dk dev quick <desc>`    | chore    | Quick small change | No         |
 
 ---
 
@@ -174,6 +175,38 @@
 
 ```
 /dk dev docs update API documentation
+```
+
+---
+
+### `/dk dev quick <description>` - Quick Small Change
+
+**For tiny changes that don't warrant full workflow.**
+
+Use this for:
+
+- Single-line fixes
+- Typo corrections
+- Config tweaks
+- Adding a log statement
+
+**NOT for:**
+
+- New features (use `feat`)
+- Bug fixes (use `fix`)
+- Multiple file changes (use appropriate type)
+
+1. **Execute**
+   - Create branch: `git checkout -b chore/{short-name}`
+   - Make the small change
+   - Commit immediately
+   - Create PR with `/dk git pr`
+
+**Example:**
+
+```
+/dk dev quick fix typo in error message
+/dk dev quick add debug log to auth handler
 ```
 
 ---

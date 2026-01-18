@@ -67,6 +67,16 @@ def main() -> None:
                 git_parts.append(untracked_tpl.format(count=len(status["untracked"])))
 
             output_lines.append(" | ".join(git_parts))
+
+            # Workflow reminder if on protected branch
+            protected = get("git.protected_branches", ["main", "master"])
+            if branch in protected:
+                enforce_mode = get("hooks.format.enforce_workflow", "warn")
+                if enforce_mode != "off":
+                    output_lines.append("")
+                    output_lines.append(
+                        f"💡 On `{branch}` - start with `/dk dev feat|fix|chore <desc>`"
+                    )
         except (SubprocessError, OSError, GitError):
             pass
 
