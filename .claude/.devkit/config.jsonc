@@ -7,15 +7,15 @@
   "project": {
     "name": "devkit-plugin",
     "type": "plugin",
-"version": "0.26.0",
+    "version": "0.26.0",
     "slogan": "Claude Code Plugin for automated dev workflows",
     "description": "Automatisiert Code-Standards, Git-Conventions und Dokumentation via Claude Code Hooks. Single Source of Truth in config.jsonc.",
     "principles": [
       "Config as Code - config.jsonc als Single Source of Truth",
       "Clean Architecture - Layer-Boundaries werden enforced",
       "Convention over Configuration - Sensible Defaults",
-      "Transparency - Alle Prompts und Regeln in der Config sichtbar"
-    ]
+      "Transparency - Alle Prompts und Regeln in der Config sichtbar",
+    ],
   },
 
   // ============================================================================
@@ -24,39 +24,64 @@
   "git": {
     "protected_branches": ["main"],
     "conventions": {
-      "types": ["feat", "fix", "chore", "refactor", "test", "docs", "perf", "ci"],
+      "types": [
+        "feat",
+        "fix",
+        "chore",
+        "refactor",
+        "test",
+        "docs",
+        "perf",
+        "ci",
+      ],
       "scopes": {
-        "mode": "strict",      // strict=error, warn=warning, off=disabled
-        "allowed": ["config", "sync", "hook", "arch", "docs", "git", "skill", "plugin", "statusline", "release", "schema", "session", "validate", "format", "plan"],
-        "internal": ["internal", "review", "ci", "deps"]  // Skip release notes
+        "mode": "strict", // strict=error, warn=warning, off=disabled
+        "allowed": [
+          "config",
+          "sync",
+          "hook",
+          "arch",
+          "docs",
+          "git",
+          "skill",
+          "plugin",
+          "statusline",
+          "release",
+          "schema",
+          "session",
+          "validate",
+          "format",
+          "plan",
+        ],
+        "internal": ["internal", "review", "ci", "deps"], // Skip release notes
       },
-      "branch_pattern": "{type}/{description}"
-    }
+      "branch_pattern": "{type}/{description}",
+    },
   },
 
   "github": {
     "url": "https://github.com/vndredev/devkit-plugin",
     "visibility": "public",
     "pr": {
-      "auto_merge": true,      // Enable auto-merge when PR is created
-      "delete_branch": true,   // Delete branch after merge
-      "merge_method": "squash" // squash, merge, or rebase
+      "auto_merge": true, // Enable auto-merge when PR is created
+      "delete_branch": true, // Delete branch after merge
+      "merge_method": "squash", // squash, merge, or rebase
     },
     "protection": {
-      "enabled": true,           // Enable branch protection ruleset
-      "require_reviews": 1,      // Required PR reviews (0 to disable)
-      "linear_history": true,    // Require linear commit history
-      "admin_bypass": true,      // Allow admins to bypass (requires Pro/Team+)
-      "dismiss_stale_reviews": false
-    }
+      "enabled": true, // Enable branch protection ruleset
+      "require_reviews": 1, // Required PR reviews (0 to disable)
+      "linear_history": true, // Require linear commit history
+      "admin_bypass": true, // Allow admins to bypass (requires Pro/Team+)
+      "dismiss_stale_reviews": false,
+    },
   },
 
   // ============================================================================
   // QUALITY - Linters and testing
   // ============================================================================
   "linters": {
-    "preset": "strict",        // strict, relaxed, minimal
-    "overrides": {}
+    "preset": "strict", // strict, relaxed, minimal
+    "overrides": {},
   },
 
   "testing": {
@@ -64,8 +89,8 @@
     "framework": "pytest",
     "coverage": {
       "minimum": 70,
-      "exclude": ["tests", ".venv", "__pycache__"]
-    }
+      "exclude": ["tests", ".venv", "__pycache__"],
+    },
   },
 
   "consistency": {
@@ -74,9 +99,9 @@
       "module_tests": {
         "enabled": true,
         "patterns": {
-          "src/lib/*.py": "tests/test_{stem}.py"
+          "src/lib/*.py": "tests/test_{stem}.py",
         },
-        "exclude": ["__init__.py"]
+        "exclude": ["__init__.py"],
       },
       "hook_handlers": { "enabled": true },
       "config_schema": { "enabled": true },
@@ -84,9 +109,9 @@
       "custom_imports": {
         "enabled": false,
         "deny": [],
-        "require": []
-      }
-    }
+        "require": [],
+      },
+    },
   },
 
   // ============================================================================
@@ -103,8 +128,8 @@
         "modified": "✏️{count} modified",
         "untracked": "❓{count} untracked",
         "hint": "CRITICAL: YOU MUST use `/dk` for ALL commands. Run `/dk dev` for workflow. NEVER execute raw git/gh commands directly.",
-        "system_warning": "⚠️ Project has issues - YOU MUST run /dk plugin check"
-      }
+        "system_warning": "⚠️ Project has issues - YOU MUST run /dk plugin check",
+      },
     },
 
     // === Validate Hook (PreToolUse: Bash) ===
@@ -112,14 +137,32 @@
       "enabled": true,
       "block_force_push": true,
       "block_dangerous_gh": true,
+      "blocked_commands": [
+        "gh repo delete",
+        "gh secret delete",
+        "gh api -X DELETE",
+      ],
       "prompts": {
         "branch_invalid": "BLOCKED: Branch '{branch}' MUST match pattern: {pattern}. YOU MUST rename the branch.",
         "commit_invalid": "BLOCKED: Commit MUST match: type(scope): message (types: {types}). YOU MUST fix the commit message.",
         "scope_invalid": "BLOCKED: Unknown scope '{scope}'. ALLOWED scopes: {allowed}. YOU MUST use an allowed scope.",
         "force_push_blocked": "BLOCKED: Force push is NEVER allowed. Use --force-with-lease if absolutely required.",
         "gh_blocked": "BLOCKED: '{cmd}' - YOU MUST use /dk git commands instead. NEVER execute raw gh commands.",
-        "pr_missing_body": "BLOCKED: YOU MUST use /dk git pr - it provides the required PR template automatically."
-      }
+        "pr_missing_body": "BLOCKED: YOU MUST use /dk git pr - it provides the required PR template automatically.",
+      },
+    },
+
+    // === Arch Guard Hook (PreToolUse: Write/Edit) ===
+    // BLOCKS edits that would introduce layer violations
+    // WARNS about similar code that already exists
+    "arch_guard": {
+      "enabled": true,
+      "discovery_enabled": true, // Warn about similar existing code
+      "discovery_threshold": 0.7, // Similarity threshold (0.0 - 1.0)
+      "prompts": {
+        "blocked": "🚫 BLOCKED - Layer violation: {message}. Fix imports before writing.",
+        "similar_found": "⚠️ Similar code exists - consider reusing: {matches}",
+      },
     },
 
     // === Format Hook (PostToolUse: Write/Edit) ===
@@ -132,8 +175,9 @@
         "formatted": "✓ Formatted: {file}",
         "test_reminder": "💡 New file - YOU MUST consider adding tests: tests/{file}",
         "arch_violation": "⚠️ CRITICAL: Architecture violation detected: {message}. YOU MUST fix this before proceeding.",
-        "arch_synced": "📄 Updated docs/ARCHITECTURE.md"
-      }
+        "arch_blocking": "🚫 LAYER VIOLATION - FIX NOW: {message}. Revert or fix the import.",
+        "arch_synced": "📄 Updated docs/ARCHITECTURE.md",
+      },
     },
 
     // === Plan Hook (PostToolUse: ExitPlanMode) ===
@@ -146,15 +190,15 @@
           "YOU MUST identify affected layers (check arch.layers)",
           "YOU MUST list files to modify vs. create",
           "ALWAYS consider edge cases and error handling",
-          "YOU MUST check for breaking changes"
+          "YOU MUST check for breaking changes",
         ],
         "structure": [
           "## Overview - What and why (REQUIRED)",
           "## Affected Files - List with rationale (REQUIRED)",
           "## Implementation Steps - Ordered tasks (REQUIRED)",
           "## Testing Strategy - How to verify (REQUIRED)",
-          "## Risks - What could go wrong (REQUIRED)"
-        ]
+          "## Risks - What could go wrong (REQUIRED)",
+        ],
       },
 
       // Instructions shown after plan approval
@@ -165,8 +209,8 @@
           "YOU MUST run linters after EVERY code change - use `uv run ruff check`",
           "YOU MUST run tests if available - use `uv run pytest`",
           "ALWAYS use conventional commits: type(scope): message",
-          "ALWAYS ask if blocked or unclear - NEVER guess"
-        ]
+          "ALWAYS ask if blocked or unclear - NEVER guess",
+        ],
       },
 
       // Project-specific hints (shown in both phases)
@@ -175,13 +219,20 @@
         "REQUIRED: New modules MUST have tests in tests/",
         "REQUIRED: Public API changes MUST update CHANGELOG",
         "📚 Docs: ALWAYS use `claude-code-guide` agent for Claude Code questions",
-        "📚 Docs: ALWAYS use Context7 MCP for library/framework documentation"
-      ]
-    }
+        "📚 Docs: ALWAYS use Context7 MCP for library/framework documentation",
+      ],
+    },
   },
 
   "changelog": {
-    "audience": "developer"    // developer=technical, user=simple
+    "audience": "developer", // developer=technical, user=simple
+  },
+
+  // ============================================================================
+  // CODE DISCOVERY - Find similar/duplicate code patterns
+  // ============================================================================
+  "discovery": {
+    "scan_patterns": ["src/**/*.py"],
   },
 
   // ============================================================================
@@ -192,24 +243,24 @@
       "core": {
         "tier": 0,
         "patterns": ["src/core/**"],
-        "description": "Types, errors, constants - nur stdlib"
+        "description": "Types, errors, constants - nur stdlib",
       },
       "lib": {
         "tier": 1,
         "patterns": ["src/lib/**"],
-        "description": "I/O-Adapter: config, git, tools, sync"
+        "description": "I/O-Adapter: config, git, tools, sync",
       },
       "arch": {
         "tier": 2,
         "patterns": ["src/arch/**"],
-        "description": "Architecture-Analyse und Visualisierung"
+        "description": "Architecture-Analyse und Visualisierung",
       },
       "events": {
         "tier": 3,
         "patterns": ["src/events/**"],
-        "description": "Claude Code Hook-Handler"
-      }
-    }
+        "description": "Claude Code Hook-Handler",
+      },
+    },
   },
 
   // ============================================================================
@@ -219,80 +270,80 @@
     "config": {
       ".claude/.devkit/config.schema.json": {
         "template": "config/config.schema.json.template",
-        "enabled": true
-      }
+        "enabled": true,
+      },
     },
     "linters": {
       ".markdownlint.json": {
         "template": "linters/common/markdownlint.json.template",
-        "enabled": true
+        "enabled": true,
       },
       ".markdownlintignore": {
         "template": "gitignore/markdownlint.ignore",
-        "enabled": true
+        "enabled": true,
       },
       "ruff.toml": {
         "template": "linters/python/ruff.toml.template",
-        "enabled": true
-      }
+        "enabled": true,
+      },
     },
     "github": {
       ".github/workflows/claude.yml": {
         "template": "github/workflows/claude.yml.template",
-        "enabled": true
+        "enabled": true,
       },
       ".github/workflows/claude-code-review.yml": {
         "template": "github/workflows/claude-code-review.yml.template",
-        "enabled": true
+        "enabled": true,
       },
       ".github/ISSUE_TEMPLATE/bug_report.yml": {
         "template": "github/ISSUE_TEMPLATE/bug_report.yml.template",
-        "enabled": true
+        "enabled": true,
       },
       ".github/ISSUE_TEMPLATE/feature_request.yml": {
         "template": "github/ISSUE_TEMPLATE/feature_request.yml.template",
-        "enabled": true
+        "enabled": true,
       },
       ".github/ISSUE_TEMPLATE/config.yml": {
         "template": "github/ISSUE_TEMPLATE/config.yml.template",
-        "enabled": true
+        "enabled": true,
       },
       ".github/PULL_REQUEST_TEMPLATE.md": {
         "template": "github/PULL_REQUEST_TEMPLATE.md.template",
-        "enabled": true
+        "enabled": true,
       },
       ".github/workflows/release.yml": {
         "template": "github/workflows/release-python.yml.template",
-        "enabled": true
-      }
+        "enabled": true,
+      },
     },
     "docs": {
       "README.md": {
-        "type": "auto_sections",  // Template + CUSTOM sections
-        "enabled": true
+        "type": "auto_sections", // Template + CUSTOM sections
+        "enabled": true,
       },
       "CLAUDE.md": {
-        "type": "auto_sections",  // auto_sections preserves CUSTOM blocks
-        "enabled": true
+        "type": "auto_sections", // auto_sections preserves CUSTOM blocks
+        "enabled": true,
       },
       "docs/ARCHITECTURE.md": {
-        "type": "auto_generate",  // 100% generated from config
-        "enabled": true
+        "type": "auto_generate", // 100% generated from config
+        "enabled": true,
       },
       "docs/PLUGIN.md": {
-        "type": "template",       // 100% from plugin template
+        "type": "template", // 100% from plugin template
         "template": "docs/PLUGIN.md.template",
-        "enabled": false          // Disabled for devkit-plugin (it's the source)
-      }
+        "enabled": false, // Disabled for devkit-plugin (it's the source)
+      },
     },
     "ignore": {
       ".gitignore": {
         "template": [
           "gitignore/common.gitignore",
-          "gitignore/python.gitignore"
+          "gitignore/python.gitignore",
         ],
-        "enabled": true
-      }
-    }
-  }
+        "enabled": true,
+      },
+    },
+  },
 }

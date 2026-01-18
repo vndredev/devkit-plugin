@@ -327,3 +327,173 @@ Start with CRITICAL issues? [Y/n]
 - **Track progress** with TodoWrite tool
 - **Commit after each phase** (CRITICAL, HIGH, MEDIUM/LOW)
 - **Areas are dynamic** - derived from config or project structure
+
+---
+
+## /dk analyze system
+
+**System-wide audit checking plugin configuration, sync status, and consistency.**
+
+| Command                    | Action                              |
+| -------------------------- | ----------------------------------- |
+| `/dk analyze system`       | Full system audit                   |
+| `/dk analyze system quick` | Quick consistency check (core only) |
+
+### Core Files (ALWAYS Checked)
+
+These 3 files form the foundation of every devkit-plugin project:
+
+```
+1. .claude/.devkit/config.jsonc  → Single Source of Truth
+2. CLAUDE.md                      → Project Documentation (AUTO:START/END)
+3. docs/ARCHITECTURE.md           → Layer Documentation (if arch.layers)
+```
+
+### Phase 1: Core Validation
+
+**Always runs regardless of config:**
+
+```python
+# Core checks (always run):
+checks = [
+    ("Config Schema", "config.jsonc validates against schema"),
+    ("Required Fields", "project.name, project.type present"),
+    ("CLAUDE.md Sync", "AUTO sections match config"),
+]
+```
+
+### Phase 2: Dynamic Checks (Based on Config)
+
+**Checks are enabled dynamically based on what's configured:**
+
+```python
+# Example: Dynamically determine which checks to run
+if get("arch.layers"):
+    checks.append(("Architecture Compliance", "imports respect layer tiers"))
+    checks.append(("ARCHITECTURE.md Sync", "docs match config"))
+
+if get("consistency.rules"):
+    for rule_name, rule_config in get("consistency.rules").items():
+        if rule_config.get("enabled"):
+            checks.append((f"Consistency: {rule_name}", "rule validation"))
+
+if get("hooks"):
+    checks.append(("Hook Handlers", "enabled hooks have handler files"))
+
+if get("managed"):
+    checks.append(("Managed Files", "templates in sync"))
+
+if get("git.conventions"):
+    checks.append(("Git Conventions", "types/scopes valid"))
+```
+
+### Phase 3: Run Plugin Health Check
+
+**Uses existing infrastructure:**
+
+```bash
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
+from arch.check import check_all, format_report
+results = check_all()
+print(format_report(results))
+"
+```
+
+### Output Format
+
+```
+=== System Audit ===
+
+── Core Files ──────────────────────
+✓ config.jsonc valid
+✓ CLAUDE.md AUTO sections in sync
+✓ docs/ARCHITECTURE.md in sync
+
+── Dynamic Checks ──────────────────
+✓ Architecture: 4 layers, no violations
+✓ Consistency: 4/4 rules pass
+✓ Hooks: 4/4 handlers present
+✓ Managed: 12/12 files in sync
+✓ Git: conventions valid
+
+── Versions ────────────────────────
+✓ All in sync: 0.26.0
+  (plugin.json, pyproject.toml, config.jsonc)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Status: HEALTHY
+
+=== System Audit Complete ===
+```
+
+### Issue Format
+
+When issues are found:
+
+```
+=== System Audit ===
+
+── Core Files ──────────────────────
+✓ config.jsonc valid
+✗ CLAUDE.md AUTO sections outdated
+  → Run: /dk plugin update
+
+── Dynamic Checks ──────────────────
+✗ Architecture: 2 layer violations
+  - events imports from core (tier 3 → tier 0)
+  - lib imports from arch (tier 1 → tier 2)
+✓ Consistency: 4/4 rules pass
+✗ Managed: 2/12 files outdated
+  - .github/workflows/release.yml
+  - ruff.toml
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Status: 4 issues found
+Action: /dk plugin update
+
+=== Recommended Fixes ===
+
+1. Run `/dk plugin update` to sync files
+2. Fix layer violations in:
+   - src/events/format.py:12
+   - src/lib/sync.py:45
+```
+
+### Quick Mode
+
+`/dk analyze system quick` runs only core checks:
+
+```python
+# Quick mode - core checks only
+checks = [
+    "Config Schema",
+    "CLAUDE.md Sync",
+    "Version Sync",
+]
+# Skip: Architecture, Consistency, Managed Files
+```
+
+### Key Principle: Config-Driven
+
+**NO hardcoded paths!** All checks derive from config:
+
+```python
+# WRONG (hardcoded):
+check_file("src/events/validate.py")
+
+# RIGHT (from config):
+for layer_name, layer_config in get("arch.layers", {}).items():
+    for pattern in layer_config.get("patterns", []):
+        check_files_matching(pattern)
+```
+
+### Integration with /dk plugin check
+
+`/dk analyze system` is complementary to `/dk plugin check`:
+
+| Command              | Focus                           | Output        |
+| -------------------- | ------------------------------- | ------------- |
+| `/dk plugin check`   | Plugin health status            | Quick summary |
+| `/dk analyze system` | Deep audit with recommendations | Full report   |
+
+Both use the same underlying `check_all()` function but with different verbosity.

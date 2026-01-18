@@ -512,12 +512,14 @@ def create_config(
     config_file = config_dir / "config.jsonc"
     config_file.write_text(jsonc_content)
 
-    # Copy schema (optional, suppress errors)
-    with contextlib.suppress(Exception):
+    # Copy schema (required for config validation)
+    try:
         plugin_root = get_plugin_root()
         schema_src = plugin_root / ".claude" / ".devkit" / "config.schema.json"
         if schema_src.exists():
             (config_dir / "config.schema.json").write_text(schema_src.read_text())
+    except Exception:
+        pass  # Schema will be created by sync
 
     return True, f"Created {config_file}"
 

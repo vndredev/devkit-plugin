@@ -11,19 +11,19 @@ from lib.hooks import noop_response, output_response, read_hook_input
 from lib.tools import format_file
 
 
-def check_arch_violation(file_path: str, prompt_tpl: str) -> str | None:
+def check_arch_violation(file_path: str) -> tuple[str | None, bool]:
     """Check if file change introduces architecture violation.
 
     Args:
         file_path: Path to the changed file.
-        prompt_tpl: Template for violation message with {message} placeholder.
 
     Returns:
-        Warning message if violation found, None otherwise.
+        Tuple of (raw violation message, is_blocking). is_blocking=True means Claude
+        MUST fix this before continuing.
     """
     # Only check src/ Python files
     if "/src/" not in file_path or not file_path.endswith(".py"):
-        return None
+        return None, False
 
     try:
         from arch.check import check_arch
@@ -34,11 +34,16 @@ def check_arch_violation(file_path: str, prompt_tpl: str) -> str | None:
             # Find violations related to this file
             for v in violations:
                 if file_path.endswith(v["file"].lstrip("./")):
-                    return prompt_tpl.format(message=v["message"])
+                    # Layer violations are blocking errors
+                    is_layer_violation = (
+                        "layer" in v.get("rule", "").lower()
+                        or "tier" in v.get("message", "").lower()
+                    )
+                    return v["message"], is_layer_violation
 
-        return None
+        return None, False
     except Exception:
-        return None
+        return None, False
 
 
 def sync_architecture_md(file_path: str, prompt_tpl: str) -> str | None:
@@ -59,7 +64,9 @@ def sync_architecture_md(file_path: str, prompt_tpl: str) -> str | None:
         Status message if created/updated, None otherwise.
     """
     # Check if ARCHITECTURE.md exists
-    arch_file = Path.cwd() / "docs" / "ARCHITECTURE.md"
+    from lib.config import get_project_root
+
+    arch_file = get_project_root() / "docs" / "ARCHITECTURE.md"
     file_exists = arch_file.exists()
 
     # Triggers for update (only if file exists)
@@ -158,9 +165,18 @@ def main() -> None:
     # Check architecture violations for src/ files
     arch_check = get("hooks.format.arch_check", True)
     if arch_check:
-        arch_warning = check_arch_violation(file_path, arch_violation_tpl)
-        if arch_warning:
-            messages.append(arch_warning)
+        violation_msg, is_blocking = check_arch_violation(file_path)
+        if violation_msg:
+            if is_blocking:
+                # Layer violations are critical - Claude MUST fix immediately
+                blocking_tpl = get(
+                    "hooks.format.prompts.arch_blocking",
+                    "🚫 LAYER VIOLATION - FIX NOW: {message}. "
+                    "Revert the import or fix the architecture.",
+                )
+                messages.append(blocking_tpl.format(message=violation_msg))
+            else:
+                messages.append(arch_violation_tpl.format(message=violation_msg))
 
     # Auto-update ARCHITECTURE.md when arch-related files change
     auto_sync_arch = get("hooks.format.auto_sync_arch", True)

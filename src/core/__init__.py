@@ -16,7 +16,7 @@ from core.errors import (
     GitError,
     ValidationError,
 )
-from core.jsonc import strip_comments
+from core.jsonc import parse_jsonc, strip_comments, strip_trailing_commas
 from core.layer_guard import (
     LayerViolationError,
     clear_violations,
@@ -67,6 +67,8 @@ __all__ = [
     "format_violations_report",
     "get_violations",
     "is_enabled",
+    "parse_jsonc",
     "strip_comments",
+    "strip_trailing_commas",
     "verify_port",
 ]

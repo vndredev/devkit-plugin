@@ -8,7 +8,7 @@ import re
 
 from lib.config import get
 from lib.git import extract_git_args
-from lib.hooks import allow_response, deny_response, read_hook_input
+from lib.hooks import allow_response, deny_response, output_response, read_hook_input
 
 # Default types if not configured
 DEFAULT_TYPES = ["feat", "fix", "chore", "refactor", "test", "docs", "perf", "ci"]
@@ -77,19 +77,39 @@ def validate_commit_message(
     first_line = msg.strip().split("\n")[0]
 
     # Build pattern from config types
+    # Supports: type(scope): msg, type(scope)!: msg (breaking change), type!: msg
     types_pattern = "|".join(types)
-    pattern = rf"^({types_pattern})(\([^)]+\))?: .+"
+    pattern = rf"^({types_pattern})(\([^)]+\))?!?: .+"
 
     match = re.match(pattern, first_line)
     if not match:
         return False, commit_invalid_tpl.format(types=types_pattern)
 
-    # Validate scope if present and mode is strict
-    if scope_mode == "strict" and match.group(2):
-        scope = match.group(2)[1:-1]  # Remove parentheses
+    # Validate scope if present and mode is strict or warn
+    scope_group = match.group(2)
+    if scope_group:
+        # Remove parentheses to get scope name
+        scope = scope_group[1:-1]
         all_valid = allowed_scopes + internal_scopes
-        if all_valid and scope not in all_valid:
-            return False, scope_invalid_tpl.format(scope=scope, allowed=", ".join(all_valid))
+
+        # Check if scope is invalid
+        scope_invalid = not all_valid or scope not in all_valid
+
+        if scope_invalid:
+            if scope_mode == "strict":
+                # Strict mode: reject invalid scopes
+                if all_valid:
+                    return False, scope_invalid_tpl.format(
+                        scope=scope, allowed=", ".join(all_valid)
+                    )
+                return False, scope_invalid_tpl.format(scope=scope, allowed="(none configured)")
+            elif scope_mode == "warn":
+                # Warn mode: return warning message but still valid
+                if all_valid:
+                    warning = f"⚠️ Warning: Unknown scope '{scope}'. Allowed: {', '.join(all_valid)}"
+                else:
+                    warning = f"⚠️ Warning: Scope '{scope}' used but no scopes configured"
+                return True, warning
 
     return True, "Valid commit message"
 
@@ -128,8 +148,8 @@ def extract_commit_message(cmd: str) -> str | None:
     return None
 
 
-# Dangerous gh commands that are always blocked
-BLOCKED_GH_COMMANDS = [
+# Default blocked gh commands (used if not configured)
+DEFAULT_BLOCKED_GH_COMMANDS = [
     "gh repo delete",
     "gh secret delete",
     "gh api -X DELETE",
@@ -142,6 +162,7 @@ def validate_gh_command(
     """Validate gh CLI commands.
 
     Blocks dangerous commands like repo delete, secret delete.
+    Blocked commands are read from config (hooks.validate.blocked_commands).
 
     Args:
         cmd: Full command string.
@@ -151,8 +172,11 @@ def validate_gh_command(
     Returns:
         Tuple of (valid, message).
     """
+    # Get blocked commands from config (fallback to defaults)
+    blocked_commands = get("hooks.validate.blocked_commands", DEFAULT_BLOCKED_GH_COMMANDS)
+
     # Check for blocked commands
-    for blocked in BLOCKED_GH_COMMANDS:
+    for blocked in blocked_commands:
         if blocked in cmd:
             return False, gh_blocked_tpl.format(cmd=blocked)
 
@@ -210,6 +234,7 @@ def main() -> None:
             valid, msg = validate_gh_command(command, gh_blocked_tpl, pr_missing_body_tpl)
             if not valid:
                 deny_response(msg)
+                return
         allow_response()
         return
 
@@ -220,11 +245,15 @@ def main() -> None:
 
     subcmd, args = extract_git_args(command)
 
-    # Block dangerous commands
+    # Block dangerous commands (--force-with-lease is allowed as safe alternative)
     block_force = get("hooks.validate.block_force_push", True)
-    is_force_push = subcmd == "push" and ("--force" in args or "-f" in args)
+    has_force_with_lease = "--force-with-lease" in args
+    is_force_push = (
+        subcmd == "push" and ("--force" in args or "-f" in args) and not has_force_with_lease
+    )
     if block_force and is_force_push:
         deny_response(force_push_tpl)
+        return
 
     # Validate branch creation
     if subcmd == "checkout" and "-b" in args:
@@ -242,9 +271,22 @@ def main() -> None:
     if subcmd == "commit" and "-m" in command:
         msg = extract_commit_message(command)
         if msg:
-            valid, err = validate_commit_message(msg, commit_invalid_tpl, scope_invalid_tpl)
+            valid, result_msg = validate_commit_message(msg, commit_invalid_tpl, scope_invalid_tpl)
             if not valid:
-                deny_response(err)
+                deny_response(result_msg)
+                return
+            # Check if result_msg is a warning (warn mode)
+            if result_msg.startswith("⚠️"):
+                output_response(
+                    {
+                        "continue": True,
+                        "hookSpecificOutput": {
+                            "hookEventName": "PreToolUse",
+                            "additionalContext": result_msg,
+                        },
+                    }
+                )
+                return
 
     # All validations passed
     allow_response()

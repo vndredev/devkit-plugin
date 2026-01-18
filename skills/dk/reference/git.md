@@ -40,6 +40,7 @@
 | `chore`    | Maintenance   |
 | `refactor` | Restructure   |
 | `test`     | Tests         |
+| `perf`     | Performance   |
 | `ci`       | CI/CD         |
 
 ### Internal Scopes (skip release notes)
@@ -177,11 +178,11 @@ git push -u origin "$BRANCH"
 TITLE=$(git log -1 --format=%s)
 COMMITS=$(git log main..$BRANCH --format='- %s' | head -10)
 
-# Read PR config
-CONFIG_FILE=".claude/.devkit/config.jsonc"
-AUTO_MERGE=$(jq -r '.github.pr.auto_merge // false' "$CONFIG_FILE" 2>/dev/null || echo "false")
-DELETE_BRANCH=$(jq -r '.github.pr.delete_branch // true' "$CONFIG_FILE" 2>/dev/null || echo "true")
-MERGE_METHOD=$(jq -r '.github.pr.merge_method // "squash"' "$CONFIG_FILE" 2>/dev/null || echo "squash")
+# Read PR config (use lib.config for JSONC support)
+read AUTO_MERGE DELETE_BRANCH MERGE_METHOD <<< $(PYTHONPATH=${PLUGIN_ROOT}/src python3 -c "
+from lib.config import get
+print(str(get('github.pr.auto_merge', False)).lower(), str(get('github.pr.delete_branch', True)).lower(), get('github.pr.merge_method', 'squash'))
+" 2>/dev/null || echo "false true squash")
 
 # Determine change type from first commit
 TYPE=$(echo "$TITLE" | grep -oE '^(feat|fix|docs|chore|refactor|test|ci)' || echo "chore")
@@ -261,10 +262,11 @@ Merge PR using config settings:
 ```bash
 PR_NUM=${1:-$(gh pr view --json number -q .number)}
 
-# Read PR config
-CONFIG_FILE=".claude/.devkit/config.jsonc"
-DELETE_BRANCH=$(jq -r '.github.pr.delete_branch // true' "$CONFIG_FILE" 2>/dev/null || echo "true")
-MERGE_METHOD=$(jq -r '.github.pr.merge_method // "squash"' "$CONFIG_FILE" 2>/dev/null || echo "squash")
+# Read PR config (use lib.config for JSONC support)
+read DELETE_BRANCH MERGE_METHOD <<< $(PYTHONPATH=${PLUGIN_ROOT}/src python3 -c "
+from lib.config import get
+print(str(get('github.pr.delete_branch', True)).lower(), get('github.pr.merge_method', 'squash'))
+" 2>/dev/null || echo "true squash")
 
 # Build merge command with separate flags
 DELETE_FLAG=""
