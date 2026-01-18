@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.32.2] - 2026-01-18
+## [v0.32.3] - 2026-01-18
 
 ### Added
 
@@ -14,6 +14,7 @@
 
 ### Fixed
 
+- **Validate**: Use claude_project_dir for self-development check (#26)
 - **Release**: Sync uv.lock after version bump (#25)
 - **Validate**: Skip dk enforcement in self-development mode (#24)
 - **Sync**: Correct workflow yaml indentation (#18)
