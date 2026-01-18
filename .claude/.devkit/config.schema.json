@@ -329,34 +329,33 @@
         },
         "protection": {
           "type": "object",
-          "description": "Branch protection ruleset configuration",
+          "description": "Branch protection ruleset settings",
           "properties": {
             "enabled": {
               "type": "boolean",
-              "default": true,
+              "default": false,
               "description": "Enable branch protection ruleset"
             },
             "require_reviews": {
               "type": "integer",
               "minimum": 0,
-              "maximum": 6,
               "default": 1,
-              "description": "Number of required PR reviews (0 to disable)"
+              "description": "Required PR reviews (0 to disable)"
             },
             "linear_history": {
               "type": "boolean",
               "default": true,
-              "description": "Require linear commit history (no merge commits)"
+              "description": "Require linear commit history"
             },
             "admin_bypass": {
               "type": "boolean",
               "default": true,
-              "description": "Allow admins to bypass protection (requires Pro/Team+)"
+              "description": "Allow admins to bypass (requires Pro/Team+)"
             },
             "dismiss_stale_reviews": {
               "type": "boolean",
               "default": false,
-              "description": "Dismiss stale reviews when new commits are pushed"
+              "description": "Dismiss stale PR reviews when new commits are pushed"
             }
           }
         }

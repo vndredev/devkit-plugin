@@ -396,7 +396,7 @@ def _build_template_values() -> dict[str, Any]:
     }
 
     # Add preset values based on project type
-    if project_type == "python":
+    if project_type in ("python", "plugin"):
         values.update(presets.get("python", {}).get(preset, {}))
     elif project_type in ("nextjs", "typescript", "javascript"):
         values.update(presets.get("nextjs", {}).get(preset, {}))
@@ -569,7 +569,9 @@ def _sync_managed_docs(
     return results
 
 
-def sync_all(root: Path | None = None, check_plugin_update: bool = True) -> list[tuple[str, bool, str]]:
+def sync_all(
+    root: Path | None = None, check_plugin_update: bool = True
+) -> list[tuple[str, bool, str]]:
     """Sync all generated files based on managed config.
 
     Also upgrades config.jsonc with missing optional sections.

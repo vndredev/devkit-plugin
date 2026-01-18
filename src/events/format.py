@@ -28,11 +28,11 @@ def check_arch_violation(file_path: str, prompt_tpl: str) -> str | None:
     try:
         from arch.check import check_arch
 
-        result = check_arch()
+        ok, violations = check_arch()
 
-        if not result["ok"] and result["violations"]:
+        if not ok and violations:
             # Find violations related to this file
-            for v in result["violations"]:
+            for v in violations:
                 if file_path.endswith(v["file"].lstrip("./")):
                     return prompt_tpl.format(message=v["message"])
 
@@ -58,8 +58,6 @@ def sync_architecture_md(file_path: str, prompt_tpl: str) -> str | None:
     Returns:
         Status message if created/updated, None otherwise.
     """
-    from pathlib import Path
-
     # Check if ARCHITECTURE.md exists
     arch_file = Path.cwd() / "docs" / "ARCHITECTURE.md"
     file_exists = arch_file.exists()

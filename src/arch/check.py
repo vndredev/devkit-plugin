@@ -68,7 +68,7 @@ def _build_check_values() -> dict[str, Any]:
     }
 
     # Add preset values based on project type
-    if project_type == "python":
+    if project_type in ("python", "plugin"):
         values.update(presets.get("python", {}).get(preset, {}))
     elif project_type in ("nextjs", "typescript", "javascript"):
         values.update(presets.get("nextjs", {}).get(preset, {}))
@@ -380,7 +380,7 @@ def check_versions() -> tuple[bool, dict[str, str], list[str]]:
     return all_in_sync, versions, errors
 
 
-def check_arch() -> tuple[bool, list[str]]:
+def check_arch() -> tuple[bool, list[dict]]:
     """Check layer rule compliance.
 
     Returns:
