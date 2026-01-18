@@ -6,9 +6,7 @@
     "name": "vndredev"
   },
   "license": "MIT",
-  "skills": [
-    "./skills/"
-  ],
+  "skills": ["./skills/"],
   "hooks": {
     "SessionStart": [
       {
@@ -28,6 +26,16 @@
           {
             "type": "command",
             "command": "cd \"${CLAUDE_PLUGIN_ROOT}\" && PYTHONPATH=src .venv/bin/python src/events/validate.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PLUGIN_ROOT}\" && PYTHONPATH=src .venv/bin/python src/events/plan_guard.py",
             "timeout": 5
           }
         ]

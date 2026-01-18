@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""PreToolUse hook - blocks edits on feat/refactor until plan approved.
+
+TIER 3: events layer.
+"""
+
+import re
+from pathlib import Path
+
+from lib.config import get
+from lib.git import git_branch
+from lib.hooks import allow_response, deny_response, read_hook_input
+
+PLAN_REQUIRED_PATTERNS = [r"^feat/", r"^refactor/"]
+
+
+def get_plan_marker_path(branch: str) -> Path:
+    """Get marker file path for branch.
+
+    Args:
+        branch: Git branch name.
+
+    Returns:
+        Path to marker file.
+    """
+    project_dir = Path.cwd()
+    sanitized = branch.replace("/", "-")
+    return project_dir / ".claude" / f".plan-approved-{sanitized}"
+
+
+def is_plan_required_branch(branch: str) -> bool:
+    """Check if branch requires plan mode.
+
+    Args:
+        branch: Git branch name.
+
+    Returns:
+        True if branch matches feat/* or refactor/*.
+    """
+    return any(re.match(p, branch) for p in PLAN_REQUIRED_PATTERNS)
+
+
+def is_plan_approved(branch: str) -> bool:
+    """Check if plan marker exists.
+
+    Args:
+        branch: Git branch name.
+
+    Returns:
+        True if plan was approved (marker exists).
+    """
+    marker = get_plan_marker_path(branch)
+    return marker.exists()
+
+
+def main() -> None:
+    """Handle PreToolUse hook for Edit/Write - Plan Guard."""
+    hook_data = read_hook_input()
+    if not hook_data or not get("hooks.plan_guard.enabled", True):
+        allow_response()
+        return
+
+    try:
+        branch = git_branch()
+    except Exception:
+        # Fail-open on git errors
+        allow_response()
+        return
+
+    if not is_plan_required_branch(branch) or is_plan_approved(branch):
+        allow_response()
+        return
+
+    msg = get(
+        "hooks.plan_guard.prompts.blocked",
+        "🚫 BLOCKED: On `{branch}` - complete planning first.\n\n"
+        "Run `EnterPlanMode` → create plan → `ExitPlanMode` to approve.",
+    ).format(branch=branch)
+
+    deny_response(msg)
+
+
+if __name__ == "__main__":
+    import json
+    import sys
+
+    try:
+        main()
+    except Exception as e:
+        # On error, allow but report
+        print(json.dumps({"continue": True, "message": f"⚠️ Plan guard error: {e}"}))
+        sys.exit(0)

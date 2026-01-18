@@ -358,6 +358,24 @@
               }
             }
           }
+        },
+        "plan_guard": {
+          "type": "object",
+          "description": "PreToolUse hook - blocks edits on feat/refactor until plan approved",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "prompts": {
+              "type": "object",
+              "description": "Customizable output templates",
+              "properties": {
+                "blocked": {
+                  "type": "string",
+                  "default": "🚫 BLOCKED: On `{branch}` - complete planning first.\n\nRun `EnterPlanMode` → create plan → `ExitPlanMode` to approve.",
+                  "description": "Message when blocking edit due to missing plan approval"
+                }
+              }
+            }
+          }
         }
       }
     },
