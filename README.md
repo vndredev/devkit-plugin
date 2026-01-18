@@ -53,3 +53,4 @@ _Add your project-specific documentation here._
 ---
 
 Managed by [devkit-plugin](https://github.com/vndredev/devkit-plugin)
+
