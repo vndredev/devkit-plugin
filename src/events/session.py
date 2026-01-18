@@ -12,6 +12,7 @@ from core.errors import GitError
 from lib.config import get
 from lib.git import check_https_with_workflows, git_branch, git_status
 from lib.hooks import consume_stdin, get_project_dir, output_response
+from lib.sync import sync_all
 from lib.version import (
     check_plugin_update,
     get_plugin_dev_recommendation,
@@ -80,9 +81,26 @@ def main() -> None:
         except (SubprocessError, OSError, GitError):
             pass
 
-    # Health check - only show if issues
+    # Health check - auto-sync outdated files if enabled
     try:
         health_results = check_all()
+
+        # Auto-sync if there are sync issues and auto_sync is enabled
+        auto_sync_enabled = get("hooks.session.auto_sync", True)
+        sync_issues = health_results.get("sync", {}).get("issues", [])
+
+        if auto_sync_enabled and sync_issues:
+            # Run sync to fix outdated files
+            sync_results = sync_all(root=project_dir, check_plugin_update=False)
+            synced_count = sum(1 for _, ok, _ in sync_results if ok)
+
+            if synced_count > 0:
+                output_lines.append("")
+                output_lines.append(f"📄 Auto-synced {synced_count} file(s)")
+
+            # Re-check health after sync
+            health_results = check_all()
+
         health_warning = format_compact(health_results)
         if health_warning:
             output_lines.append("")

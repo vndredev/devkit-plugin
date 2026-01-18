@@ -53,6 +53,11 @@
           "properties": {
             "enabled": { "type": "boolean", "default": true },
             "show_git_status": { "type": "boolean", "default": true },
+            "auto_sync": {
+              "type": "boolean",
+              "default": true,
+              "description": "Auto-sync outdated managed files on session start"
+            },
             "prompts": {
               "type": "object",
               "description": "Customizable output templates",
