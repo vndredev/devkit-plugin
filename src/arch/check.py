@@ -1024,21 +1024,43 @@ def _format_logging_section(results: dict[str, Any]) -> list[str]:
         lines.append("⏭️ Disabled in config")
         return lines
 
+    # Show strategy
+    strategy = logging_data.get("strategy", "auto")
+    strategy_labels = {
+        "terminal": "Terminal (Python logging)",
+        "service": "Service (Axiom, Sentry, etc.)",
+        "auto": "Auto",
+    }
+    lines.append(f"**Strategy:** {strategy_labels.get(strategy, strategy)}")
+
     services = logging_data.get("services", {})
-    if not services:
-        lines.append("No logging services detected")
-        return lines
 
     # Summary
     cloud = logging_data.get("cloud_services", [])
     local = logging_data.get("local_loggers", [])
-    with_creds = logging_data.get("with_credentials", 0)
     without_creds = logging_data.get("without_credentials", 0)
 
     if cloud:
         lines.append(f"**Cloud:** {', '.join(cloud)}")
     if local:
         lines.append(f"**Local:** {', '.join(local)}")
+
+    # Show recommendation if present
+    recommendation = logging_data.get("recommendation")
+    if recommendation:
+        lines.append("")
+        # For terminal strategy, it's informational; for service strategy without cloud, it's a warning
+        if strategy == "service" and not cloud:
+            lines.append(f"⚠️ {recommendation}")
+        else:
+            lines.append(f"ℹ️ {recommendation}")
+
+    if not services:
+        if not recommendation:
+            lines.append("")
+            lines.append("No logging services detected")
+        return lines
+
     lines.append("")
 
     # Details table

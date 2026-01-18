@@ -222,10 +222,41 @@
         "📚 Docs: ALWAYS use Context7 MCP for library/framework documentation",
       ],
     },
+
+    // === Browser Hook (PostToolUse: Write/Edit) ===
+    // Reminds to verify UI after frontend file changes
+    "browser": {
+      "enabled": false, // Enable for frontend projects
+      "dev_server": {
+        "url": "http://localhost:3000",
+        "wait_seconds": 2,
+      },
+      "frontend_patterns": ["*.tsx", "*.jsx", "*.vue", "*.css"],
+      "prompts": {
+        "frontend_changed": "🌐 Frontend changed - verify UI: `/dk browser verify` or browser_snapshot on {url}",
+      },
+    },
   },
 
   "changelog": {
     "audience": "developer", // developer=technical, user=simple
+  },
+
+  // ============================================================================
+  // LOGGING - Observability and logging service configuration
+  // ============================================================================
+  "logging": {
+    "enabled": true,
+    "strategy": "terminal", // terminal=Python logging, service=Axiom/Sentry, auto=based on project type
+    "services": {
+      // Explicit service configurations (auto-detected if not specified)
+      // "axiom": { "provider": "axiom", "env_var": "AXIOM_TOKEN" }
+    },
+    "axiom": {
+      // "dataset": "logs",        // Default dataset for queries
+      // "org_id": "your-org",     // Axiom organization ID
+      "proxy_endpoint": "/api/log", // Server-side proxy for frontend logs
+    },
   },
 
   // ============================================================================

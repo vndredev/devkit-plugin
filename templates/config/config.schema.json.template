@@ -782,6 +782,12 @@
           "default": true,
           "description": "Enable logging service detection and status checks"
         },
+        "strategy": {
+          "type": "string",
+          "enum": ["auto", "terminal", "service"],
+          "default": "auto",
+          "description": "Logging strategy: auto (based on project type), terminal (Python logging), service (Axiom, etc.)"
+        },
         "services": {
           "type": "object",
           "description": "Explicit logging service configurations",

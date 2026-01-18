@@ -144,7 +144,28 @@ Initialize a new project with devkit-plugin configuration.
 
 1. Detect project type (python, nextjs, typescript, javascript)
 2. Create `.claude/.devkit/config.jsonc` with `managed` section
-3. Run `/dk plugin update` to generate all files
+3. For NextJS/Node projects: Prompt for Axiom logging setup
+4. Run `/dk plugin update` to generate all files
+
+### Axiom Setup for NextJS Projects
+
+When initializing a NextJS/Node/TypeScript project, the init flow will ask:
+
+```
+Detected: NextJS project
+
+Setup Axiom for logging? (recommended for production observability)
+  [Yes] - Configure Axiom integration
+  [No]  - Skip for now (can add later with /dk axiom)
+```
+
+If "Yes" is selected:
+
+1. Run `npm install @axiomhq/nextjs`
+2. Add `logging.strategy: "service"` to config
+3. Display: "Add AXIOM_TOKEN and AXIOM_DATASET to .env.local"
+
+For Python/Plugin projects, the default strategy is "terminal" (Python logging module).
 
 ```bash
 PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
