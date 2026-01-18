@@ -19,7 +19,15 @@ from lib.config import get, get_project_root
 PROVIDERS = {
     "axiom": {
         "env_patterns": ["AXIOM_TOKEN", "AXIOM_DATASET", "NEXT_PUBLIC_AXIOM_TOKEN"],
-        "deps": ["@axiomhq/axiom-node", "@axiomhq/next", "axiom-py"],
+        "deps": [
+            "@axiomhq/js",
+            "@axiomhq/nextjs",
+            "@axiomhq/logging",
+            "@axiomhq/react",
+            "@axiomhq/winston",
+            "@axiomhq/pino",
+            "axiom-py",
+        ],
         "dashboard": "https://app.axiom.co",
         "description": "Log aggregation and analytics",
     },
