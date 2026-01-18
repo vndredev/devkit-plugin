@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.28.0] - 2026-01-18
+## [v0.29.0] - 2026-01-18
 
 ### Added
 
+- **Plugin**: Add logging/observability service detection (#21)
 - **Session**: Warn when https remote used with workflow files (#19)
 - **Plugin**: Styled markdown output for all reports (#16)
 - **Skill**: Add /dk analyze command for opus deep analysis (#13)
