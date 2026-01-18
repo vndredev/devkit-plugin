@@ -14,12 +14,14 @@ from core.types import ProjectSize, ProjectType
 from lib.config import get
 from lib.tools import detect_project_type
 
-TS_IMPORT_PATTERNS = [
+# Patterns for TypeScript/JavaScript imports
+# Using [\s\S] instead of [^}] to match multi-line imports
+TS_IMPORT_PATTERNS: list[str] = [
     r"import\s+\w+\s+from\s+['\"]([^'\"]+)['\"]",
-    r"import\s+\{[^}]+\}\s+from\s+['\"]([^'\"]+)['\"]",
+    r"import\s+\{[\s\S]*?\}\s+from\s+['\"]([^'\"]+)['\"]",  # Multi-line support
     r"import\s+\*\s+as\s+\w+\s+from\s+['\"]([^'\"]+)['\"]",
     r"require\s*\(\s*['\"]([^'\"]+)['\"]\s*\)",
-    r"export\s+\{[^}]+\}\s+from\s+['\"]([^'\"]+)['\"]",
+    r"export\s+\{[\s\S]*?\}\s+from\s+['\"]([^'\"]+)['\"]",  # Multi-line support
 ]
 
 
@@ -41,12 +43,16 @@ def count_source_files(root: Path, project_type: ProjectType) -> int:
     }
 
     exts = extensions.get(project_type, [".py", ".ts", ".tsx", ".js", ".jsx"])
+    exclude_dirs = {"node_modules", ".next", "__pycache__", ".venv", "dist", "build"}
     count = 0
 
     for ext in exts:
-        count += len(list(root.rglob(f"*{ext}")))
+        for filepath in root.rglob(f"*{ext}"):
+            # Skip excluded directories
+            if any(d in filepath.parts for d in exclude_dirs):
+                continue
+            count += 1
 
-    # Exclude node_modules, .next, __pycache__, etc.
     return count
 
 

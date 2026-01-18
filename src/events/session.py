@@ -49,13 +49,12 @@ def main() -> None:
         if is_plugin_loaded_via_plugin_dir(project_dir):
             dev_mode_indicator = " (dev)"
     except (ImportError, OSError):
-        project_dir = None
+        # Fallback to cwd if project dir detection fails
+        project_dir = Path.cwd()
 
     # Git status - compact format
     if get("hooks.session.show_git_status", True):
         try:
-            if project_dir is None:
-                project_dir = get_project_dir()
             branch = git_branch(cwd=project_dir)
             status = git_status(cwd=project_dir)
 

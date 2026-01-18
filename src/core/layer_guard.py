@@ -20,6 +20,7 @@ Note:
     The guard adds overhead to every import operation.
 """
 
+import inspect
 import sys
 from importlib.abc import MetaPathFinder
 from importlib.machinery import ModuleSpec
@@ -101,7 +102,9 @@ class LayerGuard(MetaPathFinder):
             LayerViolationError: If strict mode and violation detected.
         """
         # Get the importing module from the call stack
-        frame = sys._getframe(1)
+        frame = inspect.currentframe()
+        if frame is not None:
+            frame = frame.f_back  # Skip this frame to match _getframe(1) behavior
         while frame:
             module_name = frame.f_globals.get("__name__", "")
             if module_name and not module_name.startswith("importlib"):

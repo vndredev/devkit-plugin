@@ -400,7 +400,7 @@ def _check_plugin_skills(root: Path) -> list[Violation]:
                 content = skill_md.read_text()
 
                 # Find references to docs like: reference/dev.md
-                doc_refs = re.findall(r"reference/(\w+\.md)", content)
+                doc_refs = re.findall(r"reference/([\w-]+\.md)", content)
                 ref_dir = skill_dir / "reference"
 
                 for doc_ref in doc_refs:
@@ -447,7 +447,7 @@ def _check_local_skills(root: Path) -> list[Violation]:
             content = skill_md.read_text()
 
             # Find references to docs like: reference/dev.md
-            doc_refs = re.findall(r"reference/(\w+\.md)", content)
+            doc_refs = re.findall(r"reference/([\w-]+\.md)", content)
             ref_dir = skill_dir / "reference"
 
             for doc_ref in doc_refs:
@@ -492,7 +492,7 @@ def _check_local_commands(root: Path) -> list[Violation]:
             content = cmd_md.read_text()
 
             # Find references to docs like: reference/dev.md or ../skills/dk/reference/dev.md
-            doc_refs = re.findall(r"reference/(\w+\.md)", content)
+            doc_refs = re.findall(r"reference/([\w-]+\.md)", content)
             ref_dir = cmd_md.parent / "reference"
 
             for doc_ref in doc_refs:

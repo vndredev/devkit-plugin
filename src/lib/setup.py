@@ -569,7 +569,7 @@ def configure_actions_permissions(repo: str) -> tuple[bool, str]:
         )
         return True, "Actions permissions configured (write access)"
     except subprocess.CalledProcessError as e:
-        stderr = e.stderr.decode() if e.stderr else str(e)
+        stderr = e.stderr.decode(errors="replace") if e.stderr else str(e)
         return False, f"Failed: {stderr}"
 
 
@@ -639,7 +639,7 @@ def update_github_settings(repo: str) -> list[tuple[str, bool, str]]:
         msg = f"merge={merge_method}, delete_branch={delete_branch}, auto_merge={auto_merge}"
         results.append(("repo settings", True, msg))
     except subprocess.CalledProcessError as e:
-        stderr = e.stderr.decode() if e.stderr else str(e)
+        stderr = e.stderr.decode(errors="replace") if e.stderr else str(e)
         results.append(("repo settings", False, stderr))
 
     # Branch protection status check (setup happens in git_init via setup_branch_protection)

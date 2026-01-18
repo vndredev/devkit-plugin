@@ -55,7 +55,11 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 | `/dk env clean`           | env.md      | Remove unused env vars              |
 | `/dk vercel`              | vercel.md   | Vercel deployment help              |
 | `/dk vercel connect`      | vercel.md   | Link project to Vercel              |
+| `/dk vercel status`       | vercel.md   | Show Vercel project status          |
+| `/dk vercel deploy`       | vercel.md   | Deploy to preview                   |
 | `/dk vercel env`          | vercel.md   | Manage Vercel env vars              |
+| `/dk vercel env sync`     | vercel.md   | Sync .env.local to Vercel           |
+| `/dk vercel env pull`     | vercel.md   | Pull env vars from Vercel           |
 | `/dk neon`                | neon.md     | NeonDB branch management            |
 | `/dk neon branch list`    | neon.md     | List NeonDB branches                |
 | `/dk neon branch create`  | neon.md     | Create NeonDB branch                |

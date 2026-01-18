@@ -31,7 +31,7 @@
 
 Sync environment variables based on project type:
 
-1. Check project type from `.claude/.devkit/config.json`
+1. Check project type from `.claude/.devkit/config.jsonc`
 2. Sync `.env.production` → GitHub Secrets
 3. If nextjs/node: Sync to Vercel environments
 

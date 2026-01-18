@@ -40,13 +40,14 @@ echo ""
 Update all documentation from config:
 
 ```bash
-cd "${PLUGIN_ROOT}" && PYTHONPATH=src uv run python -c "
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
 from lib.docs import update_claude_md, update_plugin_md
+from lib.config import get_project_root
 from arch.docs import update_architecture_md
 from pathlib import Path
 import os
 
-os.chdir('${PROJECT_ROOT}')
+os.chdir(get_project_root())
 
 print('Updating CLAUDE.md...')
 ok, msg = update_claude_md()
@@ -67,13 +68,14 @@ print(f'  {\"✓\" if ok else \"✗\"} {msg}')
 Create all missing documentation:
 
 ```bash
-cd "${PLUGIN_ROOT}" && PYTHONPATH=src uv run python -c "
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
 from lib.docs import update_claude_md, update_plugin_md
+from lib.config import get_project_root
 from arch.docs import update_architecture_md
 from pathlib import Path
 import os
 
-os.chdir('${PROJECT_ROOT}')
+os.chdir(get_project_root())
 
 # Create docs/ directory if needed
 Path('docs').mkdir(exist_ok=True)
@@ -105,10 +107,11 @@ else:
 Generate/update ARCHITECTURE.md specifically:
 
 ```bash
-cd "${PLUGIN_ROOT}" && PYTHONPATH=src uv run python -c "
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
 from arch.docs import update_architecture_md
+from lib.config import get_project_root
 import os
-os.chdir('${PROJECT_ROOT}')
+os.chdir(get_project_root())
 ok, msg = update_architecture_md()
 print(f'{\"✓\" if ok else \"✗\"} {msg}')
 "
@@ -119,10 +122,11 @@ print(f'{\"✓\" if ok else \"✗\"} {msg}')
 Generate/update PLUGIN.md specifically:
 
 ```bash
-cd "${PLUGIN_ROOT}" && PYTHONPATH=src uv run python -c "
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
 from lib.docs import update_plugin_md
+from lib.config import get_project_root
 import os
-os.chdir('${PROJECT_ROOT}')
+os.chdir(get_project_root())
 ok, msg = update_plugin_md()
 print(f'{\"✓\" if ok else \"✗\"} {msg}')
 "
@@ -133,10 +137,11 @@ print(f'{\"✓\" if ok else \"✗\"} {msg}')
 Generate/update CLAUDE.md specifically:
 
 ```bash
-cd "${PLUGIN_ROOT}" && PYTHONPATH=src uv run python -c "
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
 from lib.docs import update_claude_md
+from lib.config import get_project_root
 import os
-os.chdir('${PROJECT_ROOT}')
+os.chdir(get_project_root())
 ok, msg = update_claude_md()
 print(f'{\"✓\" if ok else \"✗\"} {msg}')
 "

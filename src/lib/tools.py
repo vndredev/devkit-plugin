@@ -49,7 +49,7 @@ def format_file(path: str, auto: bool = True) -> tuple[bool, str]:
         )
         return True, f"Formatted {filepath.name}"
     except subprocess.CalledProcessError as e:
-        return False, f"Format failed: {e.stderr.decode() if e.stderr else str(e)}"
+        return False, f"Format failed: {e.stderr.decode(errors='replace') if e.stderr else str(e)}"
     except FileNotFoundError:
         return False, f"Formatter not found: {formatter[0]}"
 

@@ -1,6 +1,8 @@
-# Neon Module
+# /dk neon
 
-Manage NeonDB branches for local development.
+**CRITICAL:** NeonDB branch management for local development.
+
+**YOU MUST use `/dk neon` commands for database branch operations.**
 
 ## Branch Architecture
 

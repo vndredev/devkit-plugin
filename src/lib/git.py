@@ -29,8 +29,11 @@ def run_git(args: list[str], cwd: Path | None = None) -> str:
             text=True,
             cwd=cwd,
             check=True,
+            timeout=30,
         )
         return result.stdout.strip()
+    except subprocess.TimeoutExpired as e:
+        raise GitError(f"git {' '.join(args)} timed out after 30s") from e
     except subprocess.CalledProcessError as e:
         raise GitError(f"git {' '.join(args)} failed: {e.stderr}") from e
 
@@ -57,9 +60,11 @@ def git_status(cwd: Path | None = None) -> dict[str, list[str]]:
         status = line[:2]
         filepath = line[3:].strip()
 
+        # First byte: index/staged status (MADRC = staged changes)
         if status[0] in "MADRC":
             result["staged"].append(filepath)
-        if status[1] == "M":
+        # Second byte: working tree status (M=modified, D=deleted, T=type changed)
+        if status[1] in "MDT":
             result["modified"].append(filepath)
         if status == "??":
             result["untracked"].append(filepath)
