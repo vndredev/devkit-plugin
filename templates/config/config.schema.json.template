@@ -202,9 +202,26 @@
         },
         "plan": {
           "type": "object",
-          "description": "PostToolUse hook - guides planning and implementation phases",
+          "description": "PreToolUse:EnterPlanMode + PostToolUse:ExitPlanMode - enforces workflow and guides planning",
           "properties": {
             "enabled": { "type": "boolean", "default": true },
+            "enforce_workflow": {
+              "type": "string",
+              "enum": ["warn", "block", "off"],
+              "default": "warn",
+              "description": "Workflow enforcement: warn=show warning on protected branch, block=prevent plan mode, off=disabled"
+            },
+            "prompts": {
+              "type": "object",
+              "description": "Customizable output templates",
+              "properties": {
+                "workflow_required": {
+                  "type": "string",
+                  "default": "⚠️ You're on `{branch}` - use `/dk dev feat|fix|chore <desc>` to create a feature branch first.",
+                  "description": "Warning shown when entering plan mode on protected branch"
+                }
+              }
+            },
             "planning": {
               "type": "object",
               "description": "Guidelines for creating plans (before ExitPlanMode)",
