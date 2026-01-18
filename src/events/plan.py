@@ -2,7 +2,11 @@
 """ExitPlanMode hook handler.
 
 Injects implementation instructions when exiting plan mode.
+Creates plan marker file for feat/refactor branches.
 """
+
+import re
+from pathlib import Path
 
 from lib.config import get
 from lib.hooks import noop_response, output_response, read_hook_input
@@ -52,6 +56,23 @@ def get_tool_hint() -> str | None:
     if parts:
         return "💡 " + ", ".join(parts)
     return None
+
+
+def create_plan_marker(branch: str) -> None:
+    """Create marker file for approved plan.
+
+    Only creates marker for feat/* and refactor/* branches.
+
+    Args:
+        branch: Git branch name.
+    """
+    if not re.match(r"^(feat|refactor)/", branch):
+        return
+
+    sanitized = branch.replace("/", "-")
+    marker = Path.cwd() / ".claude" / f".plan-approved-{sanitized}"
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.touch()
 
 
 def build_instructions() -> str:
@@ -106,6 +127,14 @@ def main() -> None:
     if tool_name != "ExitPlanMode":
         noop_response()
         return
+
+    # Create plan marker for feat/refactor branches (non-fatal)
+    try:
+        from lib.git import git_branch
+
+        create_plan_marker(git_branch())
+    except Exception:
+        _ = None  # Marker creation is best-effort, non-fatal
 
     # Output loop instructions (from config or defaults)
     output_response(
