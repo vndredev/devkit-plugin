@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.27.0] - 2026-01-18
+## [v0.27.1] - 2026-01-18
 
 ### Added
 
@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- **Sync**: Correct workflow yaml indentation (#18)
 - **Plugin**: Address 13 issues from system audit (#14)
 - **Plugin**: Address 23 issues from opus analysis (#12)
 - **Config**: Detect missing schema file referenced by $schema
