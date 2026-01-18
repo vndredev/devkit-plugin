@@ -15,6 +15,26 @@ from pathlib import Path
 from lib.config import get, get_project_root
 
 
+def get_logging_strategy() -> str:
+    """Determine logging strategy based on config and project type.
+
+    Strategies:
+    - "terminal": Python logging module, terminal output (plugin, python projects)
+    - "service": Cloud service based (Axiom, Sentry, etc.) for node/nextjs/typescript
+
+    Returns:
+        Strategy string: "terminal" or "service"
+    """
+    strategy = get("logging.strategy", "auto")
+    if strategy != "auto":
+        return strategy
+
+    project_type = get("project.type", "python")
+    if project_type in ("plugin", "python"):
+        return "terminal"
+    return "service"
+
+
 # Provider definitions with detection patterns
 PROVIDERS = {
     "axiom": {
@@ -206,7 +226,7 @@ def logging_status(project_root: Path | None = None) -> dict:
     """Get comprehensive logging service status.
 
     Returns:
-        Status dictionary with detected services, credentials info, and config
+        Status dictionary with detected services, credentials info, config, and recommendations
     """
     if project_root is None:
         project_root = get_project_root()
@@ -218,6 +238,9 @@ def logging_status(project_root: Path | None = None) -> dict:
     # Detect services
     services = detect_services(project_root)
 
+    # Get strategy
+    strategy = get_logging_strategy()
+
     # Count services by status
     with_creds = sum(1 for s in services.values() if s.get("has_credentials"))
     without_creds = sum(1 for s in services.values() if not s.get("has_credentials"))
@@ -226,14 +249,27 @@ def logging_status(project_root: Path | None = None) -> dict:
     cloud_services = [name for name, info in services.items() if info.get("dashboard") is not None]
     local_loggers = [name for name, info in services.items() if info.get("dashboard") is None]
 
+    # Generate recommendation based on strategy
+    recommendation = None
+    if strategy == "terminal":
+        if not cloud_services:
+            recommendation = (
+                "Python logging configured (no cloud service needed for this project type)"
+            )
+    elif strategy == "service":
+        if not cloud_services:
+            recommendation = "Consider adding Axiom: npm install @axiomhq/nextjs"
+
     return {
         "enabled": enabled,
+        "strategy": strategy,
         "services": services,
         "service_count": len(services),
         "with_credentials": with_creds,
         "without_credentials": without_creds,
         "cloud_services": cloud_services,
         "local_loggers": local_loggers,
+        "recommendation": recommendation,
     }
 
 
