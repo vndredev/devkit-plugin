@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.25.2] - 2026-01-18
+## [v0.25.3] - 2026-01-18
 
 ### Fixed
 
+- **Config**: Detect missing schema file referenced by $schema
 - **Hook**: Improve status line detail and branch pattern validation
 - **Arch**: Resolve typeerror in format.py and sync issues
 
