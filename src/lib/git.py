@@ -134,3 +134,61 @@ def extract_git_args(cmd: str) -> tuple[str, list[str]]:
         return "", []
 
     return parts[1], parts[2:]
+
+
+def get_remote_url(cwd: Path | None = None) -> str | None:
+    """Get the origin remote URL.
+
+    Args:
+        cwd: Working directory (defaults to current).
+
+    Returns:
+        Remote URL or None if not found.
+    """
+    try:
+        return run_git(["remote", "get-url", "origin"], cwd=cwd)
+    except GitError:
+        return None
+
+
+def is_https_remote(cwd: Path | None = None) -> bool:
+    """Check if origin remote uses HTTPS.
+
+    Args:
+        cwd: Working directory (defaults to current).
+
+    Returns:
+        True if remote uses HTTPS protocol.
+    """
+    url = get_remote_url(cwd)
+    return url is not None and url.startswith("https://")
+
+
+def has_workflow_files(cwd: Path | None = None) -> bool:
+    """Check if repo has GitHub workflow files.
+
+    Args:
+        cwd: Working directory (defaults to current).
+
+    Returns:
+        True if .github/workflows/ contains .yml files.
+    """
+    workflows_dir = (cwd or Path.cwd()) / ".github" / "workflows"
+    if not workflows_dir.exists():
+        return False
+    return any(workflows_dir.glob("*.yml")) or any(workflows_dir.glob("*.yaml"))
+
+
+def check_https_with_workflows(cwd: Path | None = None) -> bool:
+    """Check if HTTPS is used with workflow files.
+
+    This combination causes issues when pushing workflow changes,
+    as OAuth tokens don't have workflow scope.
+
+    Args:
+        cwd: Working directory (defaults to current).
+
+    Returns:
+        True if HTTPS remote AND workflow files exist (problematic).
+    """
+    return is_https_remote(cwd) and has_workflow_files(cwd)
