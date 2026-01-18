@@ -16,6 +16,61 @@ from lib.sync import get_plugin_root, sync_all
 from lib.tools import detect_project_type, detect_project_version
 
 
+def install_git_hooks(root: Path | None = None) -> list[tuple[str, bool, str]]:
+    """Install git hooks for local branch protection.
+
+    Installs pre-push hook that blocks direct pushes to protected branches,
+    enforcing PR-based workflow locally (mirrors remote branch protection).
+
+    Args:
+        root: Project root directory (defaults to cwd)
+
+    Returns:
+        List of (step, success, message) tuples
+    """
+    results = []
+    if root is None:
+        root = Path.cwd()
+
+    hooks_dir = root / ".git" / "hooks"
+    if not hooks_dir.exists():
+        return [("git hooks", False, "Not a git repository")]
+
+    # Check if local protection is enabled (default: True)
+    local_protection = get("git.local_protection", True)
+    if not local_protection:
+        return [("git hooks", True, "Local protection disabled in config")]
+
+    try:
+        plugin_root = get_plugin_root()
+        template = plugin_root / "templates" / "git-hooks" / "pre-push.template"
+
+        if not template.exists():
+            return [("pre-push hook", False, f"Template not found: {template}")]
+
+        hook_path = hooks_dir / "pre-push"
+        hook_content = template.read_text()
+
+        # Check if hook already exists and is ours
+        if hook_path.exists():
+            existing = hook_path.read_text()
+            if "devkit-plugin" in existing:
+                return [("pre-push hook", True, "Already installed")]
+            # Backup existing hook
+            backup = hooks_dir / "pre-push.backup"
+            backup.write_text(existing)
+            results.append(("pre-push backup", True, f"Backed up to {backup.name}"))
+
+        hook_path.write_text(hook_content)
+        hook_path.chmod(0o755)
+        results.append(("pre-push hook", True, "Installed (blocks direct push to main)"))
+
+    except OSError as e:
+        results.append(("pre-push hook", False, f"Install failed: {e}"))
+
+    return results
+
+
 def generate_config_jsonc(
     name: str,
     project_type: str,
@@ -77,6 +132,7 @@ def generate_config_jsonc(
   // ============================================================================
   "git": {{
     "protected_branches": ["main"],
+    "local_protection": true,    // Block direct push to main (requires PR)
     "conventions": {{
       "types": ["feat", "fix", "chore", "refactor", "test", "docs", "perf", "ci"],
       "scopes": {{
@@ -210,7 +266,11 @@ def git_init(
     except Exception as e:
         results.append(("sync files", False, str(e)))
 
-    # 5. First commit
+    # 5. Install git hooks (local branch protection)
+    hook_results = install_git_hooks(root)
+    results.extend(hook_results)
+
+    # 6. First commit
     try:
         run_git(["add", "-A"])
         run_git(["commit", "-m", "chore: initial commit"])
@@ -218,18 +278,18 @@ def git_init(
     except Exception as e:
         results.append(("first commit", False, str(e)))
 
-    # 6. GitHub setup (if requested)
+    # 7. GitHub setup (if requested)
     if github_repo:
         gh_results = setup_github(github_repo, visibility)
         results.extend(gh_results)
 
-        # 7. Branch protection (after GitHub setup)
+        # 8. Branch protection (after GitHub setup)
         protection_config = get("github.protection", {})
         if protection_config.get("enabled", True):
             protection_results = setup_branch_protection(github_repo, protection_config)
             results.extend(protection_results)
 
-    # 8. Marketplace setup (for Claude Code plugins only)
+    # 9. Marketplace setup (for Claude Code plugins only)
     if project_type == "claude-code-plugin":
         marketplace_results = setup_marketplace(create_repo=True, rename_local=False)
         results.extend(marketplace_results)
@@ -265,14 +325,18 @@ def git_update(force: bool = False) -> list[tuple[str, bool, str]]:
     except Exception as e:
         results.append(("sync files", False, str(e)))
 
-    # 3. Check GitHub remote
+    # 3. Install/update git hooks (local branch protection)
+    hook_results = install_git_hooks()
+    results.extend(hook_results)
+
+    # 4. Check GitHub remote
     github_url = get("github.url", "")
     if github_url:
         repo = github_url.replace("https://github.com/", "")
         gh_results = update_github_settings(repo)
         results.extend(gh_results)
 
-        # 4. Check branch protection status
+        # 5. Check branch protection status
         protection_config = get("github.protection", {})
         if protection_config.get("enabled", True):
             protection_status = check_ruleset_status(repo)
