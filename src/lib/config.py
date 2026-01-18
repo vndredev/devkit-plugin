@@ -219,6 +219,61 @@ RECOMMENDED_DEFAULTS = {
         },
         "branch_pattern": "{type}/{description}",
     },
+    # === Logging ===
+    "logging": {
+        "enabled": True,
+        "strategy": "auto",  # Will be resolved based on project.type
+    },
+    # === Discovery ===
+    "discovery": {
+        "enabled": True,
+        "threshold": 0.7,
+    },
+    # === Arch Guard Hook ===
+    "hooks.arch_guard": {
+        "enabled": True,
+        "discovery_enabled": True,
+        "discovery_threshold": 0.7,
+        "prompts": {
+            "blocked": "🚫 BLOCKED - Layer violation: {message}. Fix imports before writing.",
+            "similar_found": "⚠️ Similar code exists - consider reusing: {matches}",
+        },
+    },
+}
+
+# Project-type specific defaults (added only for matching project types)
+PROJECT_TYPE_DEFAULTS = {
+    # Frontend projects get browser hook
+    "nextjs": {
+        "hooks.browser": {
+            "enabled": True,
+            "dev_server": {"url": "http://localhost:3000", "wait_seconds": 2},
+            "frontend_patterns": ["*.tsx", "*.jsx", "*.css"],
+            "prompts": {
+                "frontend_changed": "🌐 Frontend changed - verify UI: browser_snapshot on {url}",
+            },
+        },
+    },
+    "node": {
+        "hooks.browser": {
+            "enabled": True,
+            "dev_server": {"url": "http://localhost:3000", "wait_seconds": 2},
+            "frontend_patterns": ["*.tsx", "*.jsx", "*.css"],
+            "prompts": {
+                "frontend_changed": "🌐 Frontend changed - verify UI: browser_snapshot on {url}",
+            },
+        },
+    },
+    "typescript": {
+        "hooks.browser": {
+            "enabled": True,
+            "dev_server": {"url": "http://localhost:3000", "wait_seconds": 2},
+            "frontend_patterns": ["*.tsx", "*.jsx", "*.css"],
+            "prompts": {
+                "frontend_changed": "🌐 Frontend changed - verify UI: browser_snapshot on {url}",
+            },
+        },
+    },
 }
 
 # Standard managed entries that should exist in all projects
@@ -270,29 +325,40 @@ MANAGED_DEFAULTS = {
 def get_missing_sections() -> list[str]:
     """Check which recommended config sections are missing.
 
+    Includes both global defaults and project-type specific defaults.
+
     Returns:
         List of missing section paths (dot notation).
     """
     config = load_config()
     missing = []
 
+    # Check global defaults
     for key_path in RECOMMENDED_DEFAULTS:
-        # Navigate to the parent and check if key exists
-        parts = key_path.split(".")
-        current = config
-
-        found = True
-        for part in parts:
-            if isinstance(current, dict) and part in current:
-                current = current[part]
-            else:
-                found = False
-                break
-
-        if not found:
+        if not _has_nested_key(config, key_path):
             missing.append(key_path)
 
+    # Check project-type specific defaults
+    project_type = config.get("project", {}).get("type", "python")
+    if project_type in PROJECT_TYPE_DEFAULTS:
+        for key_path in PROJECT_TYPE_DEFAULTS[project_type]:
+            if not _has_nested_key(config, key_path):
+                missing.append(key_path)
+
     return missing
+
+
+def _has_nested_key(config: dict, key_path: str) -> bool:
+    """Check if a nested key exists in config."""
+    parts = key_path.split(".")
+    current = config
+
+    for part in parts:
+        if isinstance(current, dict) and part in current:
+            current = current[part]
+        else:
+            return False
+    return True
 
 
 def _set_nested(config: dict, key_path: str, value: Any) -> None:
@@ -347,12 +413,20 @@ def upgrade_config() -> tuple[bool, list[str]]:
     config = load_config()
     added = []
 
-    # Add missing sections
+    # Add missing sections (global defaults)
     missing_sections = get_missing_sections()
     for key_path in missing_sections:
         if key_path in RECOMMENDED_DEFAULTS:
             _set_nested(config, key_path, RECOMMENDED_DEFAULTS[key_path])
             added.append(key_path)
+
+    # Add missing sections (project-type specific)
+    project_type = config.get("project", {}).get("type", "python")
+    if project_type in PROJECT_TYPE_DEFAULTS:
+        for key_path in missing_sections:
+            if key_path in PROJECT_TYPE_DEFAULTS[project_type]:
+                _set_nested(config, key_path, PROJECT_TYPE_DEFAULTS[project_type][key_path])
+                added.append(key_path)
 
     # Add missing managed entries
     missing_managed = get_missing_managed_entries()
