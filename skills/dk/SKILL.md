@@ -12,14 +12,15 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 
 **YOU MUST follow these rules at ALL times:**
 
-1. **ALWAYS use `/dk git pr`** for pull requests - NEVER use raw `gh pr create`
-2. **ALWAYS use `/dk dev`** for development workflows - NEVER skip the workflow
-3. **ALWAYS use `/dk vercel deploy`** for deployments - NEVER use raw `vercel deploy`
-4. **NEVER execute raw git/gh commands** when a `/dk` equivalent exists
-5. **ALWAYS read CLAUDE.md** before making code changes
-6. **FIX LAYER VIOLATIONS IMMEDIATELY** - If you see "🚫 LAYER VIOLATION" in hook output, you MUST fix it NOW before continuing. Layer rules enforce Clean Architecture - higher tiers cannot import from lower tiers.
-7. **ALWAYS show full output** - After every Bash command, repeat the COMPLETE output in a formatted Markdown code block. Claude Code truncates output, so you MUST show it again for the user.
-8. **ALWAYS offer `/dk git pr`** - After completing code changes, ALWAYS ask: "Soll ich einen PR erstellen? (`/dk git pr`)" - This ensures changes get properly reviewed and merged.
+1. **ALWAYS start clean** - Before ANY work, run `git checkout main && git pull` to ensure you have the latest code. Reset any uncommitted changes if needed.
+2. **ALWAYS use `/dk git pr`** for pull requests - NEVER use raw `gh pr create`
+3. **ALWAYS use `/dk dev`** for development workflows - NEVER skip the workflow
+4. **ALWAYS use `/dk vercel deploy`** for deployments - NEVER use raw `vercel deploy`
+5. **NEVER execute raw git/gh commands** when a `/dk` equivalent exists
+6. **ALWAYS read CLAUDE.md** before making code changes
+7. **FIX LAYER VIOLATIONS IMMEDIATELY** - If you see "🚫 LAYER VIOLATION" in hook output, you MUST fix it NOW before continuing. Layer rules enforce Clean Architecture - higher tiers cannot import from lower tiers.
+8. **ALWAYS show full output** - After every Bash command, repeat the COMPLETE output in a formatted Markdown code block. Claude Code truncates output, so you MUST show it again for the user.
+9. **ALWAYS offer `/dk git pr`** - After completing code changes, ALWAYS ask: "Soll ich einen PR erstellen? (`/dk git pr`)" - This ensures changes get properly reviewed and merged.
 
 ## Commands
 
