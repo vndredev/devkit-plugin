@@ -116,7 +116,11 @@ class TestDetectServices:
     """Tests for detect_services()."""
 
     def test_detect_from_config(self, tmp_path):
-        """Should detect services from config."""
+        """Should detect services from config with credentials."""
+        # Create .env file with the token
+        env_file = tmp_path / ".env.local"
+        env_file.write_text("AXIOM_TOKEN=test-token")
+
         with patch("lib.logging.get") as mock_get:
             mock_get.return_value = {
                 "axiom": {
@@ -131,6 +135,46 @@ class TestDetectServices:
 
         assert "axiom" in services
         assert services["axiom"]["detected_from"] == "config"
+        assert services["axiom"]["has_credentials"] is True
+
+    def test_detect_from_config_missing_credentials(self, tmp_path):
+        """Should detect services from config but mark credentials as missing."""
+        # No .env file - credentials missing
+        with patch("lib.logging.get") as mock_get:
+            mock_get.return_value = {
+                "axiom": {
+                    "provider": "axiom",
+                    "env_var": "AXIOM_TOKEN",
+                }
+            }
+            with patch("lib.logging.get_project_root") as mock_root:
+                mock_root.return_value = tmp_path
+
+                services = detect_services(tmp_path)
+
+        assert "axiom" in services
+        assert services["axiom"]["detected_from"] == "config"
+        assert services["axiom"]["has_credentials"] is False
+
+    def test_detect_from_config_with_token_field(self, tmp_path):
+        """Should detect services using 'token' field instead of 'env_var'."""
+        # Create .env file with the token
+        env_file = tmp_path / ".env.local"
+        env_file.write_text("AXIOM_TOKEN=test-token")
+
+        with patch("lib.logging.get") as mock_get:
+            mock_get.return_value = {
+                "axiom": {
+                    "provider": "axiom",
+                    "token": "AXIOM_TOKEN",  # Using 'token' instead of 'env_var'
+                }
+            }
+            with patch("lib.logging.get_project_root") as mock_root:
+                mock_root.return_value = tmp_path
+
+                services = detect_services(tmp_path)
+
+        assert "axiom" in services
         assert services["axiom"]["has_credentials"] is True
 
     def test_detect_from_env_vars(self, tmp_path):
