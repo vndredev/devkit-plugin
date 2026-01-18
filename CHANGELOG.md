@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.26.1] - 2026-01-18
+## [v0.27.0] - 2026-01-18
 
 ### Added
 
+- **Plugin**: Styled markdown output for all reports (#16)
 - **Skill**: Add /dk analyze command for opus deep analysis (#13)
 
 ### Fixed
