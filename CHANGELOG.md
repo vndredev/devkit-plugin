@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.40.0] - 2026-01-18
+## [v0.40.1] - 2026-01-18
 
 ### Added
 
@@ -22,6 +22,7 @@
 
 ### Fixed
 
+- **Schema**: Add missing hook definitions (#38)
 - **Git**: Auto-return to main after /dk git pr (#36)
 - **Logging**: Update axiom detection and add enabled flags to schema (#29)
 - **Validate**: Use claude_project_dir for self-development check (#26)
