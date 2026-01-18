@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.33.1] - 2026-01-18
+## [v0.34.0] - 2026-01-18
 
 ### Added
 
+- **Skill**: Add axiom and browser skills with schema improvements (#30)
 - **Session**: Auto-sync outdated files on session start (#27)
 - **Statusline**: Support devkit_plugin_dir environment variable (#20)
 - **Hook**: Enforce /dk dev workflow on protected branches (#23)
