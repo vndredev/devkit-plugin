@@ -101,6 +101,10 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 | `/dk axiom web`            | axiom.md    | Open dashboard                      |
 | `/dk axiom token`          | axiom.md    | Token management                    |
 | `/dk axiom test`           | axiom.md    | Test connectivity                   |
+| `/dk browser`              | browser.md  | Browser status + help               |
+| `/dk browser verify`       | browser.md  | Full UI verification flow           |
+| `/dk browser screenshot`   | browser.md  | Take screenshot of current page     |
+| `/dk browser open <url>`   | browser.md  | Open URL in browser                 |
 
 ---
 
@@ -124,7 +128,8 @@ modules = {
     "arch": "reference/arch.md",
     "webhooks": "reference/webhooks.md",
     "docs": "reference/docs.md",
-    "axiom": "reference/axiom.md"
+    "axiom": "reference/axiom.md",
+    "browser": "reference/browser.md"
 }
 
 if cmd in modules:
@@ -173,6 +178,7 @@ print('Commands: /dk plugin | dev | analyze | git | arch | docs | env | vercel |
 | `/dk webhooks [sub]`    | Read `reference/webhooks.md`, follow instructions |
 | `/dk docs [sub]`        | Read `reference/docs.md`, follow instructions     |
 | `/dk axiom [sub]`       | Read `reference/axiom.md`, follow instructions    |
+| `/dk browser [sub]`     | Read `reference/browser.md`, follow instructions  |
 
 **ALWAYS pass the remaining arguments to the module.**
 

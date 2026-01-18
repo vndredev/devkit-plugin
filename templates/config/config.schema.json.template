@@ -243,6 +243,48 @@
               "description": "Project-specific planning hints (shown in both phases)"
             }
           }
+        },
+        "browser": {
+          "type": "object",
+          "description": "PostToolUse hook - reminds to verify UI after frontend changes",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "dev_server": {
+              "type": "object",
+              "description": "Development server configuration",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "default": "http://localhost:3000",
+                  "description": "Dev server URL for browser verification"
+                },
+                "wait_seconds": {
+                  "type": "integer",
+                  "default": 2,
+                  "minimum": 0,
+                  "maximum": 30,
+                  "description": "Seconds to wait for hot-reload after navigation"
+                }
+              }
+            },
+            "frontend_patterns": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": ["*.tsx", "*.jsx", "*.vue", "*.css"],
+              "description": "File patterns that trigger browser verification reminder"
+            },
+            "prompts": {
+              "type": "object",
+              "description": "Customizable output templates",
+              "properties": {
+                "frontend_changed": {
+                  "type": "string",
+                  "default": "🌐 Frontend changed - verify UI: `/dk browser verify` or browser_snapshot on {url}",
+                  "description": "Reminder shown after frontend file changes"
+                }
+              }
+            }
+          }
         }
       }
     },
