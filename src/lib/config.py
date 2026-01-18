@@ -13,9 +13,9 @@ from typing import Any
 from core.errors import ConfigError
 from core.jsonc import parse_jsonc
 
-# Cache for loaded config
-_config_cache: dict | None = None
-_project_root_cache: Path | None = None
+# Cache for loaded config (keyed by cwd to support multiple projects)
+_config_cache: dict[Path, dict] = {}
+_project_root_cache: dict[Path, Path] = {}
 
 # Config file names (priority order)
 CONFIG_FILES = ["config.jsonc", "config.json"]
@@ -25,6 +25,7 @@ def get_project_root() -> Path:
     """Get the project root directory.
 
     Looks for .claude/ directory or git root.
+    Cache is keyed by cwd to support hooks running in different projects.
 
     Returns:
         Project root path.
@@ -32,25 +33,27 @@ def get_project_root() -> Path:
     Raises:
         ConfigError: If project root cannot be found.
     """
-    global _project_root_cache
+    cwd = Path.cwd()
 
-    if _project_root_cache is not None:
-        return _project_root_cache
+    # Check cache first (keyed by cwd)
+    if cwd in _project_root_cache:
+        return _project_root_cache[cwd]
 
-    # Check environment variable first
+    # Check environment variable
     if env_root := os.environ.get("PROJECT_ROOT"):
-        _project_root_cache = Path(env_root)
-        return _project_root_cache
+        result = Path(env_root)
+        _project_root_cache[cwd] = result
+        return result
 
     # Walk up from current directory
-    current = Path.cwd()
+    current = cwd
     while current != current.parent:
         if (current / ".claude").exists():
-            _project_root_cache = current
-            return _project_root_cache
+            _project_root_cache[cwd] = current
+            return current
         if (current / ".git").exists():
-            _project_root_cache = current
-            return _project_root_cache
+            _project_root_cache[cwd] = current
+            return current
         current = current.parent
 
     raise ConfigError("Could not find project root (no .claude/ or .git/ found)")
@@ -79,20 +82,22 @@ def load_config() -> dict:
 
     Supports JSONC (JSON with Comments) format.
     Looks for config.jsonc first, falls back to config.json.
+    Cache is keyed by cwd to support hooks running in different projects.
 
     Returns:
         Configuration dictionary.
     """
-    global _config_cache
+    cwd = Path.cwd()
 
-    if _config_cache is not None:
-        return _config_cache
+    # Check cache first (keyed by cwd)
+    if cwd in _config_cache:
+        return _config_cache[cwd]
 
     config_path = get_config_path()
 
     if config_path is None:
-        _config_cache = {}
-        return _config_cache
+        _config_cache[cwd] = {}
+        return _config_cache[cwd]
 
     try:
         content = config_path.read_text()
@@ -101,8 +106,8 @@ def load_config() -> dict:
         if config_path.suffix == ".jsonc":
             content = parse_jsonc(content)
 
-        _config_cache = json.loads(content)
-        return _config_cache
+        _config_cache[cwd] = json.loads(content)
+        return _config_cache[cwd]
     except json.JSONDecodeError as e:
         raise ConfigError(f"Invalid {config_path.name}: {e}") from e
     except UnicodeDecodeError as e:
@@ -139,8 +144,8 @@ def get(key: str, default: Any = None) -> Any:
 def clear_cache() -> None:
     """Clear config cache (for testing)."""
     global _config_cache, _project_root_cache
-    _config_cache = None
-    _project_root_cache = None
+    _config_cache.clear()
+    _project_root_cache.clear()
 
 
 # Recommended defaults for optional config sections
