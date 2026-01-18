@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.36.0] - 2026-01-18
+## [v0.37.0] - 2026-01-18
 
 ### Added
 
+- **Docs**: Add auto-generated development.md guide (#33)
 - **Config**: Add config upgrade for missing sections (#32)
 - **Config**: Add project-type based logging strategy (#31)
 - **Skill**: Add axiom and browser skills with schema improvements (#30)
