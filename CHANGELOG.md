@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.26.0] - 2026-01-18
+## [v0.26.1] - 2026-01-18
 
 ### Added
 
@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- **Plugin**: Address 13 issues from system audit (#14)
 - **Plugin**: Address 23 issues from opus analysis (#12)
 - **Config**: Detect missing schema file referenced by $schema
 - **Hook**: Improve status line detail and branch pattern validation
