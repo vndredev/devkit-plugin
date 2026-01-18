@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.25.4] - 2026-01-18
+## [v0.26.0] - 2026-01-18
+
+### Added
+
+- **Skill**: Add /dk analyze command for opus deep analysis (#13)
 
 ### Fixed
 
