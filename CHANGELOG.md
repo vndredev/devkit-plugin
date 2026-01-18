@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.37.0] - 2026-01-18
+## [v0.38.0] - 2026-01-18
 
 ### Added
 
+- **Hook**: Enforce /dk dev workflow on protected branches (#34)
 - **Docs**: Add auto-generated development.md guide (#33)
 - **Config**: Add config upgrade for missing sections (#32)
 - **Config**: Add project-type based logging strategy (#31)
