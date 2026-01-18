@@ -491,6 +491,61 @@ def check_consistency_wrapper() -> tuple[bool, dict]:
         return True, {}
 
 
+def check_github_secrets() -> tuple[bool, dict[str, bool], list[str]]:
+    """Check GitHub secrets configuration for Claude integration.
+
+    Verifies that required secrets exist for:
+    - Claude Code Review (CLAUDE_CODE_OAUTH_TOKEN)
+    - Releases (RELEASE_PAT - only if needed)
+
+    Returns:
+        Tuple of (all_ok, secrets_status, list of warnings)
+    """
+    import subprocess
+
+    secrets_status: dict[str, bool] = {}
+    warnings: list[str] = []
+
+    # Get GitHub URL from config
+    github_url = get("github.url", "")
+    if not github_url:
+        return True, {}, ["No GitHub URL configured"]
+
+    repo = github_url.replace("https://github.com/", "")
+
+    try:
+        # List secrets
+        result = subprocess.run(
+            ["gh", "secret", "list", "-R", repo],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if result.returncode != 0:
+            return True, {}, ["Could not check secrets (gh auth required)"]
+
+        secret_names = {line.split()[0] for line in result.stdout.strip().split("\n") if line}
+
+        # Check for Claude OAuth token
+        secrets_status["CLAUDE_CODE_OAUTH_TOKEN"] = "CLAUDE_CODE_OAUTH_TOKEN" in secret_names
+        if not secrets_status["CLAUDE_CODE_OAUTH_TOKEN"]:
+            warnings.append("CLAUDE_CODE_OAUTH_TOKEN missing - Claude reviews won't work")
+
+        # Check for RELEASE_PAT (optional, only warn if releases are configured)
+        secrets_status["RELEASE_PAT"] = "RELEASE_PAT" in secret_names
+
+        all_ok = secrets_status.get("CLAUDE_CODE_OAUTH_TOKEN", False)
+        return all_ok, secrets_status, warnings
+
+    except subprocess.TimeoutExpired:
+        return True, {}, ["Secret check timed out"]
+    except FileNotFoundError:
+        return True, {}, ["gh CLI not installed"]
+    except Exception as e:
+        return True, {}, [f"Secret check failed: {e}"]
+
+
 def check_all() -> dict:
     """Run all health checks and return consolidated report.
 
@@ -505,6 +560,7 @@ def check_all() -> dict:
     user_files = check_user_files()
     versions_ok, versions_found, versions_errors = check_versions()
     consistency_ok, consistency_results = check_consistency_wrapper()
+    secrets_ok, secrets_status, secrets_warnings = check_github_secrets()
 
     # Count sync issues
     sync_ok = all(r[1] for r in sync_results)
@@ -565,6 +621,11 @@ def check_all() -> dict:
         "user_files": {
             "status": user_files,
             "issues": user_files_issues,
+        },
+        "secrets": {
+            "ok": secrets_ok,
+            "status": secrets_status,
+            "warnings": secrets_warnings,
         },
         "upgradable": has_missing,
     }
@@ -820,6 +881,51 @@ def _format_user_files_section(results: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _format_secrets_section(results: dict[str, Any]) -> list[str]:
+    """Format secrets section of health report.
+
+    Args:
+        results: Health check results.
+
+    Returns:
+        List of formatted lines.
+    """
+    lines = ["── GitHub Secrets ──────────────────"]
+
+    secrets_data = results.get("secrets", {})
+    secrets_status = secrets_data.get("status", {})
+    secrets_warnings = secrets_data.get("warnings", [])
+
+    if not secrets_status:
+        if secrets_warnings:
+            lines.append(f"○ {secrets_warnings[0]}")
+        else:
+            lines.append("○ Not checked")
+        return lines
+
+    # Show status of each secret
+    for secret, exists in secrets_status.items():
+        if secret == "CLAUDE_CODE_OAUTH_TOKEN":
+            label = "Claude App"
+        elif secret == "RELEASE_PAT":
+            label = "Release PAT"
+        else:
+            label = secret
+
+        if exists:
+            lines.append(f"✓ {label} configured")
+        else:
+            if secret == "CLAUDE_CODE_OAUTH_TOKEN":
+                lines.append(f"✗ {label} missing (Claude reviews won't work)")
+            else:
+                lines.append(f"○ {label} not set (optional)")
+
+    if not secrets_data.get("ok") and secrets_status.get("CLAUDE_CODE_OAUTH_TOKEN") is False:
+        lines.append("  → Install Claude GitHub App: https://github.com/apps/claude")
+
+    return lines
+
+
 def _format_summary(results: dict[str, Any]) -> list[str]:
     """Format summary section of health report.
 
@@ -876,6 +982,7 @@ def format_report(results: dict[str, Any]) -> str:
         _format_tests_section(results),
         _format_consistency_section(results),
         _format_user_files_section(results),
+        _format_secrets_section(results),
         _format_summary(results),
     ]
 
