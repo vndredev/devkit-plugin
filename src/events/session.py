@@ -10,7 +10,7 @@ from subprocess import SubprocessError
 from arch.check import check_all, format_compact
 from core.errors import GitError
 from lib.config import get
-from lib.git import check_https_with_workflows, git_branch, git_status
+from lib.git import check_https_with_workflows, git_add, git_branch, git_commit, git_status
 from lib.hooks import consume_stdin, get_project_dir, output_response
 from lib.sync import sync_all
 from lib.version import (
@@ -101,6 +101,24 @@ def main() -> None:
             if synced_count > 0:
                 output_lines.append("")
                 output_lines.append(f"📄 Auto-synced {synced_count} file(s)")
+
+                # Auto-commit managed files on protected branch
+                auto_commit = get("hooks.session.auto_commit_managed", True)
+                protected = get("git.protected_branches", ["main", "master"])
+                current_branch = git_branch(cwd=project_dir)
+
+                if auto_commit and current_branch in protected:
+                    # Get list of synced files
+                    synced_files = [path for path, ok, _ in sync_results if ok]
+                    if synced_files:
+                        add_ok, _ = git_add(synced_files, cwd=project_dir)
+                        if add_ok:
+                            commit_ok, _ = git_commit(
+                                "chore(internal): sync managed files",
+                                cwd=project_dir,
+                            )
+                            if commit_ok:
+                                output_lines.append("✅ Auto-committed managed files")
 
             # Re-check health after sync
             health_results = check_all()
