@@ -7,8 +7,10 @@ import pytest
 
 from events.validate import (
     extract_commit_message,
+    is_plugin_self_development,
     validate_branch_name,
     validate_commit_message,
+    validate_dk_enforcement,
     validate_gh_command,
 )
 
@@ -492,3 +494,107 @@ EOF
         msg = extract_commit_message('git commit -m "fix(core): resolve issue"')
 
         assert msg == "fix(core): resolve issue"
+
+
+class TestIsPluginSelfDevelopment:
+    """Tests for is_plugin_self_development()."""
+
+    def test_returns_false_when_no_env_var(self, monkeypatch):
+        """Should return False when CLAUDE_PLUGIN_ROOT is not set."""
+        monkeypatch.delenv("CLAUDE_PLUGIN_ROOT", raising=False)
+
+        result = is_plugin_self_development()
+
+        assert result is False
+
+    def test_returns_true_when_cwd_matches_plugin_root(self, tmp_path, monkeypatch):
+        """Should return True when cwd matches CLAUDE_PLUGIN_ROOT."""
+        monkeypatch.setenv("CLAUDE_PLUGIN_ROOT", str(tmp_path))
+        monkeypatch.chdir(tmp_path)
+
+        result = is_plugin_self_development()
+
+        assert result is True
+
+    def test_returns_false_when_cwd_differs_from_plugin_root(self, tmp_path, monkeypatch):
+        """Should return False when cwd differs from CLAUDE_PLUGIN_ROOT."""
+        plugin_root = tmp_path / "plugin"
+        plugin_root.mkdir()
+        other_dir = tmp_path / "other"
+        other_dir.mkdir()
+
+        monkeypatch.setenv("CLAUDE_PLUGIN_ROOT", str(plugin_root))
+        monkeypatch.chdir(other_dir)
+
+        result = is_plugin_self_development()
+
+        assert result is False
+
+    def test_handles_symlinks(self, tmp_path, monkeypatch):
+        """Should resolve symlinks when comparing paths."""
+        real_dir = tmp_path / "real"
+        real_dir.mkdir()
+        symlink = tmp_path / "link"
+        symlink.symlink_to(real_dir)
+
+        monkeypatch.setenv("CLAUDE_PLUGIN_ROOT", str(real_dir))
+        monkeypatch.chdir(symlink)
+
+        result = is_plugin_self_development()
+
+        assert result is True
+
+
+class TestValidateDkEnforcement:
+    """Tests for validate_dk_enforcement()."""
+
+    def test_blocks_gh_pr_create(self):
+        """Should block gh pr create command."""
+        valid, msg = validate_dk_enforcement("gh pr create --title 'test'")
+
+        assert valid is False
+        assert "/dk git pr" in msg
+
+    def test_blocks_gh_pr_merge(self):
+        """Should block gh pr merge command."""
+        valid, msg = validate_dk_enforcement("gh pr merge 123")
+
+        assert valid is False
+        assert "/dk git pr merge" in msg
+
+    def test_blocks_vercel_deploy(self):
+        """Should block vercel deploy command."""
+        valid, msg = validate_dk_enforcement("vercel deploy --prod")
+
+        assert valid is False
+        assert "/dk vercel deploy" in msg
+
+    def test_blocks_vercel_env(self):
+        """Should block vercel env command."""
+        valid, msg = validate_dk_enforcement("vercel env pull")
+
+        assert valid is False
+        assert "/dk vercel env" in msg
+
+    def test_allows_unrelated_commands(self):
+        """Should allow commands not in the mapping."""
+        valid, msg = validate_dk_enforcement("git status")
+
+        assert valid is True
+        assert msg == ""
+
+    def test_allows_commit_message_containing_gh_pr_create(self):
+        """Should allow commit messages that contain 'gh pr create' as text."""
+        # This tests that we use startswith, not substring match
+        valid, msg = validate_dk_enforcement(
+            'git commit -m "docs: update to use /dk git pr instead of gh pr create"'
+        )
+
+        assert valid is True
+
+    def test_blocks_command_with_leading_whitespace(self):
+        """Should handle commands with leading whitespace."""
+        valid, msg = validate_dk_enforcement("  gh pr create --title 'test'")
+
+        assert valid is False
+        assert "/dk git pr" in msg

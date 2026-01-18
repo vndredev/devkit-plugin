@@ -4,7 +4,9 @@
 Validates branch names, commit messages, and blocks dangerous commands.
 """
 
+import os
 import re
+from pathlib import Path
 
 from lib.config import get
 from lib.git import extract_git_args
@@ -164,6 +166,27 @@ DK_COMMAND_MAPPINGS = {
 }
 
 
+def is_plugin_self_development() -> bool:
+    """Check if we're developing the devkit-plugin itself.
+
+    When working in the plugin's own directory, we need to allow raw commands
+    because /dk workflows internally use these commands.
+
+    Returns:
+        True if cwd matches CLAUDE_PLUGIN_ROOT (self-development mode).
+    """
+    plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if not plugin_root:
+        return False
+
+    try:
+        cwd = Path.cwd().resolve()
+        plugin_path = Path(plugin_root).resolve()
+        return cwd == plugin_path
+    except (OSError, ValueError):
+        return False
+
+
 def validate_dk_enforcement(cmd: str) -> tuple[bool, str]:
     """Check if command should use /dk alternative.
 
@@ -255,8 +278,9 @@ def main() -> None:
     command = tool_input.get("command", "")
 
     # Enforce /dk commands (check first, before other validations)
+    # Skip enforcement when developing the plugin itself (self-development mode)
     enforce_dk = get("hooks.validate.enforce_dk_commands", True)
-    if enforce_dk:
+    if enforce_dk and not is_plugin_self_development():
         valid, msg = validate_dk_enforcement(command)
         if not valid:
             deny_response(msg)
