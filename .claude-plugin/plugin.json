@@ -1,6 +1,6 @@
 {
   "name": "devkit-plugin",
-  "version": "0.32.0",
+  "version": "0.32.1",
   "description": "Clean Architecture + Dev Workflow Plugin",
   "author": {
     "name": "vndredev"

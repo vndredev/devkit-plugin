@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.32.0] - 2026-01-18
+## [v0.32.1] - 2026-01-18
 
 ### Added
 
@@ -14,6 +14,7 @@
 
 ### Fixed
 
+- **Validate**: Skip dk enforcement in self-development mode (#24)
 - **Sync**: Correct workflow yaml indentation (#18)
 - **Plugin**: Address 13 issues from system audit (#14)
 - **Plugin**: Address 23 issues from opus analysis (#12)
