@@ -125,7 +125,11 @@
             "blocked_commands": {
               "type": "array",
               "items": { "type": "string" },
-              "default": ["gh repo delete", "gh secret delete", "gh api -X DELETE"],
+              "default": [
+                "gh repo delete",
+                "gh secret delete",
+                "gh api -X DELETE"
+              ],
               "description": "List of dangerous commands to block (matched as prefix)"
             },
             "prompts": {
@@ -887,7 +891,15 @@
             "properties": {
               "provider": {
                 "type": "string",
-                "enum": ["axiom", "sentry", "logrocket", "datadog", "pino", "winston", "custom"],
+                "enum": [
+                  "axiom",
+                  "sentry",
+                  "logrocket",
+                  "datadog",
+                  "pino",
+                  "winston",
+                  "custom"
+                ],
                 "description": "Logging service provider"
               },
               "env_var": {
