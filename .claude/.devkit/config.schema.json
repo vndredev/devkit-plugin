@@ -2,14 +2,22 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "DevKit Plugin Config",
   "type": "object",
-  "required": ["project"],
+  "required": [
+    "project"
+  ],
   "properties": {
     "project": {
       "type": "object",
       "description": "Project information",
-      "required": ["name", "type"],
+      "required": [
+        "name",
+        "type"
+      ],
       "properties": {
-        "name": { "type": "string", "description": "Project name" },
+        "name": {
+          "type": "string",
+          "description": "Project name"
+        },
         "type": {
           "type": "string",
           "enum": [
@@ -38,7 +46,9 @@
         },
         "principles": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Project principles (KISS, YAGNI, etc.)"
         }
       }
@@ -51,8 +61,14 @@
           "type": "object",
           "description": "SessionStart hook - shows project status",
           "properties": {
-            "enabled": { "type": "boolean", "default": true },
-            "show_git_status": { "type": "boolean", "default": true },
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "show_git_status": {
+              "type": "boolean",
+              "default": true
+            },
             "auto_sync": {
               "type": "boolean",
               "default": true,
@@ -69,27 +85,27 @@
               "properties": {
                 "branch": {
                   "type": "string",
-                  "default": "📍 {branch}",
+                  "default": "\ud83d\udccd {branch}",
                   "description": "Branch display template"
                 },
                 "staged": {
                   "type": "string",
-                  "default": "⚡{count} staged",
+                  "default": "\u26a1{count} staged",
                   "description": "Staged files template"
                 },
                 "modified": {
                   "type": "string",
-                  "default": "✏️{count} modified",
+                  "default": "\u270f\ufe0f{count} modified",
                   "description": "Modified files template"
                 },
                 "untracked": {
                   "type": "string",
-                  "default": "❓{count} untracked",
+                  "default": "\u2753{count} untracked",
                   "description": "Untracked files template"
                 },
                 "protected_branch": {
                   "type": "string",
-                  "default": "⚠️ On `{branch}` - use `/dk dev feat|fix|chore <desc>` first!",
+                  "default": "\u26a0\ufe0f On `{branch}` - use `/dk dev feat|fix|chore <desc>` first!",
                   "description": "Warning shown when on protected branch"
                 },
                 "hint": {
@@ -99,7 +115,7 @@
                 },
                 "system_warning": {
                   "type": "string",
-                  "default": "⚠️ Project has issues - check with /dk plugin check",
+                  "default": "\u26a0\ufe0f Project has issues - check with /dk plugin check",
                   "description": "Warning shown directly to user when issues detected"
                 }
               }
@@ -110,8 +126,14 @@
           "type": "object",
           "description": "PreToolUse hook - validates git/gh commands",
           "properties": {
-            "enabled": { "type": "boolean", "default": true },
-            "block_force_push": { "type": "boolean", "default": true },
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "block_force_push": {
+              "type": "boolean",
+              "default": true
+            },
             "block_dangerous_gh": {
               "type": "boolean",
               "default": true,
@@ -124,7 +146,9 @@
             },
             "blocked_commands": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": {
+                "type": "string"
+              },
               "default": [
                 "gh repo delete",
                 "gh secret delete",
@@ -174,8 +198,14 @@
           "type": "object",
           "description": "PostToolUse hook - formats files and checks architecture",
           "properties": {
-            "enabled": { "type": "boolean", "default": true },
-            "auto_format": { "type": "boolean", "default": true },
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "auto_format": {
+              "type": "boolean",
+              "default": true
+            },
             "arch_check": {
               "type": "boolean",
               "default": true,
@@ -183,7 +213,10 @@
             },
             "enforce_workflow": {
               "type": "string",
-              "enum": ["warn", "off"],
+              "enum": [
+                "warn",
+                "off"
+              ],
               "default": "warn",
               "description": "Warn when editing code on main without /dk dev workflow"
             },
@@ -198,27 +231,27 @@
               "properties": {
                 "formatted": {
                   "type": "string",
-                  "default": "✓ Formatted: {file}",
+                  "default": "\u2713 Formatted: {file}",
                   "description": "File formatted message"
                 },
                 "test_reminder": {
                   "type": "string",
-                  "default": "💡 New file - consider adding: tests/{file}",
+                  "default": "\ud83d\udca1 New file - consider adding: tests/{file}",
                   "description": "Test reminder for new files"
                 },
                 "arch_violation": {
                   "type": "string",
-                  "default": "⚠️ Arch violation: {message}",
+                  "default": "\u26a0\ufe0f Arch violation: {message}",
                   "description": "Architecture violation warning"
                 },
                 "arch_synced": {
                   "type": "string",
-                  "default": "📄 Updated docs/ARCHITECTURE.md",
+                  "default": "\ud83d\udcc4 Updated docs/ARCHITECTURE.md",
                   "description": "Architecture doc updated message"
                 },
                 "arch_blocking": {
                   "type": "string",
-                  "default": "🚫 LAYER VIOLATION - FIX NOW: {message}. Revert or fix the import.",
+                  "default": "\ud83d\udeab LAYER VIOLATION - FIX NOW: {message}. Revert or fix the import.",
                   "description": "Error shown when blocking layer violation is detected"
                 }
               }
@@ -229,10 +262,17 @@
           "type": "object",
           "description": "PreToolUse:EnterPlanMode + PostToolUse:ExitPlanMode - enforces workflow and guides planning",
           "properties": {
-            "enabled": { "type": "boolean", "default": true },
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
             "enforce_workflow": {
               "type": "string",
-              "enum": ["warn", "block", "off"],
+              "enum": [
+                "warn",
+                "block",
+                "off"
+              ],
               "default": "warn",
               "description": "Workflow enforcement: warn=show warning on protected branch, block=prevent plan mode, off=disabled"
             },
@@ -242,7 +282,7 @@
               "properties": {
                 "workflow_required": {
                   "type": "string",
-                  "default": "⚠️ You're on `{branch}` - use `/dk dev feat|fix|chore <desc>` to create a feature branch first.",
+                  "default": "\u26a0\ufe0f You're on `{branch}` - use `/dk dev feat|fix|chore <desc>` to create a feature branch first.",
                   "description": "Warning shown when entering plan mode on protected branch"
                 }
               }
@@ -253,12 +293,16 @@
               "properties": {
                 "requirements": {
                   "type": "array",
-                  "items": { "type": "string" },
+                  "items": {
+                    "type": "string"
+                  },
                   "description": "Things to check/consider while planning"
                 },
                 "structure": {
                   "type": "array",
-                  "items": { "type": "string" },
+                  "items": {
+                    "type": "string"
+                  },
                   "description": "Sections a plan should contain"
                 }
               }
@@ -274,14 +318,18 @@
                 },
                 "instructions": {
                   "type": "array",
-                  "items": { "type": "string" },
+                  "items": {
+                    "type": "string"
+                  },
                   "description": "Implementation steps (empty = use defaults)"
                 }
               }
             },
             "hints": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": {
+                "type": "string"
+              },
               "description": "Project-specific planning hints (shown in both phases)"
             }
           }
@@ -290,7 +338,10 @@
           "type": "object",
           "description": "PostToolUse hook - reminds to verify UI after frontend changes",
           "properties": {
-            "enabled": { "type": "boolean", "default": true },
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
             "dev_server": {
               "type": "object",
               "description": "Development server configuration",
@@ -311,8 +362,15 @@
             },
             "frontend_patterns": {
               "type": "array",
-              "items": { "type": "string" },
-              "default": ["*.tsx", "*.jsx", "*.vue", "*.css"],
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "*.tsx",
+                "*.jsx",
+                "*.vue",
+                "*.css"
+              ],
               "description": "File patterns that trigger browser verification reminder"
             },
             "prompts": {
@@ -321,7 +379,7 @@
               "properties": {
                 "frontend_changed": {
                   "type": "string",
-                  "default": "🌐 Frontend changed - verify UI: `/dk browser verify` or browser_snapshot on {url}",
+                  "default": "\ud83c\udf10 Frontend changed - verify UI: `/dk browser verify` or browser_snapshot on {url}",
                   "description": "Reminder shown after frontend file changes"
                 }
               }
@@ -332,7 +390,10 @@
           "type": "object",
           "description": "PreToolUse hook - blocks layer violations before writing code",
           "properties": {
-            "enabled": { "type": "boolean", "default": true },
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
             "discovery_enabled": {
               "type": "boolean",
               "default": true,
@@ -351,31 +412,13 @@
               "properties": {
                 "blocked": {
                   "type": "string",
-                  "default": "🚫 BLOCKED - Layer violation: {message}. Fix imports before writing.",
+                  "default": "\ud83d\udeab BLOCKED - Layer violation: {message}. Fix imports before writing.",
                   "description": "Message when blocking a write due to layer violation"
                 },
                 "similar_found": {
                   "type": "string",
-                  "default": "⚠️ Similar code exists - consider reusing: {matches}",
+                  "default": "\u26a0\ufe0f Similar code exists - consider reusing: {matches}",
                   "description": "Warning when similar code is detected"
-                }
-              }
-            }
-          }
-        },
-        "plan_guard": {
-          "type": "object",
-          "description": "PreToolUse hook - blocks edits on feat/refactor until plan approved",
-          "properties": {
-            "enabled": { "type": "boolean", "default": true },
-            "prompts": {
-              "type": "object",
-              "description": "Customizable output templates",
-              "properties": {
-                "blocked": {
-                  "type": "string",
-                  "default": "🚫 BLOCKED: On `{branch}` - complete planning first.\n\nRun `EnterPlanMode` → create plan → `ExitPlanMode` to approve.",
-                  "description": "Message when blocking edit due to missing plan approval"
                 }
               }
             }
@@ -388,8 +431,12 @@
       "properties": {
         "protected_branches": {
           "type": "array",
-          "items": { "type": "string" },
-          "default": ["main"],
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "main"
+          ],
           "description": "Branches protected from force push"
         },
         "conventions": {
@@ -398,7 +445,9 @@
           "properties": {
             "types": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": {
+                "type": "string"
+              },
               "default": [
                 "feat",
                 "fix",
@@ -417,19 +466,32 @@
               "properties": {
                 "mode": {
                   "type": "string",
-                  "enum": ["strict", "warn", "off"],
+                  "enum": [
+                    "strict",
+                    "warn",
+                    "off"
+                  ],
                   "default": "strict",
                   "description": "Validation mode: strict=error, warn=warning, off=disabled"
                 },
                 "allowed": {
                   "type": "array",
-                  "items": { "type": "string" },
+                  "items": {
+                    "type": "string"
+                  },
                   "description": "Allowed scope names for commits"
                 },
                 "internal": {
                   "type": "array",
-                  "items": { "type": "string" },
-                  "default": ["internal", "review", "ci", "deps"],
+                  "items": {
+                    "type": "string"
+                  },
+                  "default": [
+                    "internal",
+                    "review",
+                    "ci",
+                    "deps"
+                  ],
                   "description": "Internal scopes (skip release notes)"
                 }
               }
@@ -454,7 +516,11 @@
         },
         "visibility": {
           "type": "string",
-          "enum": ["public", "private", "internal"],
+          "enum": [
+            "public",
+            "private",
+            "internal"
+          ],
           "default": "public",
           "description": "Repository visibility"
         },
@@ -474,7 +540,11 @@
             },
             "merge_method": {
               "type": "string",
-              "enum": ["squash", "merge", "rebase"],
+              "enum": [
+                "squash",
+                "merge",
+                "rebase"
+              ],
               "default": "squash",
               "description": "Merge method: squash (recommended), merge, or rebase"
             }
@@ -525,12 +595,20 @@
         },
         "platform": {
           "type": "string",
-          "enum": ["vercel", "railway", "render", "fly", "netlify"],
+          "enum": [
+            "vercel",
+            "railway",
+            "render",
+            "fly",
+            "netlify"
+          ],
           "description": "Primary deployment platform"
         },
         "platforms": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Available deployment platforms"
         },
         "framework": {
@@ -574,7 +652,9 @@
               },
               "patterns": {
                 "type": "array",
-                "items": { "type": "string" },
+                "items": {
+                  "type": "string"
+                },
                 "description": "Glob patterns for layer files (e.g., src/core/**)"
               },
               "description": {
@@ -582,7 +662,9 @@
                 "description": "Human-readable layer description for documentation"
               }
             },
-            "required": ["tier"]
+            "required": [
+              "tier"
+            ]
           }
         }
       }
@@ -598,7 +680,11 @@
         },
         "preset": {
           "type": "string",
-          "enum": ["strict", "relaxed", "minimal"],
+          "enum": [
+            "strict",
+            "relaxed",
+            "minimal"
+          ],
           "default": "strict",
           "description": "Linter preset (strict, relaxed, minimal)"
         },
@@ -661,7 +747,11 @@
         },
         "framework": {
           "type": "string",
-          "enum": ["pytest", "jest", "vitest"],
+          "enum": [
+            "pytest",
+            "jest",
+            "vitest"
+          ],
           "description": "Test framework"
         },
         "coverage": {
@@ -677,7 +767,9 @@
             },
             "exclude": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": {
+                "type": "string"
+              },
               "description": "Patterns to exclude from coverage"
             }
           }
@@ -687,7 +779,9 @@
           "description": "Modules that must have tests with their required functions",
           "additionalProperties": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "List of functions that must be tested"
           }
         }
@@ -704,7 +798,10 @@
         },
         "audience": {
           "type": "string",
-          "enum": ["developer", "user"],
+          "enum": [
+            "developer",
+            "user"
+          ],
           "default": "developer",
           "description": "Target audience: developer (technical, shows scopes) or user (simple, clean)"
         },
@@ -712,10 +809,22 @@
           "type": "object",
           "description": "Custom section headers per commit type",
           "properties": {
-            "feat": { "type": "string", "default": "Added" },
-            "fix": { "type": "string", "default": "Fixed" },
-            "refactor": { "type": "string", "default": "Changed" },
-            "perf": { "type": "string", "default": "Changed" }
+            "feat": {
+              "type": "string",
+              "default": "Added"
+            },
+            "fix": {
+              "type": "string",
+              "default": "Fixed"
+            },
+            "refactor": {
+              "type": "string",
+              "default": "Changed"
+            },
+            "perf": {
+              "type": "string",
+              "default": "Changed"
+            }
           }
         }
       }
@@ -737,17 +846,28 @@
               "type": "object",
               "description": "Check that source modules have test files",
               "properties": {
-                "enabled": { "type": "boolean", "default": true },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                },
                 "patterns": {
                   "type": "object",
                   "description": "Source pattern to test pattern mapping",
-                  "additionalProperties": { "type": "string" },
-                  "default": { "src/lib/*.py": "tests/test_{stem}.py" }
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "default": {
+                    "src/lib/*.py": "tests/test_{stem}.py"
+                  }
                 },
                 "exclude": {
                   "type": "array",
-                  "items": { "type": "string" },
-                  "default": ["__init__.py"],
+                  "items": {
+                    "type": "string"
+                  },
+                  "default": [
+                    "__init__.py"
+                  ],
                   "description": "File names to exclude from checks"
                 }
               }
@@ -756,36 +876,52 @@
               "type": "object",
               "description": "Check that enabled hooks have handler files",
               "properties": {
-                "enabled": { "type": "boolean", "default": true }
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                }
               }
             },
             "config_schema": {
               "type": "object",
               "description": "Check that config keys exist in schema",
               "properties": {
-                "enabled": { "type": "boolean", "default": true }
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                }
               }
             },
             "skill_routes": {
               "type": "object",
               "description": "Check that skill routes reference existing docs",
               "properties": {
-                "enabled": { "type": "boolean", "default": true }
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                }
               }
             },
             "custom_imports": {
               "type": "object",
               "description": "Custom import rules (deny/require)",
               "properties": {
-                "enabled": { "type": "boolean", "default": false },
+                "enabled": {
+                  "type": "boolean",
+                  "default": false
+                },
                 "deny": {
                   "type": "array",
-                  "items": { "type": "string" },
+                  "items": {
+                    "type": "string"
+                  },
                   "description": "Forbidden imports: 'src/hooks/* -> @prisma/client'"
                 },
                 "require": {
                   "type": "array",
-                  "items": { "type": "string" },
+                  "items": {
+                    "type": "string"
+                  },
                   "description": "Required imports (future)"
                 }
               }
@@ -805,8 +941,12 @@
         },
         "scan_patterns": {
           "type": "array",
-          "items": { "type": "string" },
-          "default": ["src/**/*.py"],
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "src/**/*.py"
+          ],
           "description": "Glob patterns for files to scan for similar code"
         },
         "threshold": {
@@ -875,16 +1015,26 @@
               },
               "provider": {
                 "type": "string",
-                "enum": ["stripe", "livekit", "clerk", "resend", "custom"],
+                "enum": [
+                  "stripe",
+                  "livekit",
+                  "clerk",
+                  "resend",
+                  "custom"
+                ],
                 "description": "Service provider for CLI integration"
               },
               "events": {
                 "type": "array",
-                "items": { "type": "string" },
+                "items": {
+                  "type": "string"
+                },
                 "description": "Events to listen for (provider-specific)"
               }
             },
-            "required": ["path"]
+            "required": [
+              "path"
+            ]
           }
         }
       }
@@ -900,7 +1050,11 @@
         },
         "strategy": {
           "type": "string",
-          "enum": ["auto", "terminal", "service"],
+          "enum": [
+            "auto",
+            "terminal",
+            "service"
+          ],
           "default": "auto",
           "description": "Logging strategy: auto (based on project type), terminal (Python logging), service (Axiom, etc.)"
         },
@@ -960,39 +1114,65 @@
           "type": "string",
           "description": "Template path relative to templates/"
         },
-        "enabled": { "type": "boolean", "default": true }
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        }
       },
-      "required": ["template"]
+      "required": [
+        "template"
+      ]
     },
     "managedDoc": {
       "type": "object",
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["auto_sections", "auto_generate", "template"],
+          "enum": [
+            "auto_sections",
+            "auto_generate",
+            "template"
+          ],
           "description": "auto_sections preserves CUSTOM blocks, auto_generate generates from config, template copies from plugin"
         },
         "template": {
           "type": "string",
           "description": "Template path for type=template (relative to templates/)"
         },
-        "enabled": { "type": "boolean", "default": true }
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        }
       },
-      "required": ["type"]
+      "required": [
+        "type"
+      ]
     },
     "managedIgnore": {
       "type": "object",
       "properties": {
         "template": {
           "oneOf": [
-            { "type": "string" },
-            { "type": "array", "items": { "type": "string" } }
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
           ],
           "description": "Single template or array to combine"
         },
-        "enabled": { "type": "boolean", "default": true }
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        }
       },
-      "required": ["template"]
+      "required": [
+        "template"
+      ]
     }
   }
 }

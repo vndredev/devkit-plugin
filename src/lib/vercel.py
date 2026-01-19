@@ -600,7 +600,7 @@ def vercel_deploy(
     except subprocess.TimeoutExpired:
         return False, "Deploy timed out after 5 minutes", None
     except subprocess.CalledProcessError as e:
-        return False, f"Deploy failed: {e.stderr}", None
+        return False, f"Deploy failed: {e.stderr if e.stderr else str(e)}", None
 
 
 def vercel_status() -> dict:
