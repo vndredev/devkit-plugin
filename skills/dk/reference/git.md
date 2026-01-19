@@ -267,10 +267,33 @@ if [ "$AUTO_MERGE" = "true" ]; then
 fi
 ```
 
-**CRITICAL - YOU MUST return to main after PR creation:**
+**CRITICAL - If AUTO_MERGE is true, YOU MUST wait for the PR to merge before returning to main:**
 
 ```bash
-# Step 8: Return to main and pull to stay in sync
+# Step 8: Wait for PR to merge if auto-merge is enabled
+if [ "$AUTO_MERGE" = "true" ]; then
+  echo ""
+  echo "⏳ Waiting for PR to merge..."
+  while true; do
+    STATE=$(gh pr view --json state -q .state 2>/dev/null)
+    if [ "$STATE" = "MERGED" ]; then
+      echo "✓ PR merged successfully"
+      break
+    elif [ "$STATE" = "CLOSED" ]; then
+      echo "⚠️ PR was closed without merging"
+      break
+    fi
+    # Show progress
+    echo -n "."
+    sleep 5
+  done
+fi
+```
+
+**CRITICAL - YOU MUST return to main after PR is merged:**
+
+```bash
+# Step 9: Return to main and pull to stay in sync
 echo ""
 echo "Returning to main branch..."
 git checkout main && git pull
@@ -283,8 +306,9 @@ echo "✅ Ready for next task - run /dk dev to start"
 
 - [ ] PR URL is shown to user
 - [ ] Auto-merge enabled (if configured) - check for "✓ Auto-merge enabled" message
+- [ ] PR merged (if auto-merge) - check for "✓ PR merged successfully" message
 - [ ] Returned to `main` branch
-- [ ] `main` is up to date with remote
+- [ ] `main` is up to date with remote (includes merged changes)
 
 ---
 
