@@ -87,11 +87,22 @@ if not status['services']:
 
 **Startet alle Services als Background-Tasks.**
 
-**YOU MUST use Bash with `run_in_background: true`:**
+**Path Resolution:**
+
+1. Extract `PLUGIN_ROOT` from "Base directory for this skill" (remove `/skills/dk`)
+2. Script path: `PLUGIN_ROOT/skills/dk/scripts/serv-start.sh`
+
+**YOU MUST execute with Bash `run_in_background: true`:**
 
 ```bash
-# CRITICAL: Run with run_in_background: true
-${SKILL_DIR}/scripts/serv-start.sh "$(pwd)" "${PLUGIN_ROOT}"
+# Replace PLUGIN_ROOT with actual path from Base directory
+PLUGIN_ROOT/skills/dk/scripts/serv-start.sh "PROJECT_DIR" "PLUGIN_ROOT"
+```
+
+**Example** (if Base directory is `/path/to/devkit-plugin/skills/dk`):
+
+```bash
+/path/to/devkit-plugin/skills/dk/scripts/serv-start.sh "/path/to/user-project" "/path/to/devkit-plugin"
 ```
 
 Nach dem Start zeigt das Script:
@@ -103,14 +114,9 @@ Nach dem Start zeigt das Script:
 **Logs lesen:**
 
 ```bash
-# Dev server logs
-tail -f .serv/dev.log
-
-# ngrok logs
-tail -f .serv/ngrok.log
-
-# Stripe CLI logs
-tail -f .serv/stripe.log
+tail -f .serv/dev.log    # Dev server
+tail -f .serv/ngrok.log  # ngrok tunnel
+tail -f .serv/stripe.log # Stripe CLI
 ```
 
 ---
@@ -120,7 +126,8 @@ tail -f .serv/stripe.log
 **Stoppt alle Services die mit `/dk serv start` gestartet wurden.**
 
 ```bash
-${SKILL_DIR}/scripts/serv-stop.sh "$(pwd)"
+# Replace PLUGIN_ROOT with actual path from Base directory
+PLUGIN_ROOT/skills/dk/scripts/serv-stop.sh "PROJECT_DIR"
 ```
 
 Das Script:
