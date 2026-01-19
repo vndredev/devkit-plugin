@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.46.0] - 2026-01-19
+## [v0.47.0] - 2026-01-19
 
 ### Fixed
 
@@ -13,6 +13,7 @@
 
 ### Added
 
+- **Hook**: Add userpromptsubmit hook for workflow enforcement (#55)
 - **Mcp**: Add mcp server management via plugin (#54)
 - **Serv**: Background service start with scripts (#48)
 - **Hook**: Add stop hook for plugin update check (#47)
