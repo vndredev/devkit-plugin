@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.43.0] - 2026-01-19
+## [v0.44.0] - 2026-01-19
 
 ### Added
 
+- **Hook**: Add stop hook for plugin update check (#47)
 - **Serv**: Unified /dk serv command for dev services (#46)
 
 ## [v0.42.2] - 2026-01-18
