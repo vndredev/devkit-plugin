@@ -87,7 +87,7 @@ def get_repo_info(repo: str | None = None) -> RepoInfo | None:
     except subprocess.TimeoutExpired as e:
         raise GitHubError("GitHub API request timed out") from e
     except subprocess.CalledProcessError as e:
-        raise GitHubError(f"Failed to get repo info: {e.stderr}") from e
+        raise GitHubError(f"Failed to get repo info: {e.stderr if e.stderr else str(e)}") from e
     except json.JSONDecodeError as e:
         raise GitHubError(f"Invalid API response: {e}") from e
 

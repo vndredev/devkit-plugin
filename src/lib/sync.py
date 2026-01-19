@@ -115,6 +115,8 @@ def _sync_linter_config(
 
     if preset not in category_presets:
         preset = "strict"
+        if preset not in category_presets:
+            return False, f"Preset category '{preset_category}' has no presets defined"
 
     values = category_presets[preset].copy()
     values["preset"] = preset
