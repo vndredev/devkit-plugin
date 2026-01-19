@@ -40,13 +40,32 @@ After setting keys: **Restart Claude Code**.
 
 ---
 
-## MCP-Status prüfen
+## /dk mcp check
+
+Check MCP server status and env var configuration:
 
 ```bash
-# Alle MCPs anzeigen
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
+from lib.mcp import format_mcp_status
+print(format_mcp_status())
+"
+```
+
+This checks:
+
+- Which env vars are set in current environment
+- Which env vars are exported in shell config (~/.zshrc or ~/.bashrc)
+- Server readiness status
+
+---
+
+## MCP Status (Claude CLI)
+
+```bash
+# List all MCPs
 claude mcp list
 
-# Spezifischen MCP testen
+# Test specific MCP
 claude mcp test neon
 ```
 
