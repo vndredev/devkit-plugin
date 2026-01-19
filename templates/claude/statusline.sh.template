@@ -62,11 +62,15 @@ get_devkit_status() {
     # Find plugin root - search cache directories dynamically
     local plugin_root="${plugin_root:-}"
 
-    # Priority 1: DEVKIT_PLUGIN_DIR environment variable (for --plugin-dir mode)
-    if [ -z "$plugin_root" ] && [ -n "$DEVKIT_PLUGIN_DIR" ] && [ -d "$DEVKIT_PLUGIN_DIR" ]; then
-        plugin_root="$DEVKIT_PLUGIN_DIR"
-        if [ -f "$plugin_root/.claude-plugin/plugin.json" ]; then
+    # Priority 1: CLAUDE_PLUGIN_ROOT (set by Claude Code --plugin-dir)
+    if [ -z "$plugin_root" ] && [ -n "$CLAUDE_PLUGIN_ROOT" ] && [ -d "$CLAUDE_PLUGIN_ROOT" ]; then
+        # Check if this is devkit-plugin
+        local plugin_name
+        plugin_name=$(jq -r '.name // ""' "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null)
+        if [ "$plugin_name" = "devkit-plugin" ]; then
+            plugin_root="$CLAUDE_PLUGIN_ROOT"
             DEVKIT_VERSION=$(jq -r '.version // "?"' "$plugin_root/.claude-plugin/plugin.json" 2>/dev/null)
+            DEVKIT_DEV_MODE="true"
         fi
     fi
 
