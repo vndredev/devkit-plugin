@@ -35,6 +35,10 @@ node_modules/
 tmp/
 temp/
 
+# === devkit-plugin ===
+.claude/.plan-approved-*
+.serv/
+
 
 # === PLUGIN ===
 
@@ -80,6 +84,3 @@ htmlcov/
 
 # === Ruff ===
 .ruff_cache/
-
-# Plan approval markers
-.claude/.plan-approved-*
