@@ -1,6 +1,6 @@
 {
   "name": "devkit-plugin",
-  "version": "0.45.0",
+  "version": "0.45.1",
   "description": "Claude Code Plugin for automatic code standards",
   "private": true,
   "scripts": {

@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.45.0] - 2026-01-19
+## [v0.45.1] - 2026-01-19
+
+### Changed
+
+- **Serv**: Use native claude background tasks (#51)
 
 ### Added
 
