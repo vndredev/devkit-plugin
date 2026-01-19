@@ -108,10 +108,12 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 | `/dk arch discover <name>` | arch.md     | Find similar code before writing    |
 | `/dk arch init [type]`     | arch.md     | Scaffold Clean Architecture         |
 | `/dk arch layers`          | arch.md     | Show layer documentation            |
-| `/dk webhooks`             | webhooks.md | Webhook status + detected services  |
-| `/dk webhooks start`       | webhooks.md | Start ngrok + Stripe CLI            |
-| `/dk webhooks urls`        | webhooks.md | Show webhook URLs for dashboards    |
-| `/dk webhooks test`        | webhooks.md | Send test events                    |
+| `/dk serv`                 | serv.md     | Service status (dev + webhooks)     |
+| `/dk serv start`           | serv.md     | Start all dev services              |
+| `/dk serv stop`            | serv.md     | Stop all services                   |
+| `/dk serv urls`            | serv.md     | Show all URLs                       |
+| `/dk serv test`            | serv.md     | Send test events                    |
+| `/dk webhooks`             | webhooks.md | Webhook configuration status        |
 | `/dk docs`                 | docs.md     | Show docs status (all files)        |
 | `/dk docs update`          | docs.md     | Update all docs from config         |
 | `/dk docs init`            | docs.md     | Create missing docs                 |
@@ -151,6 +153,7 @@ modules = {
     "vercel": "reference/vercel.md",
     "neon": "reference/neon.md",
     "arch": "reference/arch.md",
+    "serv": "reference/serv.md",
     "webhooks": "reference/webhooks.md",
     "docs": "reference/docs.md",
     "axiom": "reference/axiom.md",
@@ -200,6 +203,7 @@ print('Commands: /dk plugin | dev | analyze | git | arch | docs | env | vercel |
 | `/dk vercel [sub]`      | Read `reference/vercel.md`, follow instructions   |
 | `/dk neon [sub]`        | Read `reference/neon.md`, follow instructions     |
 | `/dk arch [sub]`        | Read `reference/arch.md`, follow instructions     |
+| `/dk serv [sub]`        | Read `reference/serv.md`, follow instructions     |
 | `/dk webhooks [sub]`    | Read `reference/webhooks.md`, follow instructions |
 | `/dk docs [sub]`        | Read `reference/docs.md`, follow instructions     |
 | `/dk axiom [sub]`       | Read `reference/axiom.md`, follow instructions    |

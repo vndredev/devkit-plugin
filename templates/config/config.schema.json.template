@@ -818,6 +818,27 @@
         }
       }
     },
+    "dev": {
+      "type": "object",
+      "description": "Development server configuration",
+      "properties": {
+        "command": {
+          "type": "string",
+          "default": "npm run dev",
+          "description": "Command to start dev server (npm run dev, bun dev, pnpm dev, etc.)"
+        },
+        "port": {
+          "type": "integer",
+          "default": 3000,
+          "description": "Port the dev server runs on"
+        },
+        "include_webhooks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether /dk serv start includes webhook services (ngrok, Stripe CLI)"
+        }
+      }
+    },
     "webhooks": {
       "type": "object",
       "description": "Webhook tunnel configuration for local development",

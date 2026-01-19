@@ -52,6 +52,7 @@
           "validate",
           "format",
           "plan",
+          "serv",
         ],
         "internal": ["internal", "review", "ci", "deps"], // Skip release notes
       },
@@ -264,6 +265,15 @@
       // "org_id": "your-org",     // Axiom organization ID
       "proxy_endpoint": "/api/log", // Server-side proxy for frontend logs
     },
+  },
+
+  // ============================================================================
+  // DEVELOPMENT SERVER - Dev server configuration for /dk serv
+  // ============================================================================
+  "dev": {
+    "command": "uv run python -m http.server",
+    "port": 8000,
+    "include_webhooks": false, // devkit-plugin braucht keine webhooks
   },
 
   // ============================================================================
