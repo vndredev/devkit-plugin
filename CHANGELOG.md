@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.50.0] - 2026-01-19
+## [v0.51.0] - 2026-01-19
 
 ### Fixed
 
@@ -17,6 +17,7 @@
 
 ### Added
 
+- **Git**: Wait for pr merge before returning to main (#64)
 - **Statusline**: Remove plan-guard enforcement and improve sync messaging (#63)
 - **Skill**: Add livekit skill for real-time communication (#61)
 - **Mcp**: Add mcp health check for env vars (#58)
