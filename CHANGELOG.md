@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.51.0] - 2026-01-19
+## [v0.51.1] - 2026-01-19
 
 ### Fixed
 
+- **Logging**: Support nested env_vars config format for credential check (#65)
 - **Sync**: Auto-sync user files when outdated (#60)
 - **Lib**: Add timeouts to subprocess calls in tools.py (#59)
 - **Mcp**: Use env var defaults and restore neon api key mode (#57)
