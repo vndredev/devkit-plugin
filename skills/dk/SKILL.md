@@ -128,6 +128,11 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 | `/dk axiom web`            | axiom.md    | Open dashboard                      |
 | `/dk axiom token`          | axiom.md    | Token management                    |
 | `/dk axiom test`           | axiom.md    | Test connectivity                   |
+| `/dk livekit`              | livekit.md  | LiveKit status + auth               |
+| `/dk livekit room list`    | livekit.md  | List active rooms                   |
+| `/dk livekit room create`  | livekit.md  | Create room                         |
+| `/dk livekit token`        | livekit.md  | Generate access token               |
+| `/dk livekit web`          | livekit.md  | Open cloud dashboard                |
 | `/dk browser`              | browser.md  | Browser status + help               |
 | `/dk browser verify`       | browser.md  | Full UI verification flow           |
 | `/dk browser screenshot`   | browser.md  | Take screenshot of current page     |
@@ -158,6 +163,7 @@ modules = {
     "webhooks": "reference/webhooks.md",
     "docs": "reference/docs.md",
     "axiom": "reference/axiom.md",
+    "livekit": "reference/livekit.md",
     "browser": "reference/browser.md",
     "mcp": "reference/mcp.md"
 }
@@ -209,6 +215,7 @@ print('Commands: /dk plugin | dev | analyze | git | arch | docs | env | vercel |
 | `/dk webhooks [sub]`    | Read `reference/webhooks.md`, follow instructions |
 | `/dk docs [sub]`        | Read `reference/docs.md`, follow instructions     |
 | `/dk axiom [sub]`       | Read `reference/axiom.md`, follow instructions    |
+| `/dk livekit [sub]`     | Read `reference/livekit.md`, follow instructions  |
 | `/dk browser [sub]`     | Read `reference/browser.md`, follow instructions  |
 | `/dk mcp`               | Read `reference/mcp.md`, follow instructions      |
 
