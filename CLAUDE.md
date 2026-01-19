@@ -55,6 +55,7 @@ graph TD
 | `validate` | - |
 | `format` | - |
 | `plan` | - |
+| `serv` | - |
 
 **Internal Scopes (skip release notes):** `internal, review, ci, deps`
 

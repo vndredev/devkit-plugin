@@ -35,6 +35,10 @@ node_modules/
 tmp/
 temp/
 
+# === devkit-plugin ===
+.claude/.plan-approved-*
+.serv/
+
 
 # === PLUGIN ===
 

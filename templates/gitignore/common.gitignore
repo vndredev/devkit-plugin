@@ -34,3 +34,7 @@ node_modules/
 .cache/
 tmp/
 temp/
+
+# === devkit-plugin ===
+.claude/.plan-approved-*
+.serv/
