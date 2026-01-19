@@ -38,6 +38,18 @@
       },
       "description": "Axiom observability and logging"
     },
+    "upstash": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/mcp-server@latest",
+        "--email",
+        "${UPSTASH_EMAIL:-}",
+        "--api-key",
+        "${UPSTASH_API_KEY:-}"
+      ],
+      "description": "Upstash Redis database management"
+    },
     "livekit-docs": {
       "url": "https://docs.livekit.io/mcp",
       "description": "LiveKit documentation and code examples"
