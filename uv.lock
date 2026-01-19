@@ -37,7 +37,7 @@ wheels = [
 
 [[package]]
 name = "devkit-plugin"
-version = "0.51.2"
+version = "0.51.3"
 source = { virtual = "." }
 
 [package.optional-dependencies]
