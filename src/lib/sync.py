@@ -666,6 +666,13 @@ def sync_all(
 
     results.extend(sync_versions(root))
 
+    # Sync user files (statusline.sh) if outdated
+    user_status = check_user_files()
+    for status in user_status.values():
+        if status.get("outdated") and status.get("exists"):
+            results.extend(install_user_files())
+            break  # Only need to call once
+
     return results
 
 
