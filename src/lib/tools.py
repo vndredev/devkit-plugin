@@ -46,8 +46,11 @@ def format_file(path: str, auto: bool = True) -> tuple[bool, str]:
             [*formatter, str(filepath)],
             capture_output=True,
             check=True,
+            timeout=30,
         )
         return True, f"Formatted {filepath.name}"
+    except subprocess.TimeoutExpired:
+        return False, f"Format timed out after 30s: {filepath.name}"
     except subprocess.CalledProcessError as e:
         return False, f"Format failed: {e.stderr.decode(errors='replace') if e.stderr else str(e)}"
     except FileNotFoundError:
@@ -83,10 +86,12 @@ def run_linter(
         return False, f"Unknown linter: {name}"
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)  # noqa: S603
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=60)  # noqa: S603
         if result.returncode == 0:
             return True, f"{name}: All checks passed"
         return False, result.stdout + result.stderr
+    except subprocess.TimeoutExpired:
+        return False, f"{name}: Timed out after 60s"
     except FileNotFoundError:
         return False, f"Linter not found: {name}"
 
@@ -103,6 +108,7 @@ def notify(title: str, message: str) -> None:
             ["osascript", "-e", f'display notification "{message}" with title "{title}"'],  # noqa: S607
             capture_output=True,
             check=False,
+            timeout=5,
         )
 
 
