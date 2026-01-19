@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.48.2] - 2026-01-19
+## [v0.49.0] - 2026-01-19
 
 ### Fixed
 
@@ -17,6 +17,7 @@
 
 ### Added
 
+- **Skill**: Add livekit skill for real-time communication (#61)
 - **Mcp**: Add mcp health check for env vars (#58)
 - **Hook**: Add userpromptsubmit hook for workflow enforcement (#55)
 - **Mcp**: Add mcp server management via plugin (#54)
