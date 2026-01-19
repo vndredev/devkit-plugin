@@ -13,6 +13,35 @@ from lib.hooks import allow_response, deny_response, read_hook_input
 
 PLAN_REQUIRED_PATTERNS = [r"^feat/", r"^refactor/"]
 
+# Paths that are always allowed (plan files, etc.)
+ALWAYS_ALLOWED_PATHS = [
+    Path.home() / ".claude" / "plans",
+]
+
+
+def is_allowed_path(file_path: str | None) -> bool:
+    """Check if file path is in always-allowed directories.
+
+    Args:
+        file_path: Path to the file being edited.
+
+    Returns:
+        True if path is in an always-allowed directory.
+    """
+    if not file_path:
+        return False
+
+    try:
+        path = Path(file_path).resolve()
+        for allowed in ALWAYS_ALLOWED_PATHS:
+            allowed_resolved = allowed.resolve()
+            if path == allowed_resolved or allowed_resolved in path.parents:
+                return True
+    except (OSError, ValueError):
+        pass
+
+    return False
+
 
 def get_plan_marker_path(branch: str) -> Path:
     """Get marker file path for branch.
@@ -57,6 +86,13 @@ def main() -> None:
     """Handle PreToolUse hook for Edit/Write - Plan Guard."""
     hook_data = read_hook_input()
     if not hook_data or not get("hooks.plan_guard.enabled", True):
+        allow_response()
+        return
+
+    # Allow writes to plan files (outside project)
+    tool_input = hook_data.get("toolInput", {})
+    file_path = tool_input.get("file_path")
+    if is_allowed_path(file_path):
         allow_response()
         return
 
