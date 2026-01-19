@@ -90,7 +90,7 @@ def main() -> None:
         return
 
     # Allow writes to plan files (outside project)
-    tool_input = hook_data.get("toolInput", {})
+    tool_input = hook_data.get("tool_input", {})
     file_path = tool_input.get("file_path")
     if is_allowed_path(file_path):
         allow_response()
