@@ -132,6 +132,7 @@ allowed-tools: TodoWrite, Read, Write, Edit, Bash(python3:*), Bash(git:*), Bash(
 | `/dk browser verify`       | browser.md  | Full UI verification flow           |
 | `/dk browser screenshot`   | browser.md  | Take screenshot of current page     |
 | `/dk browser open <url>`   | browser.md  | Open URL in browser                 |
+| `/dk mcp`                  | mcp.md      | MCP server status                   |
 
 ---
 
@@ -157,7 +158,8 @@ modules = {
     "webhooks": "reference/webhooks.md",
     "docs": "reference/docs.md",
     "axiom": "reference/axiom.md",
-    "browser": "reference/browser.md"
+    "browser": "reference/browser.md",
+    "mcp": "reference/mcp.md"
 }
 
 if cmd in modules:
@@ -208,6 +210,7 @@ print('Commands: /dk plugin | dev | analyze | git | arch | docs | env | vercel |
 | `/dk docs [sub]`        | Read `reference/docs.md`, follow instructions     |
 | `/dk axiom [sub]`       | Read `reference/axiom.md`, follow instructions    |
 | `/dk browser [sub]`     | Read `reference/browser.md`, follow instructions  |
+| `/dk mcp`               | Read `reference/mcp.md`, follow instructions      |
 
 **ALWAYS pass the remaining arguments to the module.**
 
