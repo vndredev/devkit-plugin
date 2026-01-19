@@ -405,7 +405,7 @@ def check_arch() -> tuple[bool, list[dict]]:
     except ImportError:
         return True, []
     except Exception as e:
-        return False, [f"Arch check failed: {e}"]
+        return False, [{"message": f"Arch check failed: {e}"}]
 
 
 def check_templates() -> tuple[bool, list[str]]:
@@ -553,7 +553,9 @@ def check_github_secrets() -> tuple[bool, dict[str, bool], list[str]]:
         if result.returncode != 0:
             return True, {}, ["Could not check secrets (gh auth required)"]
 
-        secret_names = {line.split()[0] for line in result.stdout.strip().split("\n") if line}
+        secret_names = {
+            line.split()[0] for line in result.stdout.strip().split("\n") if line.strip()
+        }
 
         # Check for Claude OAuth token
         secrets_status["CLAUDE_CODE_OAUTH_TOKEN"] = "CLAUDE_CODE_OAUTH_TOKEN" in secret_names

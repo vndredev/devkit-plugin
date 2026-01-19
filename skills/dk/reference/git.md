@@ -273,20 +273,27 @@ fi
 # Step 8: Wait for PR to merge if auto-merge is enabled
 if [ "$AUTO_MERGE" = "true" ]; then
   echo ""
-  echo "⏳ Waiting for PR to merge..."
-  while true; do
+  echo "⏳ Waiting for PR to merge (max 1 min)..."
+  WAIT_COUNT=0
+  while [ $WAIT_COUNT -lt 12 ]; do
     STATE=$(gh pr view --json state -q .state 2>/dev/null)
     if [ "$STATE" = "MERGED" ]; then
+      echo ""
       echo "✓ PR merged successfully"
       break
     elif [ "$STATE" = "CLOSED" ]; then
+      echo ""
       echo "⚠️ PR was closed without merging"
       break
     fi
-    # Show progress
     echo -n "."
     sleep 5
+    WAIT_COUNT=$((WAIT_COUNT + 1))
   done
+  if [ $WAIT_COUNT -ge 12 ]; then
+    echo ""
+    echo "⏱️ Timeout - PR not yet merged. Check manually: gh pr view"
+  fi
 fi
 ```
 
