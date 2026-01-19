@@ -80,3 +80,6 @@ htmlcov/
 
 # === Ruff ===
 .ruff_cache/
+
+# Plan approval markers
+.claude/.plan-approved-*
