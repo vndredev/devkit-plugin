@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.51.3] - 2026-01-19
+## [v0.51.4] - 2026-01-19
 
 ### Fixed
 
+- **Plugin**: Sync coverage minimum and fix edge cases (#70)
 - **Plugin**: Handle edge cases and cleanup dead code (#68)
 - **Arch**: Improve check_arch return type and secret parsing (#67)
 - **Logging**: Support nested env_vars config format for credential check (#65)
