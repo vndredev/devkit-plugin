@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.51.1] - 2026-01-19
+## [v0.51.2] - 2026-01-19
 
 ### Fixed
 
+- **Arch**: Improve check_arch return type and secret parsing (#67)
 - **Logging**: Support nested env_vars config format for credential check (#65)
 - **Sync**: Auto-sync user files when outdated (#60)
 - **Lib**: Add timeouts to subprocess calls in tools.py (#59)
