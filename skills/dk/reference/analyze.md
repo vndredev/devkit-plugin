@@ -95,8 +95,9 @@ Launch Opus agents for each detected area:
 
 ```python
 # Example Task tool configuration
+# CRITICAL: Use general-purpose (not Explore) to enable opus model
 Task(
-    subagent_type="Explore",
+    subagent_type="general-purpose",
     model="opus",
     prompt=ANALYSIS_PROMPT.format(area=area, patterns=patterns),
     description=f"Analyze {area}"
@@ -276,8 +277,9 @@ Continue fixing issues from an existing analysis plan:
 **Task tool configuration:**
 
 ```python
+# CRITICAL: Use general-purpose (not Explore) to enable opus model
 Task(
-    subagent_type="Explore",
+    subagent_type="general-purpose",
     model="opus",
     prompt="...",
     description="Analyze {area}"
