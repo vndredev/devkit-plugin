@@ -6,25 +6,22 @@
 
 Das Plugin stellt folgende MCP-Server bereit:
 
-| Server       | Paket                           | Beschreibung          | API Key                       |
-| ------------ | ------------------------------- | --------------------- | ----------------------------- |
-| `context7`   | `@upstash/context7-mcp`         | Library-Dokumentation | -                             |
-| `neon`       | `@neondatabase/mcp-server-neon` | Postgres-Datenbank    | `NEON_API_KEY`                |
-| `stripe`     | `@stripe/mcp`                   | Payment-Integration   | `STRIPE_SECRET_KEY`           |
-| `playwright` | `@playwright/mcp`               | Browser-Automation    | -                             |
-| `axiom`      | `mcp-server-axiom`              | Observability/Logging | `AXIOM_TOKEN`, `AXIOM_ORG_ID` |
+| Server       | Package/URL             | Description           | Auth                          |
+| ------------ | ----------------------- | --------------------- | ----------------------------- |
+| `context7`   | `@upstash/context7-mcp` | Library documentation | -                             |
+| `neon`       | `https://mcp.neon.tech` | Postgres database     | OAuth (automatic)             |
+| `stripe`     | `@stripe/mcp`           | Payment integration   | `STRIPE_SECRET_KEY`           |
+| `playwright` | `@playwright/mcp`       | Browser automation    | -                             |
+| `axiom`      | `mcp-server-axiom`      | Observability/Logging | `AXIOM_TOKEN`, `AXIOM_ORG_ID` |
 
 ---
 
-## API Keys konfigurieren
+## API Keys Configuration
 
-Setze die benötigten API Keys in deiner Shell-Umgebung:
+Set required API keys in your shell environment:
 
 ```bash
-# ~/.zshrc oder ~/.bashrc
-
-# Neon (https://console.neon.tech/app/settings/api-keys)
-export NEON_API_KEY="your-neon-api-key"
+# ~/.zshrc or ~/.bashrc
 
 # Stripe (https://dashboard.stripe.com/apikeys)
 export STRIPE_SECRET_KEY="sk_test_..."
@@ -34,7 +31,9 @@ export AXIOM_TOKEN="your-axiom-token"
 export AXIOM_ORG_ID="your-org-id"
 ```
 
-Nach dem Setzen der Keys: **Claude Code neu starten**.
+After setting keys: **Restart Claude Code**.
+
+**Note:** Neon uses OAuth (automatic) - no API key needed.
 
 ---
 
