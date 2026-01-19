@@ -89,7 +89,7 @@
     "enabled": true,
     "framework": "pytest",
     "coverage": {
-      "minimum": 70,
+      "minimum": 80,
       "exclude": ["tests", ".venv", "__pycache__"],
     },
   },
