@@ -118,7 +118,7 @@ get_devkit_status() {
         return
     fi
 
-    # Run health check
+    # Run health check with auto-fix for sync issues
     local result
     result=$(cd "$plugin_root" 2>/dev/null && \
         PYTHONPATH=src "$python_cmd" -c "
@@ -126,7 +126,23 @@ import os
 os.chdir('$CWD')
 try:
     from arch.check import check_all
+    from lib.config import get
+    from lib.sync import sync_all
+    from pathlib import Path
+
     r = check_all()
+
+    # Auto-fix sync issues if enabled
+    if not r.get('sync', {}).get('ok'):
+        auto_sync = get('hooks.session.auto_sync', True)
+        if auto_sync:
+            root = Path('$CWD')
+            sync_results = sync_all(root=root, check_plugin_update=False)
+            synced = sum(1 for _, ok, _ in sync_results if ok)
+            if synced > 0:
+                # Re-check after sync
+                r = check_all()
+
     if r.get('healthy'):
         print('ok')
     else:
@@ -139,7 +155,7 @@ try:
             print('error:arch violation - run /dk plugin check')
         else:
             print('error:issues found - run /dk plugin check')
-except Exception:
+except Exception as e:
     print('error:check failed')
 " 2>/dev/null)
 
