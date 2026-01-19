@@ -135,6 +135,7 @@ try:
     from pathlib import Path
 
     r = check_all()
+    synced_count = 0
 
     # Auto-fix sync issues if enabled
     if not r.get('sync', {}).get('ok'):
@@ -142,13 +143,16 @@ try:
         if auto_sync:
             root = Path('$CWD')
             sync_results = sync_all(root=root, check_plugin_update=False)
-            synced = sum(1 for _, ok, _ in sync_results if ok)
-            if synced > 0:
+            synced_count = sum(1 for _, ok, _ in sync_results if ok)
+            if synced_count > 0:
                 # Re-check after sync
                 r = check_all()
 
     if r.get('healthy'):
-        print('ok')
+        if synced_count > 0:
+            print(f'synced:{synced_count}')
+        else:
+            print('ok')
     else:
         # Prioritize: show most actionable issue with fix command
         if not r.get('sync', {}).get('ok'):
@@ -165,7 +169,10 @@ except Exception as e:
 
     if [ "$result" = "ok" ]; then
         DEVKIT_STATUS="ok"
-        DEVKIT_MSG="ok"
+        DEVKIT_MSG=""
+    elif [[ "$result" == synced:* ]]; then
+        DEVKIT_STATUS="synced"
+        DEVKIT_MSG="${result#synced:}"
     elif [[ "$result" == error:* ]]; then
         DEVKIT_STATUS="error"
         DEVKIT_MSG="${result#error:}"
@@ -239,11 +246,12 @@ fi
 if [ -n "$DEVKIT_STATUS" ]; then
     OUTPUT+=" \033[90m|\033[0m "
 
-    if [ "$DEVKIT_STATUS" = "ok" ]; then
-        # Show version (green) + dev mode indicator
+    if [ "$DEVKIT_STATUS" = "ok" ] || [ "$DEVKIT_STATUS" = "synced" ]; then
+        # Show version (green) + dev mode indicator + synced info
         OUTPUT+="\033[32mdevkit"
         [ -n "$DEVKIT_VERSION" ] && OUTPUT+=" $DEVKIT_VERSION"
         [ -n "$DEVKIT_DEV_MODE" ] && OUTPUT+=" (dev)"
+        [ "$DEVKIT_STATUS" = "synced" ] && OUTPUT+=" ✓ synced"
         OUTPUT+="\033[0m"
     else
         # Show error with version if available

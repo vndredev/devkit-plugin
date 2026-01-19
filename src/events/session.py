@@ -100,7 +100,7 @@ def main() -> None:
 
             if synced_count > 0:
                 output_lines.append("")
-                output_lines.append(f"📄 Auto-synced {synced_count} file(s)")
+                output_lines.append(f"✅ Auto-synced {synced_count} file(s)")
 
                 # Auto-commit managed files on protected branch
                 auto_commit = get("hooks.session.auto_commit_managed", True)
