@@ -6,12 +6,9 @@
       "description": "Up-to-date library documentation and code examples"
     },
     "neon": {
-      "command": "npx",
-      "args": ["-y", "@neondatabase/mcp-server-neon", "start"],
-      "env": {
-        "NEON_API_KEY": "${NEON_API_KEY}"
-      },
-      "description": "Neon Postgres database management"
+      "type": "url",
+      "url": "https://mcp.neon.tech",
+      "description": "Neon Postgres database management (OAuth)"
     },
     "stripe": {
       "command": "npx",
