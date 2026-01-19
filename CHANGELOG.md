@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.51.4] - 2026-01-19
+## [v0.52.0] - 2026-01-19
 
 ### Fixed
 
@@ -21,6 +21,7 @@
 
 ### Added
 
+- **Plugin**: Add upstash redis mcp server (#71)
 - **Git**: Wait for pr merge before returning to main (#64)
 - **Statusline**: Remove plan-guard enforcement and improve sync messaging (#63)
 - **Skill**: Add livekit skill for real-time communication (#61)
