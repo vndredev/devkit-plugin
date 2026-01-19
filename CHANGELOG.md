@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.47.0] - 2026-01-19
+## [v0.47.1] - 2026-01-19
 
 ### Fixed
 
+- **Mcp**: Use neon remote mcp with oauth (#56)
 - **Statusline**: Use claude_plugin_root for version detection (#53)
 - **Hook**: Use correct tool_input key in plan_guard (#52)
 
