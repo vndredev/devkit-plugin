@@ -146,6 +146,30 @@ jobs:
           pkg.version = newVersion;
           fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
 
+          // Sync version to other files (config.jsonc, plugin.json)
+          const versionFiles = [
+            { path: '.claude/.devkit/config.jsonc', isJsonc: true },
+            { path: '.claude-plugin/plugin.json', isJsonc: false },
+          ];
+
+          for (const { path, isJsonc } of versionFiles) {
+            if (!fs.existsSync(path)) continue;
+
+            if (isJsonc) {
+              // JSONC: use regex to preserve comments
+              let content = fs.readFileSync(path, 'utf8');
+              content = content.replace(/("version":\s*")([^"]*)(")/, `$1${newVersion}$3`);
+              fs.writeFileSync(path, content);
+            } else {
+              // Regular JSON: parse and update
+              try {
+                const data = JSON.parse(fs.readFileSync(path, 'utf8'));
+                data.version = newVersion;
+                fs.writeFileSync(path, JSON.stringify(data, null, 2) + '\n');
+              } catch (e) {}
+            }
+          }
+
           // Update changelog
           const section = SECTION_MAP[commitType];
           const entry = `- ${formatEntry(msg, AUDIENCE)}`;
@@ -206,6 +230,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md package.json
           [ -f package-lock.json ] && git add package-lock.json || true
+          [ -f .claude/.devkit/config.jsonc ] && git add .claude/.devkit/config.jsonc || true
+          [ -f .claude-plugin/plugin.json ] && git add .claude-plugin/plugin.json || true
           git commit -m "chore(release): ${{ steps.release.outputs.version }} [skip ci]"
           git push
 
