@@ -37,6 +37,10 @@
         "AXIOM_URL": "https://api.axiom.co"
       },
       "description": "Axiom observability and logging"
+    },
+    "livekit-docs": {
+      "url": "https://docs.livekit.io/mcp",
+      "description": "LiveKit documentation and code examples"
     }
   }
 }
