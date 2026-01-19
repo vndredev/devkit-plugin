@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.44.0] - 2026-01-19
+## [v0.45.0] - 2026-01-19
 
 ### Added
 
+- **Serv**: Background service start with scripts (#48)
 - **Hook**: Add stop hook for plugin update check (#47)
 - **Serv**: Unified /dk serv command for dev services (#46)
 
