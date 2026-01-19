@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.48.1] - 2026-01-19
+## [v0.48.2] - 2026-01-19
 
 ### Fixed
 
+- **Sync**: Auto-sync user files when outdated (#60)
 - **Lib**: Add timeouts to subprocess calls in tools.py (#59)
 - **Mcp**: Use env var defaults and restore neon api key mode (#57)
 - **Mcp**: Use neon remote mcp with oauth (#56)
