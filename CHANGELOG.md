@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.43.0] - 2026-01-19
+
+### Added
+
+- **Serv**: Unified /dk serv command for dev services (#46)
+
 ## [v0.42.2] - 2026-01-18
 
 ### Added
