@@ -6,13 +6,13 @@
 
 ## Commands
 
-| Command          | Description                       |
-| ---------------- | --------------------------------- |
-| `/dk serv`       | Status aller Services             |
-| `/dk serv start` | Zeigt alle Start-Commands         |
-| `/dk serv stop`  | Stoppt alle Services              |
-| `/dk serv urls`  | Zeigt alle URLs                   |
-| `/dk serv test`  | Sendet Test-Events (Stripe, etc.) |
+| Command          | Description                                |
+| ---------------- | ------------------------------------------ |
+| `/dk serv`       | Status aller Services                      |
+| `/dk serv start` | Startet alle Services als Background-Tasks |
+| `/dk serv stop`  | Stoppt alle Services                       |
+| `/dk serv urls`  | Zeigt alle URLs                            |
+| `/dk serv test`  | Sendet Test-Events (Stripe, etc.)          |
 
 ---
 
@@ -85,56 +85,49 @@ if not status['services']:
 
 ## /dk serv start
 
-Show commands to start all services (respects `include_webhooks` setting):
+**Startet alle Services als Background-Tasks.**
+
+**YOU MUST use Bash with `run_in_background: true`:**
 
 ```bash
-PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
-from lib.serv import serv_start_commands
-
-commands = serv_start_commands()
-
-print('=== Start Commands ===')
-print()
-print('Run these commands in separate terminals:')
-print()
-
-for cmd in commands:
-    print(f'Terminal {cmd[\"terminal\"]}: {cmd[\"description\"]}')
-    print(f'  {cmd[\"command\"]}')
-    print()
-"
+# CRITICAL: Run with run_in_background: true
+${SKILL_DIR}/scripts/serv-start.sh "$(pwd)" "${PLUGIN_ROOT}"
 ```
 
-**Manual Start** (copy to separate terminals):
+Nach dem Start zeigt das Script:
+
+- PIDs der gestarteten Prozesse
+- Log-Dateien (.serv/\*.log)
+- Lokale URL
+
+**Logs lesen:**
 
 ```bash
-# Terminal 1: Dev server
-npm run dev
+# Dev server logs
+tail -f .serv/dev.log
 
-# Terminal 2: ngrok tunnel (if configured)
-ngrok http 3000 --domain your-app.ngrok-free.app
+# ngrok logs
+tail -f .serv/ngrok.log
 
-# Terminal 3: Stripe CLI (if Stripe detected)
-stripe listen --forward-to http://localhost:3000/api/webhooks/stripe
+# Stripe CLI logs
+tail -f .serv/stripe.log
 ```
 
 ---
 
 ## /dk serv stop
 
-Stop all services:
+**Stoppt alle Services die mit `/dk serv start` gestartet wurden.**
 
 ```bash
-# Find and kill processes by port
-lsof -ti:3000 | xargs kill -9 2>/dev/null || true
-lsof -ti:4040 | xargs kill -9 2>/dev/null || true  # ngrok inspect
-
-# Or use process names
-pkill -f "ngrok" 2>/dev/null || true
-pkill -f "stripe listen" 2>/dev/null || true
+${SKILL_DIR}/scripts/serv-stop.sh "$(pwd)"
 ```
 
-**Note:** The dev server should be stopped via its terminal (Ctrl+C).
+Das Script:
+
+- Liest PIDs aus `.serv/pids`
+- Stoppt alle Prozesse
+- Behält Logs für Debugging
 
 ---
 
