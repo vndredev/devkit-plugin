@@ -1,0 +1,40 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "description": "Up-to-date library documentation and code examples"
+    },
+    "neon": {
+      "command": "npx",
+      "args": ["-y", "@neondatabase/mcp-server-neon", "start"],
+      "env": {
+        "NEON_API_KEY": "${NEON_API_KEY}"
+      },
+      "description": "Neon Postgres database management"
+    },
+    "stripe": {
+      "command": "npx",
+      "args": ["-y", "@stripe/mcp", "--tools=all"],
+      "env": {
+        "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}"
+      },
+      "description": "Stripe payment integration"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "description": "Browser automation via Playwright"
+    },
+    "axiom": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-axiom"],
+      "env": {
+        "AXIOM_TOKEN": "${AXIOM_TOKEN}",
+        "AXIOM_ORG_ID": "${AXIOM_ORG_ID}",
+        "AXIOM_URL": "https://api.axiom.co"
+      },
+      "description": "Axiom observability and logging"
+    }
+  }
+}
