@@ -85,49 +85,59 @@ if not status['services']:
 
 ## /dk serv start
 
-**Startet alle Services als Background-Tasks.**
+**Startet alle Services als Claude Background-Tasks.**
 
-**YOU MUST use Bash with `run_in_background: true`:**
-
-```bash
-# CRITICAL: Run with run_in_background: true
-${SKILL_DIR}/scripts/serv-start.sh "$(pwd)" "${PLUGIN_ROOT}"
-```
-
-Nach dem Start zeigt das Script:
-
-- PIDs der gestarteten Prozesse
-- Log-Dateien (.serv/\*.log)
-- Lokale URL
-
-**Logs lesen:**
+### Step 1: Get Commands
 
 ```bash
-# Dev server logs
-tail -f .serv/dev.log
-
-# ngrok logs
-tail -f .serv/ngrok.log
-
-# Stripe CLI logs
-tail -f .serv/stripe.log
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
+from lib.serv import serv_start_commands
+for cmd in serv_start_commands():
+    print(f'{cmd[\"description\"]}: {cmd[\"command\"]}')
+"
 ```
+
+### Step 2: Start Each Service
+
+**YOU MUST start EACH service as a SEPARATE Bash call with `run_in_background: true`:**
+
+Example commands (actual commands come from Step 1):
+
+```bash
+# Service 1: Dev server (run_in_background: true)
+npm run dev
+
+# Service 2: ngrok tunnel (run_in_background: true)
+ngrok http 3000 --domain your-domain.ngrok-free.app
+
+# Service 3: Stripe CLI (run_in_background: true)
+stripe listen --forward-to http://localhost:3000/api/webhooks/stripe
+```
+
+### Step 3: Show URLs
+
+```bash
+PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
+from lib.serv import serv_urls
+urls = serv_urls()
+print(f'Local: {urls[\"localhost\"]}')
+if urls['ngrok']: print(f'Public: {urls[\"ngrok\"]}')
+"
+```
+
+### Step 4: Monitor
+
+Use `TaskOutput` tool with `block: false` to check service output.
 
 ---
 
 ## /dk serv stop
 
-**Stoppt alle Services die mit `/dk serv start` gestartet wurden.**
+**Stoppt Background-Tasks mit `KillShell` tool.**
 
-```bash
-${SKILL_DIR}/scripts/serv-stop.sh "$(pwd)"
-```
+Use the `KillShell` tool with the shell_id from each running service.
 
-Das Script:
-
-- Liest PIDs aus `.serv/pids`
-- Stoppt alle Prozesse
-- Behält Logs für Debugging
+List running tasks: `/tasks` command
 
 ---
 
