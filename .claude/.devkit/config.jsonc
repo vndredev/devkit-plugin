@@ -7,7 +7,7 @@
   "project": {
     "name": "devkit-plugin",
     "type": "plugin",
-    "version": "0.49.0",
+    "version": "0.50.0",
     "slogan": "Claude Code Plugin for automated dev workflows",
     "description": "Automatisiert Code-Standards, Git-Conventions und Dokumentation via Claude Code Hooks. Single Source of Truth in config.jsonc.",
     "principles": [

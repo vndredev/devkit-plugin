@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.49.0] - 2026-01-19
+## [v0.50.0] - 2026-01-19
 
 ### Fixed
 
@@ -17,6 +17,7 @@
 
 ### Added
 
+- **Statusline**: Remove plan-guard enforcement and improve sync messaging (#63)
 - **Skill**: Add livekit skill for real-time communication (#61)
 - **Mcp**: Add mcp health check for env vars (#58)
 - **Hook**: Add userpromptsubmit hook for workflow enforcement (#55)

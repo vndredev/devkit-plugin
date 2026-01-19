@@ -1,12 +1,14 @@
 {
   "name": "devkit-plugin",
-  "version": "0.49.0",
+  "version": "0.50.0",
   "description": "Clean Architecture + Dev Workflow Plugin",
   "author": {
     "name": "vndredev"
   },
   "license": "MIT",
-  "skills": ["./skills/"],
+  "skills": [
+    "./skills/"
+  ],
   "hooks": {
     "UserPromptSubmit": [
       {
