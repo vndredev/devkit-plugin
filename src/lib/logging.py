@@ -38,7 +38,7 @@ def get_logging_strategy() -> str:
 # Provider definitions with detection patterns
 PROVIDERS = {
     "axiom": {
-        "env_patterns": ["AXIOM_TOKEN", "AXIOM_DATASET", "NEXT_PUBLIC_AXIOM_TOKEN"],
+        "env_patterns": ["AXIOM_TOKEN", "AXIOM_DATASET"],
         "deps": [
             "@axiomhq/js",
             "@axiomhq/nextjs",
@@ -177,8 +177,13 @@ def detect_services(project_root: Path | None = None) -> dict[str, dict]:
         provider = config.get("provider", name)
         provider_info = PROVIDERS.get(provider, {})
 
-        # Check for credential env var (support multiple field names)
-        env_var_name = config.get("env_var") or config.get("token")
+        # Check for credential env var (support multiple config formats)
+        # Format 1: env_var: "AXIOM_TOKEN"
+        # Format 2: token: "AXIOM_TOKEN"
+        # Format 3: env_vars: {token: "AXIOM_TOKEN"}
+        env_var_name = (
+            config.get("env_var") or config.get("token") or config.get("env_vars", {}).get("token")
+        )
         has_credentials = env_var_name in env_vars if env_var_name else False
 
         detected[name] = {
