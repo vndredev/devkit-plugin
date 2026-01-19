@@ -24,4 +24,4 @@ omit = [ "tests/*", "*/__init__.py",]
 
 [tool.coverage.report]
 exclude_lines = [ "pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedError",]
-fail_under = 70
+fail_under = 80

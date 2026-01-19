@@ -115,6 +115,8 @@ def check_arch_violation(file_path: str) -> tuple[str | None, bool]:
         if not ok and violations:
             # Find violations related to this file
             for v in violations:
+                if "file" not in v:
+                    continue
                 if file_path.endswith(v["file"].lstrip("./")):
                     # Layer violations are blocking errors
                     is_layer_violation = (
