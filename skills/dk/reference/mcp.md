@@ -6,13 +6,13 @@
 
 Das Plugin stellt folgende MCP-Server bereit:
 
-| Server       | Package/URL             | Description           | Auth                          |
-| ------------ | ----------------------- | --------------------- | ----------------------------- |
-| `context7`   | `@upstash/context7-mcp` | Library documentation | -                             |
-| `neon`       | `https://mcp.neon.tech` | Postgres database     | OAuth (automatic)             |
-| `stripe`     | `@stripe/mcp`           | Payment integration   | `STRIPE_SECRET_KEY`           |
-| `playwright` | `@playwright/mcp`       | Browser automation    | -                             |
-| `axiom`      | `mcp-server-axiom`      | Observability/Logging | `AXIOM_TOKEN`, `AXIOM_ORG_ID` |
+| Server       | Package                         | Description           | Env Vars                      |
+| ------------ | ------------------------------- | --------------------- | ----------------------------- |
+| `context7`   | `@upstash/context7-mcp`         | Library documentation | -                             |
+| `neon`       | `@neondatabase/mcp-server-neon` | Postgres database     | `NEON_API_KEY`                |
+| `stripe`     | `@stripe/mcp`                   | Payment integration   | `STRIPE_SECRET_KEY`           |
+| `playwright` | `@playwright/mcp`               | Browser automation    | -                             |
+| `axiom`      | `mcp-server-axiom`              | Observability/Logging | `AXIOM_TOKEN`, `AXIOM_ORG_ID` |
 
 ---
 
@@ -22,6 +22,9 @@ Set required API keys in your shell environment:
 
 ```bash
 # ~/.zshrc or ~/.bashrc
+
+# Neon (https://console.neon.tech/app/settings/api-keys)
+export NEON_API_KEY="neon_api_key_here"
 
 # Stripe (https://dashboard.stripe.com/apikeys)
 export STRIPE_SECRET_KEY="sk_test_..."
@@ -33,7 +36,7 @@ export AXIOM_ORG_ID="your-org-id"
 
 After setting keys: **Restart Claude Code**.
 
-**Note:** Neon uses OAuth (automatic) - no API key needed.
+**Note:** MCPs with missing env vars will start but fail to connect. Use `${VAR:-}` syntax in configs for graceful fallback.
 
 ---
 
