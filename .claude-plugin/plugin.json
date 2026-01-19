@@ -6,10 +6,19 @@
     "name": "vndredev"
   },
   "license": "MIT",
-  "skills": [
-    "./skills/"
-  ],
+  "skills": ["./skills/"],
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PLUGIN_ROOT}\" && PYTHONPATH=src .venv/bin/python src/events/prompt_submit.py",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
