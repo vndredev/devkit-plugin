@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.45.2] - 2026-01-19
+## [v0.45.3] - 2026-01-19
 
 ### Fixed
 
+- **Statusline**: Use claude_plugin_root for version detection (#53)
 - **Hook**: Use correct tool_input key in plan_guard (#52)
 
 ### Changed
