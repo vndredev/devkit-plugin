@@ -6,13 +6,14 @@
 
 Das Plugin stellt folgende MCP-Server bereit:
 
-| Server       | Package                         | Description           | Env Vars                      |
-| ------------ | ------------------------------- | --------------------- | ----------------------------- |
-| `context7`   | `@upstash/context7-mcp`         | Library documentation | -                             |
-| `neon`       | `@neondatabase/mcp-server-neon` | Postgres database     | `NEON_API_KEY`                |
-| `stripe`     | `@stripe/mcp`                   | Payment integration   | `STRIPE_SECRET_KEY`           |
-| `playwright` | `@playwright/mcp`               | Browser automation    | -                             |
-| `axiom`      | `mcp-server-axiom`              | Observability/Logging | `AXIOM_TOKEN`, `AXIOM_ORG_ID` |
+| Server       | Package                         | Description           | Env Vars                           |
+| ------------ | ------------------------------- | --------------------- | ---------------------------------- |
+| `context7`   | `@upstash/context7-mcp`         | Library documentation | -                                  |
+| `neon`       | `@neondatabase/mcp-server-neon` | Postgres database     | `NEON_API_KEY`                     |
+| `stripe`     | `@stripe/mcp`                   | Payment integration   | `STRIPE_SECRET_KEY`                |
+| `playwright` | `@playwright/mcp`               | Browser automation    | -                                  |
+| `axiom`      | `mcp-server-axiom`              | Observability/Logging | `AXIOM_TOKEN`, `AXIOM_ORG_ID`      |
+| `upstash`    | `@upstash/mcp-server`           | Redis database        | `UPSTASH_EMAIL`, `UPSTASH_API_KEY` |
 
 ---
 
@@ -32,6 +33,10 @@ export STRIPE_SECRET_KEY="sk_test_..."
 # Axiom (https://app.axiom.co/settings/api-tokens)
 export AXIOM_TOKEN="your-axiom-token"
 export AXIOM_ORG_ID="your-org-id"
+
+# Upstash (https://console.upstash.com/account/api)
+export UPSTASH_EMAIL="your-email@example.com"
+export UPSTASH_API_KEY="your-upstash-api-key"
 ```
 
 After setting keys: **Restart Claude Code**.
@@ -117,6 +122,15 @@ curl -H "Authorization: Bearer $NEON_API_KEY" \
 curl -u "$STRIPE_SECRET_KEY:" https://api.stripe.com/v1/balance
 ```
 
+### Upstash-Verbindung fehlgeschlagen
+
+```bash
+# API Key testen
+curl -H "Authorization: Bearer $UPSTASH_API_KEY" \
+  -H "Email: $UPSTASH_EMAIL" \
+  https://api.upstash.com/v2/redis/databases
+```
+
 ---
 
 ## Ressourcen
@@ -126,3 +140,4 @@ curl -u "$STRIPE_SECRET_KEY:" https://api.stripe.com/v1/balance
 - [Stripe MCP Docs](https://docs.stripe.com/mcp)
 - [Playwright MCP](https://github.com/microsoft/playwright-mcp)
 - [Axiom MCP](https://axiom.co/docs/console/intelligence/mcp-server)
+- [Upstash MCP Docs](https://upstash.com/docs/redis/integrations/mcp)
