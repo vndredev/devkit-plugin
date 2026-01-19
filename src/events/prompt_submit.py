@@ -71,7 +71,7 @@ def build_rules_context(branch: str, on_protected: bool) -> str:
 
 def main() -> None:
     """Handle UserPromptSubmit hook."""
-    hook_data = read_hook_input()
+    _ = read_hook_input()  # Consume stdin (hook protocol)
 
     # Check if hook is enabled
     if not get("hooks.prompt_submit.enabled", True):
