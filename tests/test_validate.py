@@ -401,22 +401,23 @@ class TestValidateGhCommand:
         assert valid is False
         assert "DELETE" in msg
 
-    def test_requires_pr_body(self):
-        """Should require --body for pr create."""
+    def test_blocks_gh_pr_create(self):
+        """Should block gh pr create (must use /dk git pr)."""
         valid, msg = validate_gh_command(
             "gh pr create --title 'Test'", GH_BLOCKED_TPL, PR_MISSING_BODY_TPL
         )
 
         assert valid is False
-        assert "body" in msg.lower()
+        assert "gh pr create" in msg.lower()
 
-    def test_allows_pr_create_with_body(self):
-        """Should allow pr create with --body."""
+    def test_blocks_gh_pr_create_even_with_body(self):
+        """Should block gh pr create even with --body (must use /dk git pr)."""
         valid, msg = validate_gh_command(
             "gh pr create --title 'Test' --body 'Description'", GH_BLOCKED_TPL, PR_MISSING_BODY_TPL
         )
 
-        assert valid is True
+        assert valid is False
+        assert "gh pr create" in msg.lower()
 
     def test_allows_safe_commands(self):
         """Should allow safe gh commands."""
