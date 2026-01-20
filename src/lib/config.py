@@ -172,6 +172,10 @@ RECOMMENDED_DEFAULTS = {
     # === Format Hook ===
     "hooks.format.arch_check": True,
     "hooks.format.auto_sync_arch": True,
+    "hooks.format.eslint": {
+        "enabled": True,
+        "auto_fix": True,
+    },
     "hooks.format.prompts": {
         "formatted": "✓ Formatted: {file}",
         "test_reminder": "💡 New file - consider adding: tests/{file}",
