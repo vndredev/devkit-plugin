@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.53.1] - 2026-01-20
+## [v0.53.2] - 2026-01-20
 
 ### Fixed
 
+- **Config**: Remove trailing commas from config.jsonc (#74)
 - **Config**: Add eslint to recommended defaults (#73)
 
 ### Added
