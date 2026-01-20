@@ -100,6 +100,28 @@ def run_linter(
 ESLINT_EXTENSIONS = {".ts", ".tsx", ".js", ".jsx"}
 
 
+def _find_project_root(file_path: Path) -> Path:
+    """Find project root by looking for common markers.
+
+    Searches upward from file_path for git root or package.json.
+
+    Args:
+        file_path: Path to start searching from.
+
+    Returns:
+        Project root directory or file's parent if not found.
+    """
+    current = file_path.parent if file_path.is_file() else file_path
+    for parent in [current, *current.parents]:
+        # Check for git root first (most reliable)
+        if (parent / ".git").exists():
+            return parent
+        # Fallback to package.json for Node projects
+        if (parent / "package.json").exists():
+            return parent
+    return current
+
+
 def lint_file(path: str, fix: bool = False) -> tuple[bool, int, int, str]:
     """Run ESLint on a single JS/TS file.
 
@@ -115,6 +137,9 @@ def lint_file(path: str, fix: bool = False) -> tuple[bool, int, int, str]:
 
     if ext not in ESLINT_EXTENSIONS:
         return True, 0, 0, f"No linter for {ext}"
+
+    # Find project root to run ESLint from correct directory
+    project_root = _find_project_root(filepath)
 
     try:
         # Run ESLint with JSON output for structured results
@@ -132,6 +157,7 @@ def lint_file(path: str, fix: bool = False) -> tuple[bool, int, int, str]:
             text=True,
             check=False,
             timeout=30,
+            cwd=project_root,  # Run from project root to find eslint.config
         )
 
         # Parse JSON output to get error/warning counts
