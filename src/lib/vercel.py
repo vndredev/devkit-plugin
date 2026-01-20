@@ -201,7 +201,8 @@ def get_project_info(root: Path) -> dict | None:
                 cwd=root,
                 timeout=30,
             )
-            projects = json.loads(result.stdout)
+            data = json.loads(result.stdout)
+            projects = data.get("projects", []) if isinstance(data, dict) else data
             for proj in projects:
                 if proj.get("name") == info["name"]:
                     info["production_url"] = proj.get("latestDeployment", {}).get("url")
