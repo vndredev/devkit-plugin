@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.55.2] - 2026-01-20
+## [v0.55.3] - 2026-01-20
 
 ### Changed
 
@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- **Plugin**: Protection default + auto-pr feature (#87)
 - **Check**: Add claude-code-plugin to valid project types (#86)
 - **Schema**: Add missing types and marketplace section (#84)
 - **Vercel**: Handle new api response structure in get_project_info (#82)
