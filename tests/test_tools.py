@@ -9,6 +9,7 @@ from core.types import ProjectType
 from lib.tools import (
     ESLINT_EXTENSIONS,
     FORMATTERS,
+    _find_project_root,
     detect_project_type,
     detect_project_version,
     format_file,
@@ -325,6 +326,58 @@ class TestEslintExtensions:
         assert ".jsx" in ESLINT_EXTENSIONS
 
 
+class TestFindProjectRoot:
+    """Tests for _find_project_root()."""
+
+    def test_finds_git_root(self, tmp_path):
+        """Should find project root by .git directory."""
+        git_dir = tmp_path / ".git"
+        git_dir.mkdir()
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        test_file = src_dir / "test.ts"
+        test_file.write_text("const x = 1;")
+
+        result = _find_project_root(test_file)
+
+        assert result == tmp_path
+
+    def test_finds_package_json_root(self, tmp_path):
+        """Should find project root by package.json if no .git."""
+        (tmp_path / "package.json").write_text("{}")
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        test_file = src_dir / "test.ts"
+        test_file.write_text("const x = 1;")
+
+        result = _find_project_root(test_file)
+
+        assert result == tmp_path
+
+    def test_returns_parent_if_no_markers(self, tmp_path):
+        """Should return file's parent if no project markers found."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        test_file = src_dir / "test.ts"
+        test_file.write_text("const x = 1;")
+
+        result = _find_project_root(test_file)
+
+        assert result == src_dir
+
+    def test_prefers_git_over_package_json(self, tmp_path):
+        """Should prefer .git over package.json when both exist."""
+        git_dir = tmp_path / ".git"
+        git_dir.mkdir()
+        (tmp_path / "package.json").write_text("{}")
+        test_file = tmp_path / "test.ts"
+        test_file.write_text("const x = 1;")
+
+        result = _find_project_root(test_file)
+
+        assert result == tmp_path
+
+
 class TestLintFile:
     """Tests for lint_file()."""
 
@@ -358,6 +411,27 @@ class TestLintFile:
         assert "eslint" in call_args
         assert "--format" in call_args
         assert "json" in call_args
+
+    @patch("lib.tools.subprocess.run")
+    def test_runs_eslint_with_correct_cwd(self, mock_run, tmp_path):
+        """Should run ESLint from project root directory (fixes #75)."""
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = '[{"errorCount": 0, "warningCount": 0}]'
+        mock_run.return_value.stderr = ""
+        # Create project structure with .git marker
+        git_dir = tmp_path / ".git"
+        git_dir.mkdir()
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        test_file = src_dir / "component.tsx"
+        test_file.write_text("const x = 1;")
+
+        lint_file(str(test_file))
+
+        # Verify cwd is set to project root (where .git is)
+        call_kwargs = mock_run.call_args[1]
+        assert "cwd" in call_kwargs
+        assert call_kwargs["cwd"] == tmp_path
 
     @patch("lib.tools.subprocess.run")
     def test_runs_eslint_with_fix(self, mock_run, tmp_path):
