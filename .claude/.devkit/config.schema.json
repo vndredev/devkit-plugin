@@ -2,17 +2,12 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "DevKit Plugin Config",
   "type": "object",
-  "required": [
-    "project"
-  ],
+  "required": ["project"],
   "properties": {
     "project": {
       "type": "object",
       "description": "Project information",
-      "required": [
-        "name",
-        "type"
-      ],
+      "required": ["name", "type"],
       "properties": {
         "name": {
           "type": "string",
@@ -26,7 +21,8 @@
             "nextjs",
             "typescript",
             "javascript",
-            "plugin"
+            "plugin",
+            "claude-code-plugin"
           ],
           "description": "Project type (python, node-based, or Claude plugin)"
         },
@@ -213,10 +209,7 @@
             },
             "enforce_workflow": {
               "type": "string",
-              "enum": [
-                "warn",
-                "off"
-              ],
+              "enum": ["warn", "off"],
               "default": "warn",
               "description": "Warn when editing code on main without /dk dev workflow"
             },
@@ -289,11 +282,7 @@
             },
             "enforce_workflow": {
               "type": "string",
-              "enum": [
-                "warn",
-                "block",
-                "off"
-              ],
+              "enum": ["warn", "block", "off"],
               "default": "warn",
               "description": "Workflow enforcement: warn=show warning on protected branch, block=prevent plan mode, off=disabled"
             },
@@ -386,12 +375,7 @@
               "items": {
                 "type": "string"
               },
-              "default": [
-                "*.tsx",
-                "*.jsx",
-                "*.vue",
-                "*.css"
-              ],
+              "default": ["*.tsx", "*.jsx", "*.vue", "*.css"],
               "description": "File patterns that trigger browser verification reminder"
             },
             "prompts": {
@@ -455,9 +439,7 @@
           "items": {
             "type": "string"
           },
-          "default": [
-            "main"
-          ],
+          "default": ["main"],
           "description": "Branches protected from force push"
         },
         "conventions": {
@@ -487,11 +469,7 @@
               "properties": {
                 "mode": {
                   "type": "string",
-                  "enum": [
-                    "strict",
-                    "warn",
-                    "off"
-                  ],
+                  "enum": ["strict", "warn", "off"],
                   "default": "strict",
                   "description": "Validation mode: strict=error, warn=warning, off=disabled"
                 },
@@ -507,12 +485,7 @@
                   "items": {
                     "type": "string"
                   },
-                  "default": [
-                    "internal",
-                    "review",
-                    "ci",
-                    "deps"
-                  ],
+                  "default": ["internal", "review", "ci", "deps"],
                   "description": "Internal scopes (skip release notes)"
                 }
               }
@@ -537,11 +510,7 @@
         },
         "visibility": {
           "type": "string",
-          "enum": [
-            "public",
-            "private",
-            "internal"
-          ],
+          "enum": ["public", "private", "internal"],
           "default": "public",
           "description": "Repository visibility"
         },
@@ -561,11 +530,7 @@
             },
             "merge_method": {
               "type": "string",
-              "enum": [
-                "squash",
-                "merge",
-                "rebase"
-              ],
+              "enum": ["squash", "merge", "rebase"],
               "default": "squash",
               "description": "Merge method: squash (recommended), merge, or rebase"
             }
@@ -616,13 +581,7 @@
         },
         "platform": {
           "type": "string",
-          "enum": [
-            "vercel",
-            "railway",
-            "render",
-            "fly",
-            "netlify"
-          ],
+          "enum": ["vercel", "railway", "render", "fly", "netlify"],
           "description": "Primary deployment platform"
         },
         "platforms": {
@@ -683,9 +642,7 @@
                 "description": "Human-readable layer description for documentation"
               }
             },
-            "required": [
-              "tier"
-            ]
+            "required": ["tier"]
           }
         }
       }
@@ -701,11 +658,7 @@
         },
         "preset": {
           "type": "string",
-          "enum": [
-            "strict",
-            "relaxed",
-            "minimal"
-          ],
+          "enum": ["strict", "relaxed", "minimal"],
           "default": "strict",
           "description": "Linter preset (strict, relaxed, minimal)"
         },
@@ -768,11 +721,7 @@
         },
         "framework": {
           "type": "string",
-          "enum": [
-            "pytest",
-            "jest",
-            "vitest"
-          ],
+          "enum": ["pytest", "jest", "vitest"],
           "description": "Test framework"
         },
         "coverage": {
@@ -819,10 +768,7 @@
         },
         "audience": {
           "type": "string",
-          "enum": [
-            "developer",
-            "user"
-          ],
+          "enum": ["developer", "user"],
           "default": "developer",
           "description": "Target audience: developer (technical, shows scopes) or user (simple, clean)"
         },
@@ -886,9 +832,7 @@
                   "items": {
                     "type": "string"
                   },
-                  "default": [
-                    "__init__.py"
-                  ],
+                  "default": ["__init__.py"],
                   "description": "File names to exclude from checks"
                 }
               }
@@ -965,9 +909,7 @@
           "items": {
             "type": "string"
           },
-          "default": [
-            "src/**/*.py"
-          ],
+          "default": ["src/**/*.py"],
           "description": "Glob patterns for files to scan for similar code"
         },
         "threshold": {
@@ -1036,13 +978,7 @@
               },
               "provider": {
                 "type": "string",
-                "enum": [
-                  "stripe",
-                  "livekit",
-                  "clerk",
-                  "resend",
-                  "custom"
-                ],
+                "enum": ["stripe", "livekit", "clerk", "resend", "custom"],
                 "description": "Service provider for CLI integration"
               },
               "events": {
@@ -1053,9 +989,7 @@
                 "description": "Events to listen for (provider-specific)"
               }
             },
-            "required": [
-              "path"
-            ]
+            "required": ["path"]
           }
         }
       }
@@ -1071,11 +1005,7 @@
         },
         "strategy": {
           "type": "string",
-          "enum": [
-            "auto",
-            "terminal",
-            "service"
-          ],
+          "enum": ["auto", "terminal", "service"],
           "default": "auto",
           "description": "Logging strategy: auto (based on project type), terminal (Python logging), service (Axiom, etc.)"
         },
@@ -1125,6 +1055,24 @@
           }
         }
       }
+    },
+    "marketplace": {
+      "type": "object",
+      "description": "Plugin marketplace configuration for publishing",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "GitHub username for marketplace repo"
+        },
+        "repo_name": {
+          "type": "string",
+          "description": "Marketplace repository name"
+        },
+        "local_dir": {
+          "type": "string",
+          "description": "Local directory path to marketplace repo"
+        }
+      }
     }
   },
   "$defs": {
@@ -1140,20 +1088,14 @@
           "default": true
         }
       },
-      "required": [
-        "template"
-      ]
+      "required": ["template"]
     },
     "managedDoc": {
       "type": "object",
       "properties": {
         "type": {
           "type": "string",
-          "enum": [
-            "auto_sections",
-            "auto_generate",
-            "template"
-          ],
+          "enum": ["auto_sections", "auto_generate", "template"],
           "description": "auto_sections preserves CUSTOM blocks, auto_generate generates from config, template copies from plugin"
         },
         "template": {
@@ -1165,9 +1107,7 @@
           "default": true
         }
       },
-      "required": [
-        "type"
-      ]
+      "required": ["type"]
     },
     "managedIgnore": {
       "type": "object",
@@ -1191,9 +1131,7 @@
           "default": true
         }
       },
-      "required": [
-        "template"
-      ]
+      "required": ["template"]
     }
   }
 }
