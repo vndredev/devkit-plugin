@@ -142,7 +142,8 @@
       "blocked_commands": [
         "gh repo delete",
         "gh secret delete",
-        "gh api -X DELETE"
+        "gh api -X DELETE",
+        "gh pr create"
       ],
       "prompts": {
         "branch_invalid": "BLOCKED: Branch '{branch}' MUST match pattern: {pattern}. YOU MUST rename the branch.",
