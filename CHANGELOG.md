@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.53.0] - 2026-01-20
+
+### Added
+
+- **Format**: Add eslint hook with strict 0-err/0-warn policy (#72)
+
 ## [v0.52.0] - 2026-01-19
 
 ### Fixed
