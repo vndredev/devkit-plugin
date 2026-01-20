@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.55.4] - 2026-01-20
+## [v0.55.5] - 2026-01-20
 
 ### Changed
 
@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- **Session**: Don't mark plugin-project hint as issue (#89)
 - **Sync**: Add git fetch+pull before sync_with_pr (#88)
 - **Plugin**: Protection default + auto-pr feature (#87)
 - **Check**: Add claude-code-plugin to valid project types (#86)
