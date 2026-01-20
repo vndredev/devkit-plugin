@@ -165,31 +165,8 @@ def main() -> None:
     except (SubprocessError, OSError, GitError):
         pass
 
-    # Protection sync check - compare config vs GitHub
-    if get("hooks.session.check_protection", True):
-        try:
-            from lib.github import compare_protection_config, get_repo_info
-
-            protection_config = get("github.protection", {})
-            if protection_config.get("enabled", True):
-                repo_info = get_repo_info()
-                if repo_info:
-                    repo = f"{repo_info.owner}/{repo_info.name}"
-                    discrepancies = compare_protection_config(repo, protection_config)
-                    if discrepancies:
-                        issues = []
-                        for d in discrepancies:
-                            setting = d["setting"]
-                            config_val = d["config_value"]
-                            github_val = d["github_value"]
-                            issues.append(f"{setting}={config_val} (GitHub: {github_val})")
-
-                        output_lines.append("")
-                        output_lines.append(f"⚠️ Protection out of sync: {', '.join(issues)}")
-                        output_lines.append("   Run `/dk git init` to sync")
-                        has_issues = True
-        except (ImportError, OSError, Exception):
-            pass
+    # NOTE: Protection sync check moved to stop.py for better performance
+    # (API calls should happen after Claude responds, not at session start)
 
     # Commands hint - only if no issues (otherwise they know what to fix)
     if not has_issues:
