@@ -4,54 +4,12 @@
 
 ## Overview
 
-## Architecture
 
-Clean Architecture: Imports nur von niedrigeren Tiers erlaubt.
-
-| Layer | Tier | Description | May Import |
-|-------|------|-------------|------------|
-| `core` | 0 | Types, errors, constants - nur stdlib | stdlib only |
-| `lib` | 1 | I/O-Adapter: config, git, tools, sync | core |
-| `arch` | 2 | Architecture-Analyse und Visualisierung | core, lib |
-| `events` | 3 | Claude Code Hook-Handler | core, lib, arch |
-
-```mermaid
-graph TD
-    core[core]
-    lib[lib]
-    core --> lib
-    arch[arch]
-    lib --> arch
-    events[events]
-    arch --> events
-```
 
 ## ASCII Diagram
 
 ```
-Architecture Layers
-============================================================
-
-  ┌────────────────────┐
-  │TIER 0: core        │  Types, errors, constants - nur
-  └────────────────────┘
-            │
-            ▼
-  ┌────────────────────┐
-  │TIER 1: lib         │  I/O-Adapter: config, git, tool
-  └────────────────────┘
-            │
-            ▼
-  ┌────────────────────┐
-  │TIER 2: arch        │  Architecture-Analyse und Visua
-  └────────────────────┘
-            │
-            ▼
-  ┌────────────────────┐
-  │TIER 3: events      │  Claude Code Hook-Handler
-  └────────────────────┘
-
-Rule: Higher tiers may import from lower tiers only.
+No layers configured.
 ```
 
 ## Dependency Matrix

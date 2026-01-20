@@ -50,7 +50,15 @@ def check_config() -> tuple[bool, list[str], list[str]]:
 
     # Check project type is valid
     project_type = config.get("project", {}).get("type")
-    valid_types = ["python", "node", "nextjs", "typescript", "javascript", "plugin"]
+    valid_types = [
+        "python",
+        "node",
+        "nextjs",
+        "typescript",
+        "javascript",
+        "plugin",
+        "claude-code-plugin",
+    ]
     if project_type and project_type not in valid_types:
         errors.append(f"Invalid project.type: {project_type}")
 
