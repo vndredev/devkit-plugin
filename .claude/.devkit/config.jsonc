@@ -8,7 +8,7 @@
   "project": {
     "name": "devkit-plugin",
     "type": "claude-code-plugin",
-    "version": "0.54.1"
+    "version": "0.54.2"
   },
 
   // ======================================================================

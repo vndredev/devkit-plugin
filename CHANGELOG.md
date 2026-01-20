@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.54.1] - 2026-01-20
+## [v0.54.2] - 2026-01-20
 
 ### Changed
 
@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- **Vercel**: Handle new api response structure in get_project_info (#82)
 - **Validate**: Block gh pr create command (#77)
 - **Hook**: Run eslint from project root directory (#76)
 - **Config**: Remove trailing commas from config.jsonc (#74)
