@@ -10,7 +10,7 @@ from pathlib import Path
 
 from lib.config import clear_cache, get, load_config
 from lib.git import run_git
-from lib.github import check_ruleset_status, setup_branch_protection
+from lib.github import check_ruleset_status, setup_branch_protection, setup_release_workflow
 from lib.marketplace import get_marketplace_config, setup_marketplace
 from lib.sync import get_plugin_root, sync_all
 from lib.tools import detect_project_type, detect_project_version
@@ -283,11 +283,10 @@ def git_init(
         gh_results = setup_github(github_repo, visibility)
         results.extend(gh_results)
 
-        # 8. Branch protection (after GitHub setup)
-        protection_config = get("github.protection", {})
-        if protection_config.get("enabled", True):
-            protection_results = setup_branch_protection(github_repo, protection_config)
-            results.extend(protection_results)
+        # 8. Release workflow setup (check RELEASE_PAT instead of creating rulesets)
+        # Note: Rulesets don't work well with Free plans (no bypass actors)
+        release_results = setup_release_workflow(github_repo)
+        results.extend(release_results)
 
     # 9. Marketplace setup (for Claude Code plugins only)
     if project_type == "claude-code-plugin":
