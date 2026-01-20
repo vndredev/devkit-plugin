@@ -410,14 +410,13 @@ class TestValidateGhCommand:
         assert valid is False
         assert "gh pr create" in msg.lower()
 
-    def test_blocks_gh_pr_create_even_with_body(self):
-        """Should block gh pr create even with --body (must use /dk git pr)."""
+    def test_allows_gh_pr_create_with_body(self):
+        """Should allow gh pr create with --body (internal plugin use)."""
         valid, msg = validate_gh_command(
             "gh pr create --title 'Test' --body 'Description'", GH_BLOCKED_TPL, PR_MISSING_BODY_TPL
         )
 
-        assert valid is False
-        assert "gh pr create" in msg.lower()
+        assert valid is True
 
     def test_allows_safe_commands(self):
         """Should allow safe gh commands."""

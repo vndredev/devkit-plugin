@@ -235,9 +235,9 @@ def validate_gh_command(
         if blocked in cmd:
             return False, gh_blocked_tpl.format(cmd=blocked)
 
-    # Warn if pr create without --body (should use template)
+    # Block gh pr create without --body (should use /dk git pr which adds proper body)
     if "gh pr create" in cmd and "--body" not in cmd:
-        return False, pr_missing_body_tpl
+        return False, "Use `/dk git pr` instead of `gh pr create` (or add --body)"
 
     return True, "Valid gh command"
 

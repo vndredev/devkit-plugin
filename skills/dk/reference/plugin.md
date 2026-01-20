@@ -108,14 +108,17 @@ Sync all managed files, upgrade config, and install user files:
 6. **Docs:** CLAUDE.md, docs/PLUGIN.md
 7. **Ignore:** .gitignore, etc.
 8. **User files:** ~/.claude/statusline.sh (Claude Code status line)
+9. **Auto-PR:** If on protected branch with changes, creates branch + PR
 
 ```bash
 PYTHONPATH=${PLUGIN_ROOT}/src uv run python -c "
-from lib.sync import sync_all, install_user_files, format_sync_report
+from lib.sync import sync_with_pr, install_user_files, format_sync_report
 
-results = sync_all()
+results, pr_url = sync_with_pr()
 user_results = install_user_files()
 print(format_sync_report(results, user_results))
+if pr_url:
+    print(f'\n🔗 PR created: {pr_url}')
 "
 ```
 

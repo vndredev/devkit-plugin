@@ -947,3 +947,167 @@ def format_sync_report(
     lines.append("## ✅ Done")
 
     return "\n".join(lines)
+
+
+def sync_with_pr(root: Path | None = None) -> tuple[list[tuple[str, bool, str]], str | None]:
+    """Sync all files, creating branch + PR if on protected branch.
+
+    If on a protected branch (main/master), creates a new branch,
+    syncs files, commits changes, and creates a PR.
+
+    Args:
+        root: Project root directory (defaults to auto-detect).
+
+    Returns:
+        Tuple of (sync_results, pr_url or None).
+    """
+    import subprocess
+    from datetime import datetime
+
+    if root is None:
+        root = get_project_root()
+
+    # Get protected branches from config
+    protected = get("git.protected_branches", ["main", "master"])
+
+    # Get current branch
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=root,
+        )
+        current_branch = result.stdout.strip()
+    except subprocess.CalledProcessError:
+        # Not in git repo or error - just sync normally
+        return sync_all(root), None
+
+    # If not on protected branch, just sync normally
+    if current_branch not in protected:
+        return sync_all(root), None
+
+    # On protected branch - create new branch for changes
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    new_branch = f"chore/plugin-update-{timestamp}"
+
+    try:
+        # Create and switch to new branch
+        subprocess.run(
+            ["git", "checkout", "-b", new_branch],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=root,
+        )
+
+        # Run sync
+        sync_results = sync_all(root)
+
+        # Check if there are any changes
+        status_result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=root,
+        )
+
+        if not status_result.stdout.strip():
+            # No changes - switch back to original branch and delete new branch
+            subprocess.run(
+                ["git", "checkout", current_branch],
+                capture_output=True,
+                text=True,
+                cwd=root,
+            )
+            subprocess.run(
+                ["git", "branch", "-D", new_branch],
+                capture_output=True,
+                text=True,
+                cwd=root,
+            )
+            return sync_results, None
+
+        # Stage and commit changes
+        subprocess.run(
+            ["git", "add", "-A"],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=root,
+        )
+
+        subprocess.run(
+            [
+                "git",
+                "commit",
+                "-m",
+                "chore(plugin): sync managed files\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=root,
+        )
+
+        # Push branch
+        subprocess.run(
+            ["git", "push", "-u", "origin", new_branch],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=root,
+        )
+
+        # Create PR
+        pr_result = subprocess.run(
+            [
+                "gh",
+                "pr",
+                "create",
+                "--title",
+                "chore(plugin): sync managed files",
+                "--body",
+                "## Summary\n- Auto-sync managed files via `/dk plugin update`\n\n🤖 Generated with devkit-plugin",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=root,
+        )
+        pr_url = pr_result.stdout.strip()
+
+        # Enable auto-merge if configured
+        auto_merge = get("github.pr.auto_merge", False)
+        merge_method = get("github.pr.merge_method", "squash")
+        if auto_merge:
+            subprocess.run(
+                ["gh", "pr", "merge", "--auto", f"--{merge_method}"],
+                capture_output=True,
+                text=True,
+                cwd=root,
+            )
+
+        # Switch back to original branch
+        subprocess.run(
+            ["git", "checkout", current_branch],
+            capture_output=True,
+            text=True,
+            cwd=root,
+        )
+
+        return sync_results, pr_url
+
+    except subprocess.CalledProcessError as e:
+        # On error, try to switch back to original branch
+        subprocess.run(
+            ["git", "checkout", current_branch],
+            capture_output=True,
+            text=True,
+            cwd=root,
+        )
+        # Return sync results with error
+        error_msg = e.stderr if e.stderr else str(e)
+        return [(f"PR creation failed: {error_msg}", False, error_msg)], None
