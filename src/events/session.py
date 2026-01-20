@@ -144,14 +144,14 @@ def main() -> None:
             pass
 
     # Plugin development recommendation - if working on a plugin project
-    # but not loaded via --plugin-dir
+    # but not loaded via --plugin-dir (informational, not an issue)
     try:
         plugin_dev_cmd = get_plugin_dev_recommendation(project_dir)
         if plugin_dev_cmd:
             output_lines.append("")
             output_lines.append("🔌 Plugin project detected - for live testing:")
             output_lines.append(f"   {plugin_dev_cmd}")
-            has_issues = True
+            # Note: This is informational, not an issue - don't set has_issues
     except (ImportError, OSError):
         pass
 
