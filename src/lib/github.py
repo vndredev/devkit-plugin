@@ -224,6 +224,9 @@ def create_ruleset(
                     "required_approving_review_count": require_reviews,
                     "dismiss_stale_reviews_on_push": dismiss_stale_reviews,
                     "require_code_owner_review": False,
+                    "require_last_push_approval": False,
+                    "required_review_thread_resolution": False,
+                    "allowed_merge_methods": ["merge", "squash", "rebase"],
                 },
             }
         )

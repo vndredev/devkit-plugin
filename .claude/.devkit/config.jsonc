@@ -1,28 +1,25 @@
 {
   "$schema": "./config.schema.json",
 
-  // ============================================================================
+  // ======================================================================
   // IDENTITY - Project information
-  // ============================================================================
+  // name, type, version, slogan, description, principles
+  // ======================================================================
   "project": {
     "name": "devkit-plugin",
-    "type": "plugin",
-    "version": "0.54.1",
-    "slogan": "Claude Code Plugin for automated dev workflows",
-    "description": "Automatisiert Code-Standards, Git-Conventions und Dokumentation via Claude Code Hooks. Single Source of Truth in config.jsonc.",
-    "principles": [
-      "Config as Code - config.jsonc als Single Source of Truth",
-      "Clean Architecture - Layer-Boundaries werden enforced",
-      "Convention over Configuration - Sensible Defaults",
-      "Transparency - Alle Prompts und Regeln in der Config sichtbar"
-    ]
+    "type": "claude-code-plugin",
+    "version": "0.54.1"
   },
 
-  // ============================================================================
-  // DEVELOPMENT - Git and GitHub configuration
-  // ============================================================================
+  // ======================================================================
+  // DEVELOPMENT - Git configuration
+  // protected_branches, conventions (types, scopes, branch_pattern)
+  // ======================================================================
   "git": {
-    "protected_branches": ["main"],
+    "protected_branches": [
+      "main"
+    ],
+    "local_protection": true,
     "conventions": {
       "types": [
         "feat",
@@ -35,297 +32,194 @@
         "ci"
       ],
       "scopes": {
-        "mode": "strict", // strict=error, warn=warning, off=disabled
-        "allowed": [
-          "config",
-          "sync",
-          "hook",
-          "arch",
-          "docs",
-          "git",
-          "skill",
-          "plugin",
-          "statusline",
-          "release",
-          "schema",
-          "session",
-          "validate",
-          "format",
-          "plan",
-          "serv"
-        ],
-        "internal": ["internal", "review", "ci", "deps"] // Skip release notes
+        "mode": "strict",
+        "allowed": [],
+        "internal": [
+          "internal",
+          "review",
+          "ci",
+          "deps"
+        ]
       },
       "branch_pattern": "{type}/{description}"
     }
   },
 
+  // ======================================================================
+  // DEVELOPMENT - GitHub configuration
+  // url, visibility, pr settings (auto_merge, delete_branch, merge_method)
+  // ======================================================================
   "github": {
-    "url": "https://github.com/vndredev/devkit-plugin",
+    "url": "",
     "visibility": "public",
     "pr": {
-      "auto_merge": true, // Enable auto-merge when PR is created
-      "delete_branch": true, // Delete branch after merge
-      "merge_method": "squash" // squash, merge, or rebase
-    },
-    "protection": {
-      "enabled": true, // Enable branch protection ruleset
-      "require_reviews": 1, // Required PR reviews (0 to disable)
-      "linear_history": true, // Require linear commit history
-      "admin_bypass": true, // Allow admins to bypass (requires Pro/Team+)
-      "dismiss_stale_reviews": false
+      "auto_merge": false,
+      "delete_branch": true,
+      "merge_method": "squash"
     }
   },
 
-  // ============================================================================
-  // QUALITY - Linters and testing
-  // ============================================================================
+  // ======================================================================
+  // QUALITY - Linters configuration
+  // preset (strict|relaxed|minimal), overrides
+  // ======================================================================
   "linters": {
-    "preset": "strict", // strict, relaxed, minimal
+    "preset": "strict",
     "overrides": {}
   },
 
+  // ======================================================================
+  // QUALITY - Testing configuration
+  // enabled, framework (pytest|vitest|jest), coverage, required_modules
+  // ======================================================================
   "testing": {
-    "enabled": true,
-    "framework": "pytest",
-    "coverage": {
-      "minimum": 80,
-      "exclude": ["tests", ".venv", "__pycache__"]
-    }
+    "enabled": false,
+    "framework": "pytest"
   },
 
-  "consistency": {
-    "enabled": true,
-    "rules": {
-      "module_tests": {
-        "enabled": true,
-        "patterns": {
-          "src/lib/*.py": "tests/test_{stem}.py"
-        },
-        "exclude": ["__init__.py"]
-      },
-      "hook_handlers": { "enabled": true },
-      "config_schema": { "enabled": true },
-      "skill_routes": { "enabled": true },
-      "custom_imports": {
-        "enabled": false,
-        "deny": [],
-        "require": []
-      }
-    }
-  },
-
-  // ============================================================================
-  // AUTOMATION - Hooks and changelog
-  // ============================================================================
+  // ======================================================================
+  // AUTOMATION - Claude Code hooks
+  // session, validate, format, plan - customize prompts and behavior
+  // ======================================================================
   "hooks": {
-    // === Session Hook (SessionStart) ===
+    // === SessionStart - shows git status, project info ===
     "session": {
       "enabled": true,
       "show_git_status": true,
       "prompts": {
-        "branch": "📍 {branch}",
-        "staged": "⚡{count} staged",
-        "modified": "✏️{count} modified",
-        "untracked": "❓{count} untracked",
-        "protected_branch": "⚠️ On `{branch}` - use `/dk dev feat|fix|chore <desc>` first!",
-        "hint": "CRITICAL: YOU MUST use `/dk` for ALL commands. Run `/dk dev` for workflow. NEVER execute raw git/gh commands directly.",
-        "system_warning": "⚠️ Project has issues - YOU MUST run /dk plugin check"
+        "branch": "\ud83d\udccd {branch}",
+        "staged": "\u26a1{count} staged",
+        "modified": "\u270f\ufe0f{count} modified",
+        "untracked": "\u2753{count} untracked",
+        "hint": "Use `/dk` for commands, `/dk dev` for workflow",
+        "system_warning": "\u26a0\ufe0f Project has issues - check with /dk plugin check"
       }
     },
 
-    // === Validate Hook (PreToolUse: Bash) ===
+    // === PreToolUse:Bash - validates git/gh commands ===
     "validate": {
       "enabled": true,
       "block_force_push": true,
       "block_dangerous_gh": true,
-      "blocked_commands": [
-        "gh repo delete",
-        "gh secret delete",
-        "gh api -X DELETE",
-        "gh pr create"
-      ],
       "prompts": {
-        "branch_invalid": "BLOCKED: Branch '{branch}' MUST match pattern: {pattern}. YOU MUST rename the branch.",
-        "commit_invalid": "BLOCKED: Commit MUST match: type(scope): message (types: {types}). YOU MUST fix the commit message.",
-        "scope_invalid": "BLOCKED: Unknown scope '{scope}'. ALLOWED scopes: {allowed}. YOU MUST use an allowed scope.",
-        "force_push_blocked": "BLOCKED: Force push is NEVER allowed. Use --force-with-lease if absolutely required.",
-        "gh_blocked": "BLOCKED: '{cmd}' - YOU MUST use /dk git commands instead. NEVER execute raw gh commands.",
-        "pr_missing_body": "BLOCKED: YOU MUST use /dk git pr - it provides the required PR template automatically."
+        "branch_invalid": "Branch '{branch}' should match: {pattern}",
+        "commit_invalid": "Commit should match: type(scope): message (types: {types})",
+        "scope_invalid": "Unknown scope '{scope}'. Allowed: {allowed}",
+        "force_push_blocked": "Force push is blocked. Use --force-with-lease if needed.",
+        "gh_blocked": "Blocked: '{cmd}' - too dangerous for automatic execution",
+        "pr_missing_body": "gh pr create requires --body with PR template"
       }
     },
 
-    // === Arch Guard Hook (PreToolUse: Write/Edit) ===
-    // BLOCKS edits that would introduce layer violations
-    // WARNS about similar code that already exists
-    "arch_guard": {
-      "enabled": true,
-      "discovery_enabled": true, // Warn about similar existing code
-      "discovery_threshold": 0.7, // Similarity threshold (0.0 - 1.0)
-      "prompts": {
-        "blocked": "🚫 BLOCKED - Layer violation: {message}. Fix imports before writing.",
-        "similar_found": "⚠️ Similar code exists - consider reusing: {matches}"
-      }
-    },
-
-    // === Format Hook (PostToolUse: Write/Edit) ===
+    // === PostToolUse:Write/Edit - auto-format, arch check ===
     "format": {
       "enabled": true,
       "auto_format": true,
       "arch_check": true,
       "auto_sync_arch": true,
       "eslint": {
-        "enabled": true,  // ESLint checks for JS/TS files
-        "auto_fix": true // Auto-fix issues when possible
+        "enabled": true,
+        "auto_fix": true
       },
       "prompts": {
-        "formatted": "✓ Formatted: {file}",
-        "test_reminder": "💡 New file - YOU MUST consider adding tests: tests/{file}",
-        "arch_violation": "⚠️ CRITICAL: Architecture violation detected: {message}. YOU MUST fix this before proceeding.",
-        "arch_blocking": "🚫 LAYER VIOLATION - FIX NOW: {message}. Revert or fix the import.",
-        "arch_synced": "📄 Updated docs/ARCHITECTURE.md"
+        "formatted": "\u2713 Formatted: {file}",
+        "test_reminder": "\ud83d\udca1 New file - consider adding: tests/{file}",
+        "arch_violation": "\u26a0\ufe0f Arch violation: {message}",
+        "arch_synced": "\ud83d\udcc4 Updated docs/ARCHITECTURE.md"
       }
     },
 
-    // === Plan Hook (PreToolUse: EnterPlanMode + PostToolUse: ExitPlanMode) ===
+    // === PostToolUse:ExitPlanMode - planning and implementation guidance ===
     "plan": {
       "enabled": true,
-      "enforce_workflow": "warn", // warn=show warning, block=prevent plan mode, off=disabled
-
-      // Prompts for workflow enforcement
+      "enforce_workflow": "warn",
       "prompts": {
-        "workflow_required": "⚠️ You're on `{branch}` - use `/dk dev feat|fix|chore <desc>` to create a feature branch first."
+        "workflow_required": "\u26a0\ufe0f You're on `{branch}` - use `/dk dev feat|fix|chore <desc>` to create a feature branch first."
       },
-
-      // Guidelines for creating plans
       "planning": {
         "requirements": [
-          "YOU MUST identify affected layers (check arch.layers)",
-          "YOU MUST list files to modify vs. create",
-          "ALWAYS consider edge cases and error handling",
-          "YOU MUST check for breaking changes"
+          "Identify affected layers (check arch.layers)",
+          "List files to modify vs. create",
+          "Consider edge cases and error handling",
+          "Check for breaking changes"
         ],
         "structure": [
-          "## Overview - What and why (REQUIRED)",
-          "## Affected Files - List with rationale (REQUIRED)",
-          "## Implementation Steps - Ordered tasks (REQUIRED)",
-          "## Testing Strategy - How to verify (REQUIRED)",
-          "## Risks - What could go wrong (REQUIRED)"
+          "## Overview - What and why",
+          "## Affected Files - List with rationale",
+          "## Implementation Steps - Ordered tasks",
+          "## Testing Strategy - How to verify",
+          "## Risks - What could go wrong"
         ]
       },
-
-      // Instructions shown after plan approval
       "implementation": {
         "header": "## Implementation Phase",
         "instructions": [
-          "YOU MUST complete one task at a time, mark done in todo list",
-          "YOU MUST run linters after EVERY code change - use `uv run ruff check`",
-          "YOU MUST run tests if available - use `uv run pytest`",
-          "ALWAYS use conventional commits: type(scope): message",
-          "ALWAYS ask if blocked or unclear - NEVER guess"
+          "Complete one task at a time, mark done in todo list",
+          "Run linters after code changes",
+          "Run tests if available",
+          "Use conventional commits: type(scope): message",
+          "Ask if blocked or unclear"
         ]
       },
-
-      // Project-specific hints (shown in both phases)
       "hints": [
-        "CRITICAL: Clean Architecture - YOU MUST respect layer boundaries (see arch.layers)",
-        "REQUIRED: New modules MUST have tests in tests/",
-        "REQUIRED: Public API changes MUST update CHANGELOG",
-        "📚 Docs: ALWAYS use `claude-code-guide` agent for Claude Code questions",
-        "📚 Docs: ALWAYS use Context7 MCP for library/framework documentation"
+        "\ud83d\udccb Before adding features, read docs/DEVELOPMENT.md for checklists",
+        "Respect layer boundaries if arch.layers is configured",
+        "New modules should have corresponding tests",
+        "Run /dk plugin check after changes to verify consistency"
       ]
     },
 
-    // === Browser Hook (PostToolUse: Write/Edit) ===
-    // Reminds to verify UI after frontend file changes
-    "browser": {
-      "enabled": false, // Enable for frontend projects
-      "dev_server": {
-        "url": "http://localhost:3000",
-        "wait_seconds": 2
-      },
-      "frontend_patterns": ["*.tsx", "*.jsx", "*.vue", "*.css"],
+    "arch_guard": {
+      "enabled": true,
+      "discovery_enabled": true,
+      "discovery_threshold": 0.7,
       "prompts": {
-        "frontend_changed": "🌐 Frontend changed - verify UI: `/dk browser verify` or browser_snapshot on {url}"
+        "blocked": "\ud83d\udeab BLOCKED - Layer violation: {message}. Fix imports before writing.",
+        "similar_found": "\u26a0\ufe0f Similar code exists - consider reusing: {matches}"
       }
     }
   },
 
+  // ======================================================================
+  // AUTOMATION - Changelog generation
+  // audience (developer|user) - controls detail level
+  // ======================================================================
   "changelog": {
-    "audience": "developer" // developer=technical, user=simple
+    "audience": "developer"
   },
 
-  // ============================================================================
-  // LOGGING - Observability and logging service configuration
-  // ============================================================================
+  // ======================================================================
+  // DEPLOYMENT - Platform configuration
+  // platform (vercel|railway|etc), env_sync, production_domain
+  // ======================================================================
+  "deployment": {
+    "enabled": false,
+    "platforms": [],
+    "note": "Claude Code plugins are not deployed. They run locally via Claude Code."
+  },
+
+  // ======================================================================
+  // ARCHITECTURE - Clean Architecture layers
+  // layers with tier (0=innermost), patterns, description
+  // ======================================================================
+  "arch": {
+    "layers": {}
+  },
+
+  // ======================================================================
+  // OBSERVABILITY - Logging service configuration
+  // providers (axiom|sentry|logrocket|datadog|pino|winston)
+  // ======================================================================
   "logging": {
     "enabled": true,
-    "strategy": "terminal", // terminal=Python logging, service=Axiom/Sentry, auto=based on project type
-    "services": {
-      // Explicit service configurations (auto-detected if not specified)
-      // "axiom": { "provider": "axiom", "env_var": "AXIOM_TOKEN" }
-    },
-    "axiom": {
-      // "dataset": "logs",        // Default dataset for queries
-      // "org_id": "your-org",     // Axiom organization ID
-      "proxy_endpoint": "/api/log" // Server-side proxy for frontend logs
-    }
+    "strategy": "auto"
   },
 
-  // ============================================================================
-  // DEVELOPMENT SERVER - Dev server configuration for /dk serv
-  // ============================================================================
-  "dev": {
-    "command": "uv run python -m http.server",
-    "port": 8000,
-    "include_webhooks": false // devkit-plugin braucht keine webhooks
-  },
-
-  // ============================================================================
-  // CODE DISCOVERY - Find similar/duplicate code patterns
-  // ============================================================================
-  "discovery": {
-    "scan_patterns": ["src/**/*.py"]
-  },
-
-  // ============================================================================
-  // ARCHITECTURE - Layer configuration (Clean Architecture)
-  // ============================================================================
-  "arch": {
-    "layers": {
-      "core": {
-        "tier": 0,
-        "patterns": ["src/core/**"],
-        "description": "Types, errors, constants - nur stdlib"
-      },
-      "lib": {
-        "tier": 1,
-        "patterns": ["src/lib/**"],
-        "description": "I/O-Adapter: config, git, tools, sync"
-      },
-      "arch": {
-        "tier": 2,
-        "patterns": ["src/arch/**"],
-        "description": "Architecture-Analyse und Visualisierung"
-      },
-      "events": {
-        "tier": 3,
-        "patterns": ["src/events/**"],
-        "description": "Claude Code Hook-Handler"
-      }
-    }
-  },
-
-  // ============================================================================
-  // MANAGED FILES - Auto-generated files manifest
-  // ============================================================================
+  // ======================================================================
+  // MANAGED FILES - Auto-generated by /dk plugin update
+  // linters, github, docs, ignore - set enabled:false to skip
+  // ======================================================================
   "managed": {
-    "config": {
-      ".claude/.devkit/config.schema.json": {
-        "template": "config/config.schema.json.template",
-        "enabled": true
-      }
-    },
     "linters": {
       ".markdownlint.json": {
         "template": "linters/common/markdownlint.json.template",
@@ -333,10 +227,6 @@
       },
       ".markdownlintignore": {
         "template": "gitignore/markdownlint.ignore",
-        "enabled": true
-      },
-      "ruff.toml": {
-        "template": "linters/python/ruff.toml.template",
         "enabled": true
       }
     },
@@ -372,24 +262,20 @@
     },
     "docs": {
       "README.md": {
-        "type": "auto_sections", // Template + CUSTOM sections
+        "type": "auto_sections",
         "enabled": true
       },
       "CLAUDE.md": {
-        "type": "auto_sections", // auto_sections preserves CUSTOM blocks
-        "enabled": true
-      },
-      "docs/ARCHITECTURE.md": {
-        "type": "auto_generate", // 100% generated from config
+        "type": "auto_sections",
         "enabled": true
       },
       "docs/PLUGIN.md": {
-        "type": "template", // 100% from plugin template
+        "type": "template",
         "template": "docs/PLUGIN.md.template",
-        "enabled": false // Disabled for devkit-plugin (it's the source)
+        "enabled": true
       },
       "docs/DEVELOPMENT.md": {
-        "type": "auto_generate", // 100% generated from config - development guide
+        "type": "auto_generate",
         "enabled": true
       }
     },
@@ -402,5 +288,17 @@
         "enabled": true
       }
     }
+  },
+
+  "marketplace": {
+    "username": "vndredev",
+    "repo_name": "claude-marketplace",
+    "local_dir": "/Users/andreschmidt/dev/claude-marketplace"
+  },
+
+  "discovery": {
+    "enabled": true,
+    "threshold": 0.7
   }
+
 }
