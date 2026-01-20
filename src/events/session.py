@@ -132,6 +132,7 @@ def main() -> None:
         pass
 
     # Plugin update check - skip in dev mode (we're developing locally)
+    # Note: This is informational, not an issue - don't set has_issues
     if not dev_mode_indicator:
         try:
             update_available, current, latest = check_plugin_update()
@@ -139,7 +140,6 @@ def main() -> None:
                 output_lines.append("")
                 output_lines.append(f"🔄 Plugin update: {current or 'unknown'} → {latest}")
                 output_lines.append("   Run `/dk plugin update` to update")
-                has_issues = True
         except (ImportError, OSError):
             pass
 
