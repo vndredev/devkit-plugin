@@ -291,6 +291,10 @@ After file edits:
 - Auto-formats Python files with ruff
 - Auto-formats TypeScript/JavaScript with prettier
 - Auto-formats Markdown with markdownlint
+- **ESLint checks** for JS/TS files (0 errors, 0 warnings policy)
+  - Blocking: Claude MUST fix all lint issues before continuing
+  - Auto-fix enabled by default
+  - Config: `hooks.format.eslint.enabled` and `hooks.format.eslint.auto_fix`
 
 ### ExitPlanMode (plan.py)
 
