@@ -11,14 +11,17 @@ from lib.github import (
     PlanTier,
     RepoInfo,
     can_use_bypass_actors,
+    check_release_pat,
     check_ruleset_status,
     compare_protection_config,
     create_ruleset,
     delete_ruleset,
+    get_pat_creation_url,
     get_protection_recommendation,
     get_repo_info,
     get_ruleset_details,
     setup_branch_protection,
+    setup_release_workflow,
 )
 from core.errors import GitHubError, ProtectionError
 
@@ -680,3 +683,123 @@ class TestCompareProtectionConfig:
             discrepancies = compare_protection_config("user/repo", config)
 
             assert any(d["setting"] == "dismiss_stale_reviews" for d in discrepancies)
+
+
+class TestCheckReleasePat:
+    """Tests for check_release_pat()."""
+
+    def test_returns_true_when_pat_exists(self):
+        """Should return True when RELEASE_PAT is found."""
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                stdout="RELEASE_PAT\t2024-01-01\nOTHER_SECRET\t2024-01-01\n"
+            )
+
+            exists, msg = check_release_pat("user/repo")
+
+            assert exists is True
+            assert "configured" in msg.lower()
+
+    def test_returns_false_when_pat_missing(self):
+        """Should return False when RELEASE_PAT is not found."""
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(stdout="OTHER_SECRET\t2024-01-01\n")
+
+            exists, msg = check_release_pat("user/repo")
+
+            assert exists is False
+            assert "not found" in msg.lower()
+
+    def test_auto_detects_repo(self):
+        """Should auto-detect repo from git remote when not provided."""
+        with patch("lib.github.get_repo_info") as mock_info:
+            with patch("subprocess.run") as mock_run:
+                mock_info.return_value = RepoInfo(
+                    owner="user",
+                    name="repo",
+                    owner_type=OwnerType.USER,
+                    plan=PlanTier.FREE,
+                    visibility="public",
+                    default_branch="main",
+                )
+                mock_run.return_value = MagicMock(stdout="RELEASE_PAT\t2024-01-01\n")
+
+                exists, msg = check_release_pat()
+
+                assert exists is True
+                mock_run.assert_called_once()
+                assert "-R" in mock_run.call_args[0][0]
+                assert "user/repo" in mock_run.call_args[0][0]
+
+    def test_handles_api_error(self):
+        """Should handle API errors gracefully."""
+        with patch("subprocess.run") as mock_run:
+            mock_run.side_effect = subprocess.CalledProcessError(1, "gh", stderr="error")
+
+            exists, msg = check_release_pat("user/repo")
+
+            assert exists is False
+            assert "could not check" in msg.lower()
+
+
+class TestGetPatCreationUrl:
+    """Tests for get_pat_creation_url()."""
+
+    def test_returns_github_url(self):
+        """Should return GitHub PAT creation URL."""
+        url = get_pat_creation_url()
+
+        assert "github.com" in url
+        assert "personal-access-tokens" in url
+
+
+class TestSetupReleaseWorkflow:
+    """Tests for setup_release_workflow()."""
+
+    def test_returns_success_when_pat_exists(self):
+        """Should return success when RELEASE_PAT is configured."""
+        with patch("lib.github.get_repo_info") as mock_info:
+            with patch("lib.github.check_release_pat") as mock_pat:
+                mock_info.return_value = RepoInfo(
+                    owner="user",
+                    name="repo",
+                    owner_type=OwnerType.USER,
+                    plan=PlanTier.FREE,
+                    visibility="public",
+                    default_branch="main",
+                )
+                mock_pat.return_value = (True, "RELEASE_PAT configured")
+
+                results = setup_release_workflow("user/repo")
+
+                assert any(r[0] == "RELEASE_PAT" and r[1] is True for r in results)
+
+    def test_returns_instructions_when_pat_missing(self):
+        """Should return setup instructions when RELEASE_PAT is missing."""
+        with patch("lib.github.get_repo_info") as mock_info:
+            with patch("lib.github.check_release_pat") as mock_pat:
+                mock_info.return_value = RepoInfo(
+                    owner="user",
+                    name="repo",
+                    owner_type=OwnerType.USER,
+                    plan=PlanTier.FREE,
+                    visibility="public",
+                    default_branch="main",
+                )
+                mock_pat.return_value = (False, "RELEASE_PAT not found")
+
+                results = setup_release_workflow("user/repo")
+
+                assert any(r[0] == "RELEASE_PAT" and r[1] is False for r in results)
+                assert any("action required" in r[0] for r in results)
+                assert any("instructions" in r[0] for r in results)
+
+    def test_handles_repo_info_failure(self):
+        """Should handle repo info failure gracefully."""
+        with patch("lib.github.get_repo_info") as mock_info:
+            mock_info.return_value = None
+
+            results = setup_release_workflow("user/repo")
+
+            assert any(r[1] is False for r in results)
+            assert any("Could not detect" in r[2] for r in results)

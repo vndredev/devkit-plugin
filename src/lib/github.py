@@ -555,3 +555,100 @@ def setup_branch_protection(repo: str, config: dict | None = None) -> list[tuple
         )
 
     return results
+
+
+def check_release_pat(repo: str | None = None) -> tuple[bool, str]:
+    """Check if RELEASE_PAT secret exists in the repository.
+
+    Args:
+        repo: GitHub repo in format owner/repo. If None, detect from git remote.
+
+    Returns:
+        Tuple of (exists, message).
+    """
+    # Auto-detect repo if not provided
+    if not repo:
+        repo_info = get_repo_info()
+        if not repo_info:
+            return False, "Could not detect repository"
+        repo = f"{repo_info.owner}/{repo_info.name}"
+
+    try:
+        result = subprocess.run(
+            ["gh", "secret", "list", "-R", repo],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=30,
+        )
+        if "RELEASE_PAT" in result.stdout:
+            return True, "RELEASE_PAT configured"
+        return False, "RELEASE_PAT not found"
+    except subprocess.TimeoutExpired:
+        return False, "Timeout checking secrets"
+    except subprocess.CalledProcessError as e:
+        return False, f"Could not check secrets: {e.stderr if e.stderr else str(e)}"
+
+
+def get_pat_creation_url() -> str:
+    """Get the URL for creating a fine-grained PAT with correct permissions.
+
+    Returns:
+        URL to GitHub token creation page.
+    """
+    return "https://github.com/settings/personal-access-tokens/new"
+
+
+def setup_release_workflow(repo: str | None = None) -> list[tuple[str, bool, str]]:
+    """Setup release workflow by checking/configuring RELEASE_PAT.
+
+    This replaces ruleset-based protection which doesn't work well
+    with Free plans. Instead, we ensure RELEASE_PAT is configured
+    for the release workflow to push version bumps.
+
+    Args:
+        repo: GitHub repo in format owner/repo. If None, detect from git remote.
+
+    Returns:
+        List of (step, success, message) tuples.
+    """
+    results = []
+
+    # 1. Get repo info
+    try:
+        repo_info = get_repo_info(repo)
+        if not repo_info:
+            results.append(("repo info", False, "Could not detect repository"))
+            return results
+        repo = f"{repo_info.owner}/{repo_info.name}"
+        results.append(
+            ("repo type", True, f"{repo_info.owner_type.value} ({repo_info.plan.value})")
+        )
+    except GitHubError as e:
+        results.append(("repo info", False, str(e)))
+        return results
+
+    # 2. Check if RELEASE_PAT exists
+    pat_exists, pat_msg = check_release_pat(repo)
+    if pat_exists:
+        results.append(("RELEASE_PAT", True, "Secret configured"))
+    else:
+        results.append(("RELEASE_PAT", False, "Not configured"))
+        results.append(
+            (
+                "action required",
+                True,
+                "Create PAT at: https://github.com/settings/personal-access-tokens/new",
+            )
+        )
+        results.append(
+            (
+                "instructions",
+                True,
+                "1. Name: RELEASE_PAT  2. Repository access: Only select repositories  "
+                "3. Permissions: Contents (Read+Write)  4. Generate & copy token  "
+                "5. Run: gh secret set RELEASE_PAT",
+            )
+        )
+
+    return results
