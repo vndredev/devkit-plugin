@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.55.0] - 2026-01-20
+## [v0.55.1] - 2026-01-20
 
 ### Changed
 
@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- **Schema**: Add missing types and marketplace section (#84)
 - **Vercel**: Handle new api response structure in get_project_info (#82)
 - **Validate**: Block gh pr create command (#77)
 - **Hook**: Run eslint from project root directory (#76)
