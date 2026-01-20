@@ -173,6 +173,10 @@
       "auto_format": true,
       "arch_check": true,
       "auto_sync_arch": true,
+      "eslint": {
+        "enabled": true,  // ESLint checks for JS/TS files
+        "auto_fix": true, // Auto-fix issues when possible
+      },
       "prompts": {
         "formatted": "✓ Formatted: {file}",
         "test_reminder": "💡 New file - YOU MUST consider adding tests: tests/{file}",
