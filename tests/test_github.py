@@ -12,10 +12,12 @@ from lib.github import (
     RepoInfo,
     can_use_bypass_actors,
     check_ruleset_status,
+    compare_protection_config,
     create_ruleset,
     delete_ruleset,
     get_protection_recommendation,
     get_repo_info,
+    get_ruleset_details,
     setup_branch_protection,
 )
 from core.errors import GitHubError, ProtectionError
@@ -533,3 +535,148 @@ class TestSetupBranchProtection:
 
             assert any(r[1] is False for r in results)
             assert any("Could not detect" in r[2] for r in results)
+
+
+class TestGetRulesetDetails:
+    """Tests for get_ruleset_details()."""
+
+    def test_returns_ruleset_details(self):
+        """Should return full ruleset details when found."""
+        with patch("lib.github.check_ruleset_status") as mock_status:
+            with patch("subprocess.run") as mock_run:
+                mock_status.return_value = {"exists": True, "ruleset_id": 123}
+
+                ruleset_data = {
+                    "id": 123,
+                    "name": "devkit-protection",
+                    "rules": [
+                        {"type": "required_linear_history"},
+                        {
+                            "type": "pull_request",
+                            "parameters": {"required_approving_review_count": 1},
+                        },
+                    ],
+                }
+                result = MagicMock()
+                result.stdout = json.dumps(ruleset_data)
+                mock_run.return_value = result
+
+                details = get_ruleset_details("user/repo")
+
+                assert details is not None
+                assert details["id"] == 123
+                assert len(details["rules"]) == 2
+
+    def test_returns_none_when_not_found(self):
+        """Should return None when ruleset doesn't exist."""
+        with patch("lib.github.check_ruleset_status") as mock_status:
+            mock_status.return_value = {"exists": False, "ruleset_id": None}
+
+            details = get_ruleset_details("user/repo")
+
+            assert details is None
+
+    def test_handles_api_error(self):
+        """Should return None on API error."""
+        with patch("lib.github.check_ruleset_status") as mock_status:
+            with patch("subprocess.run") as mock_run:
+                mock_status.return_value = {"exists": True, "ruleset_id": 123}
+                mock_run.side_effect = subprocess.CalledProcessError(1, "gh")
+
+                details = get_ruleset_details("user/repo")
+
+                assert details is None
+
+
+class TestCompareProtectionConfig:
+    """Tests for compare_protection_config()."""
+
+    def test_no_discrepancies_when_matching(self):
+        """Should return empty list when config matches GitHub."""
+        with patch("lib.github.get_ruleset_details") as mock_details:
+            mock_details.return_value = {
+                "rules": [
+                    {"type": "required_linear_history"},
+                    {
+                        "type": "pull_request",
+                        "parameters": {
+                            "required_approving_review_count": 1,
+                            "dismiss_stale_reviews_on_push": False,
+                        },
+                    },
+                ]
+            }
+
+            config = {
+                "enabled": True,
+                "linear_history": True,
+                "require_reviews": 1,
+                "dismiss_stale_reviews": False,
+            }
+
+            discrepancies = compare_protection_config("user/repo", config)
+
+            assert discrepancies == []
+
+    def test_detects_missing_ruleset(self):
+        """Should detect when ruleset doesn't exist."""
+        with patch("lib.github.get_ruleset_details") as mock_details:
+            mock_details.return_value = None
+
+            config = {"enabled": True, "require_reviews": 1}
+
+            discrepancies = compare_protection_config("user/repo", config)
+
+            assert len(discrepancies) == 1
+            assert discrepancies[0]["setting"] == "ruleset"
+            assert discrepancies[0]["github_value"] == "not configured"
+
+    def test_detects_review_count_mismatch(self):
+        """Should detect require_reviews mismatch."""
+        with patch("lib.github.get_ruleset_details") as mock_details:
+            mock_details.return_value = {
+                "rules": [
+                    {
+                        "type": "pull_request",
+                        "parameters": {"required_approving_review_count": 0},
+                    }
+                ]
+            }
+
+            config = {"require_reviews": 1}
+
+            discrepancies = compare_protection_config("user/repo", config)
+
+            assert any(d["setting"] == "require_reviews" for d in discrepancies)
+            review_disc = next(d for d in discrepancies if d["setting"] == "require_reviews")
+            assert review_disc["config_value"] == 1
+            assert review_disc["github_value"] == 0
+
+    def test_detects_linear_history_mismatch(self):
+        """Should detect linear_history mismatch."""
+        with patch("lib.github.get_ruleset_details") as mock_details:
+            mock_details.return_value = {"rules": []}  # No linear history rule
+
+            config = {"linear_history": True}
+
+            discrepancies = compare_protection_config("user/repo", config)
+
+            assert any(d["setting"] == "linear_history" for d in discrepancies)
+
+    def test_detects_dismiss_stale_mismatch(self):
+        """Should detect dismiss_stale_reviews mismatch."""
+        with patch("lib.github.get_ruleset_details") as mock_details:
+            mock_details.return_value = {
+                "rules": [
+                    {
+                        "type": "pull_request",
+                        "parameters": {"dismiss_stale_reviews_on_push": True},
+                    }
+                ]
+            }
+
+            config = {"dismiss_stale_reviews": False}
+
+            discrepancies = compare_protection_config("user/repo", config)
+
+            assert any(d["setting"] == "dismiss_stale_reviews" for d in discrepancies)

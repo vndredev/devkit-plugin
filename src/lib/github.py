@@ -299,6 +299,115 @@ def check_ruleset_status(repo: str) -> dict:
         return {"exists": False, "ruleset_id": None, "enforcement": None, "has_bypass": False}
 
 
+def get_ruleset_details(repo: str) -> dict | None:
+    """Get full details of devkit-protection ruleset.
+
+    Args:
+        repo: GitHub repo in format owner/repo.
+
+    Returns:
+        Full ruleset data or None if not found.
+    """
+    status = check_ruleset_status(repo)
+    if not status.get("exists") or not status.get("ruleset_id"):
+        return None
+
+    try:
+        result = subprocess.run(
+            ["gh", "api", f"/repos/{repo}/rulesets/{status['ruleset_id']}"],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=30,
+        )
+        return json.loads(result.stdout)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError):
+        return None
+
+
+def compare_protection_config(repo: str, config: dict) -> list[dict]:
+    """Compare GitHub ruleset with config and return discrepancies.
+
+    Args:
+        repo: GitHub repo in format owner/repo.
+        config: Protection config from config.jsonc.
+
+    Returns:
+        List of discrepancies, each with:
+            - setting: str (setting name)
+            - config_value: Any (expected value from config)
+            - github_value: Any (actual value from GitHub)
+    """
+    discrepancies = []
+
+    # Get full ruleset details
+    ruleset = get_ruleset_details(repo)
+    if ruleset is None:
+        # Ruleset doesn't exist but should
+        if config.get("enabled", True):
+            discrepancies.append(
+                {
+                    "setting": "ruleset",
+                    "config_value": "enabled",
+                    "github_value": "not configured",
+                }
+            )
+        return discrepancies
+
+    # Extract current settings from ruleset
+    rules = ruleset.get("rules", [])
+
+    # Check linear_history
+    config_linear = config.get("linear_history", True)
+    github_linear = any(r.get("type") == "required_linear_history" for r in rules)
+    if config_linear != github_linear:
+        discrepancies.append(
+            {
+                "setting": "linear_history",
+                "config_value": config_linear,
+                "github_value": github_linear,
+            }
+        )
+
+    # Check require_reviews
+    config_reviews = config.get("require_reviews", 1)
+    github_reviews = 0
+    for rule in rules:
+        if rule.get("type") == "pull_request":
+            params = rule.get("parameters", {})
+            github_reviews = params.get("required_approving_review_count", 0)
+            break
+
+    if config_reviews != github_reviews:
+        discrepancies.append(
+            {
+                "setting": "require_reviews",
+                "config_value": config_reviews,
+                "github_value": github_reviews,
+            }
+        )
+
+    # Check dismiss_stale_reviews
+    config_dismiss = config.get("dismiss_stale_reviews", False)
+    github_dismiss = False
+    for rule in rules:
+        if rule.get("type") == "pull_request":
+            params = rule.get("parameters", {})
+            github_dismiss = params.get("dismiss_stale_reviews_on_push", False)
+            break
+
+    if config_dismiss != github_dismiss:
+        discrepancies.append(
+            {
+                "setting": "dismiss_stale_reviews",
+                "config_value": config_dismiss,
+                "github_value": github_dismiss,
+            }
+        )
+
+    return discrepancies
+
+
 def delete_ruleset(repo: str, ruleset_id: int) -> tuple[bool, str]:
     """Delete a ruleset by ID.
 
