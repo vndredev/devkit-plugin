@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.53.4] - 2026-01-20
+## [v0.54.0] - 2026-01-20
 
 ### Fixed
 
@@ -11,6 +11,7 @@
 
 ### Added
 
+- **Hook**: Add protection sync check to session and stop hooks (#78)
 - **Format**: Add eslint hook with strict 0-err/0-warn policy (#72)
 
 ## [v0.52.0] - 2026-01-19
