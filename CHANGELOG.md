@@ -1,6 +1,10 @@
 # Changelog
 
-## [v0.54.0] - 2026-01-20
+## [v0.54.1] - 2026-01-20
+
+### Changed
+
+- **Hook**: Move protection check to stop hook with caching (#79)
 
 ### Fixed
 
