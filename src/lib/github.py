@@ -346,8 +346,9 @@ def compare_protection_config(repo: str, config: dict) -> list[dict]:
     # Get full ruleset details
     ruleset = get_ruleset_details(repo)
     if ruleset is None:
-        # Ruleset doesn't exist but should
-        if config.get("enabled", True):
+        # Ruleset doesn't exist - only warn if explicitly enabled in config
+        # Default False: Free accounts use RELEASE_PAT instead of rulesets
+        if config.get("enabled", False):
             discrepancies.append(
                 {
                     "setting": "ruleset",
