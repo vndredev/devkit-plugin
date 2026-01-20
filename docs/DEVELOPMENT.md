@@ -8,8 +8,8 @@
 |------|-------|----------|
 | Config Sections | 0 | `.claude/.devkit/config.jsonc` |
 | Hooks | 5 | `hooks.*` in config |
-| Layers | 4 | `arch.layers` in config |
-| Managed Files | 16 | `managed.*` in config |
+| Layers | 0 | `arch.layers` in config |
+| Managed Files | 14 | `managed.*` in config |
 
 ---
 
@@ -53,25 +53,20 @@ When changing managed files:
 |------|--------|--------|
 | `session` | enabled | `hooks.session` |
 | `validate` | enabled | `hooks.validate` |
-| `arch_guard` | enabled | `hooks.arch_guard` |
 | `format` | enabled | `hooks.format` |
 | `plan` | enabled | `hooks.plan` |
+| `arch_guard` | enabled | `hooks.arch_guard` |
 
 ### Architecture Layers
 
 | Layer | Tier | Description |
 |-------|------|-------------|
-| `core` | 0 | Types, errors, constants - nur stdlib |
-| `lib` | 1 | I/O-Adapter: config, git, tools, sync |
-| `arch` | 2 | Architecture-Analyse und Visualisierung |
-| `events` | 3 | Claude Code Hook-Handler |
+| - | - | - |
 
 ### Managed Files
 
-  - `.claude/.devkit/config.schema.json` (config)
   - `.markdownlint.json` (linters)
   - `.markdownlintignore` (linters)
-  - `ruff.toml` (linters)
   - `.github/workflows/claude.yml` (github)
   - `.github/workflows/claude-code-review.yml` (github)
   - `.github/ISSUE_TEMPLATE/bug_report.yml` (github)
@@ -81,7 +76,7 @@ When changing managed files:
   - `.github/workflows/release.yml` (github)
   - `README.md` (docs)
   - `CLAUDE.md` (docs)
-  - `docs/ARCHITECTURE.md` (docs)
+  - `docs/PLUGIN.md` (docs)
   - `docs/DEVELOPMENT.md` (docs)
   - `.gitignore` (ignore)
 

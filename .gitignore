@@ -40,7 +40,7 @@ temp/
 .serv/
 
 
-# === PLUGIN ===
+# === CLAUDE-CODE-PLUGIN ===
 
 # === Python ===
 __pycache__/
