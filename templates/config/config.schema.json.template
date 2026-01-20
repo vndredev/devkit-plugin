@@ -225,6 +225,22 @@
               "default": true,
               "description": "Auto-update ARCHITECTURE.md when config or arch files change"
             },
+            "eslint": {
+              "type": "object",
+              "description": "ESLint configuration for JS/TS files (0 errors, 0 warnings policy)",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Enable ESLint checks on JS/TS file changes"
+                },
+                "auto_fix": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Auto-fix ESLint issues when possible"
+                }
+              }
+            },
             "prompts": {
               "type": "object",
               "description": "Customizable output templates",
@@ -253,6 +269,11 @@
                   "type": "string",
                   "default": "\ud83d\udeab LAYER VIOLATION - FIX NOW: {message}. Revert or fix the import.",
                   "description": "Error shown when blocking layer violation is detected"
+                },
+                "eslint_blocking": {
+                  "type": "string",
+                  "default": "\ud83d\udeab ESLINT VIOLATION - FIX NOW: {errors} error(s), {warnings} warning(s)\n{details}\nYou MUST fix ALL lint issues before continuing. Do NOT modify eslint config to bypass.",
+                  "description": "Error shown when ESLint finds errors or warnings (blocking)"
                 }
               }
             }

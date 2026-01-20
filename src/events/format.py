@@ -9,7 +9,7 @@ from pathlib import Path
 
 from lib.config import get
 from lib.hooks import noop_response, output_response, read_hook_input
-from lib.tools import format_file
+from lib.tools import format_file, lint_file
 
 # Code file extensions that require workflow
 CODE_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rs", ".java"}
@@ -223,6 +223,30 @@ def main() -> None:
         success, _msg = format_file(file_path)
         if success:
             messages.append(formatted_tpl.format(file=Path(file_path).name))
+
+    # ESLint check for JS/TS files (0 errors, 0 warnings policy)
+    eslint_enabled = get("hooks.format.eslint.enabled", True)
+    if eslint_enabled:
+        eslint_fix = get("hooks.format.eslint.auto_fix", True)
+        ok, errors, warnings, lint_msg = lint_file(file_path, fix=eslint_fix)
+
+        if not ok or errors > 0 or warnings > 0:
+            # Block on ANY lint issue - strict policy
+            eslint_blocking_tpl = get(
+                "hooks.format.prompts.eslint_blocking",
+                "🚫 ESLINT VIOLATION - FIX NOW: {errors} error(s), {warnings} warning(s)\n{details}\n"
+                "You MUST fix ALL lint issues before continuing. Do NOT modify eslint config to bypass.",
+            )
+            messages.append(
+                eslint_blocking_tpl.format(
+                    errors=errors,
+                    warnings=warnings,
+                    details=lint_msg,
+                )
+            )
+        elif lint_msg and "passed" in lint_msg.lower():
+            # Only show success if ESLint actually ran (not skipped)
+            messages.append("✓ ESLint: 0 errors, 0 warnings")
 
     # Check for missing artifacts (tests, docs) - only for NEW files
     filepath = Path(file_path)

@@ -7,10 +7,12 @@ import pytest
 
 from core.types import ProjectType
 from lib.tools import (
+    ESLINT_EXTENSIONS,
     FORMATTERS,
     detect_project_type,
     detect_project_version,
     format_file,
+    lint_file,
     run_linter,
 )
 
@@ -307,3 +309,115 @@ class TestDetectProjectVersion:
         result = detect_project_version(tmp_path)
 
         assert result == "0.0.0"
+
+
+class TestEslintExtensions:
+    """Tests for ESLINT_EXTENSIONS constant."""
+
+    def test_includes_typescript_extensions(self):
+        """Should include TypeScript extensions."""
+        assert ".ts" in ESLINT_EXTENSIONS
+        assert ".tsx" in ESLINT_EXTENSIONS
+
+    def test_includes_javascript_extensions(self):
+        """Should include JavaScript extensions."""
+        assert ".js" in ESLINT_EXTENSIONS
+        assert ".jsx" in ESLINT_EXTENSIONS
+
+
+class TestLintFile:
+    """Tests for lint_file()."""
+
+    def test_skips_non_js_ts_files(self, tmp_path):
+        """Should skip files that aren't JS/TS."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x = 1")
+
+        success, errors, warnings, msg = lint_file(str(test_file))
+
+        assert success is True
+        assert errors == 0
+        assert warnings == 0
+        assert "no linter" in msg.lower()
+
+    @patch("lib.tools.subprocess.run")
+    def test_runs_eslint_on_ts_file(self, mock_run, tmp_path):
+        """Should run ESLint on TypeScript files."""
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = '[{"errorCount": 0, "warningCount": 0}]'
+        mock_run.return_value.stderr = ""
+        test_file = tmp_path / "test.ts"
+        test_file.write_text("const x = 1;")
+
+        success, errors, warnings, msg = lint_file(str(test_file))
+
+        assert success is True
+        assert errors == 0
+        assert warnings == 0
+        call_args = mock_run.call_args[0][0]
+        assert "eslint" in call_args
+        assert "--format" in call_args
+        assert "json" in call_args
+
+    @patch("lib.tools.subprocess.run")
+    def test_runs_eslint_with_fix(self, mock_run, tmp_path):
+        """Should pass --fix flag when fix=True."""
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = '[{"errorCount": 0, "warningCount": 0}]'
+        mock_run.return_value.stderr = ""
+        test_file = tmp_path / "test.tsx"
+        test_file.write_text("const x = 1;")
+
+        lint_file(str(test_file), fix=True)
+
+        call_args = mock_run.call_args[0][0]
+        assert "--fix" in call_args
+
+    @patch("lib.tools.subprocess.run")
+    def test_returns_errors_and_warnings(self, mock_run, tmp_path):
+        """Should return error and warning counts."""
+        mock_run.return_value.returncode = 1
+        mock_run.return_value.stdout = (
+            '[{"errorCount": 2, "warningCount": 1, "messages": ['
+            '{"severity": 2, "line": 1, "ruleId": "no-unused-vars", "message": "unused var"},'
+            '{"severity": 1, "line": 2, "ruleId": "prefer-const", "message": "use const"}'
+            "]}]"
+        )
+        mock_run.return_value.stderr = ""
+        test_file = tmp_path / "test.js"
+        test_file.write_text("let x = 1;")
+
+        success, errors, warnings, msg = lint_file(str(test_file))
+
+        assert success is False
+        assert errors == 2
+        assert warnings == 1
+        assert "error" in msg.lower() or "L1:" in msg
+
+    @patch("lib.tools.subprocess.run")
+    def test_handles_eslint_not_found(self, mock_run, tmp_path):
+        """Should return success when ESLint not installed."""
+        mock_run.side_effect = FileNotFoundError()
+        test_file = tmp_path / "test.jsx"
+        test_file.write_text("const x = 1;")
+
+        success, errors, warnings, msg = lint_file(str(test_file))
+
+        assert success is True
+        assert errors == 0
+        assert warnings == 0
+        assert "not installed" in msg.lower() or "skipped" in msg.lower()
+
+    @patch("lib.tools.subprocess.run")
+    def test_handles_timeout(self, mock_run, tmp_path):
+        """Should handle timeout gracefully."""
+        import subprocess
+
+        mock_run.side_effect = subprocess.TimeoutExpired("eslint", 30)
+        test_file = tmp_path / "test.ts"
+        test_file.write_text("const x = 1;")
+
+        success, errors, warnings, msg = lint_file(str(test_file))
+
+        assert success is False
+        assert "timed out" in msg.lower()

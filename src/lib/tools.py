@@ -96,6 +96,84 @@ def run_linter(
         return False, f"Linter not found: {name}"
 
 
+# JS/TS extensions that should be linted with ESLint
+ESLINT_EXTENSIONS = {".ts", ".tsx", ".js", ".jsx"}
+
+
+def lint_file(path: str, fix: bool = False) -> tuple[bool, int, int, str]:
+    """Run ESLint on a single JS/TS file.
+
+    Args:
+        path: File path to lint.
+        fix: Whether to auto-fix issues.
+
+    Returns:
+        Tuple of (success, error_count, warning_count, message).
+    """
+    filepath = Path(path)
+    ext = filepath.suffix.lower()
+
+    if ext not in ESLINT_EXTENSIONS:
+        return True, 0, 0, f"No linter for {ext}"
+
+    try:
+        # Run ESLint with JSON output for structured results
+        cmd = [
+            "npx",
+            "eslint",
+            "--format",
+            "json",
+            *(["--fix"] if fix else []),
+            str(filepath),
+        ]
+        result = subprocess.run(  # noqa: S603
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+
+        # Parse JSON output to get error/warning counts
+        import json
+
+        try:
+            lint_results = json.loads(result.stdout)
+            if lint_results:
+                file_result = lint_results[0]
+                errors = file_result.get("errorCount", 0)
+                warnings = file_result.get("warningCount", 0)
+
+                if errors > 0 or warnings > 0:
+                    # Format messages for display
+                    messages = file_result.get("messages", [])
+                    msg_lines = []
+                    for msg in messages[:5]:  # Limit to first 5
+                        severity = "error" if msg.get("severity") == 2 else "warn"
+                        line = msg.get("line", 0)
+                        rule = msg.get("ruleId", "unknown")
+                        text = msg.get("message", "")
+                        msg_lines.append(f"  [{severity}] L{line}: {text} ({rule})")
+
+                    if len(messages) > 5:
+                        msg_lines.append(f"  ... and {len(messages) - 5} more issues")
+
+                    return False, errors, warnings, "\n".join(msg_lines)
+
+                return True, 0, 0, "ESLint: All checks passed"
+            return True, 0, 0, "ESLint: All checks passed"
+        except json.JSONDecodeError:
+            # Fallback to simple check
+            if result.returncode == 0:
+                return True, 0, 0, "ESLint: All checks passed"
+            return False, 1, 0, result.stderr or result.stdout
+
+    except subprocess.TimeoutExpired:
+        return False, 0, 0, "ESLint: Timed out after 30s"
+    except FileNotFoundError:
+        return True, 0, 0, "ESLint not installed (skipped)"
+
+
 def notify(title: str, message: str) -> None:
     """Send a desktop notification.
 

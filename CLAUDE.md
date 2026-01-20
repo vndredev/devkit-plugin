@@ -65,7 +65,7 @@ Example: `feat/add-login`, `fix/button-styling`
 
 ## Testing
 
-**Framework:** `pytest` | **Coverage:** ≥70%
+**Framework:** `pytest` | **Coverage:** ≥80%
 
 ## Commands
 
