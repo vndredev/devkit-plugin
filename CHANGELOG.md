@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.54.2] - 2026-01-20
+## [v0.55.0] - 2026-01-20
 
 ### Changed
 
@@ -16,6 +16,7 @@
 
 ### Added
 
+- **Git**: Replace ruleset creation with release_pat check (#83)
 - **Hook**: Add protection sync check to session and stop hooks (#78)
 - **Format**: Add eslint hook with strict 0-err/0-warn policy (#72)
 
