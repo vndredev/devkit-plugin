@@ -988,6 +988,26 @@ def sync_with_pr(root: Path | None = None) -> tuple[list[tuple[str, bool, str]],
     if current_branch not in protected:
         return sync_all(root), None
 
+    # On protected branch - fetch and pull first to avoid conflicts
+    try:
+        subprocess.run(
+            ["git", "fetch", "origin"],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=root,
+        )
+        subprocess.run(
+            ["git", "pull", "--ff-only"],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=root,
+        )
+    except subprocess.CalledProcessError:
+        # Pull failed (diverged branches, etc.) - let user handle manually
+        pass
+
     # On protected branch - create new branch for changes
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     new_branch = f"chore/plugin-update-{timestamp}"
