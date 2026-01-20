@@ -1,9 +1,10 @@
 # Changelog
 
-## [v0.53.3] - 2026-01-20
+## [v0.53.4] - 2026-01-20
 
 ### Fixed
 
+- **Validate**: Block gh pr create command (#77)
 - **Hook**: Run eslint from project root directory (#76)
 - **Config**: Remove trailing commas from config.jsonc (#74)
 - **Config**: Add eslint to recommended defaults (#73)
