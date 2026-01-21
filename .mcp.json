@@ -51,6 +51,7 @@
       "description": "Upstash Redis database management"
     },
     "livekit-docs": {
+      "type": "sse",
       "url": "https://docs.livekit.io/mcp",
       "description": "LiveKit documentation and code examples"
     }
